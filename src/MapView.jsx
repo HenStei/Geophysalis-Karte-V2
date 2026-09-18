@@ -135,20 +135,6 @@ export default function MapView() {
     setIsCompressing(true);
     setExifNotice("");
 
-    try {
-      const gps = await exifr.gps(file);
-      if (gps && gps.latitude && gps.longitude) {
-         setDraftPin([gps.latitude, gps.longitude]);
-         setManualLat(gps.latitude.toFixed(6));
-         setManualLng(gps.longitude.toFixed(6));
-         fetchLocationName(gps.latitude, gps.longitude);
-         setExifNotice("Standort automatisch aus Foto-Daten (EXIF) übernommen!");
-         if (map) map.flyTo([gps.latitude, gps.longitude], 15);
-      }
-    } catch (err) {
-      console.log("Keine EXIF Daten gefunden.");
-    }
-
     const options = { maxSizeMB: 0.3, maxWidthOrHeight: 1200, useWebWorker: true };
     try {
       const compressed = await imageCompression(file, options);
@@ -283,7 +269,7 @@ export default function MapView() {
                   value={manualLat} 
                   onChange={(e) => {
                     setManualLat(e.target.value);
-                    const val = parseFloat(e.target.value);
+                    const val = parseFloat(e.target.value.replace(',', '.'));
                     if(!isNaN(val)) setDraftPin([val, draftPin[1]]);
                   }} 
                   className="w-1/2 text-xs border border-gray-300 p-2 rounded-lg bg-white focus:outline-blue-500" placeholder="Breite" 
@@ -293,7 +279,7 @@ export default function MapView() {
                   value={manualLng} 
                   onChange={(e) => {
                     setManualLng(e.target.value);
-                    const val = parseFloat(e.target.value);
+                    const val = parseFloat(e.target.value.replace(',', '.'));
                     if(!isNaN(val)) setDraftPin([draftPin[0], val]);
                   }} 
                   className="w-1/2 text-xs border border-gray-300 p-2 rounded-lg bg-white focus:outline-blue-500" placeholder="Länge" 
