@@ -269,20 +269,36 @@ export default function MapView() {
                   value={manualLat} 
                   onChange={(e) => {
                     setManualLat(e.target.value);
-                    const val = parseFloat(e.target.value.replace(',', '.'));
-                    if(!isNaN(val)) setDraftPin([val, draftPin[1]]);
+                    setLocationName(""); // Lösche den alten Ort während des Tippens
                   }} 
-                  className="w-1/2 text-xs border border-gray-300 p-2 rounded-lg bg-white focus:outline-blue-500" placeholder="Breite" 
+                  onBlur={() => {
+                    const val = parseFloat(manualLat.replace(',', '.'));
+                    if(!isNaN(val)) {
+                      setDraftPin([val, draftPin[1]]);
+                      setManualLat(val.toFixed(6));
+                      fetchLocationName(val, draftPin[1]);
+                      if (map) map.flyTo([val, draftPin[1]], 15);
+                    }
+                  }}
+                  className="w-1/2 text-xs border border-gray-300 p-2 rounded-lg bg-white focus:outline-blue-500" placeholder="Breitengrad" 
                 />
                 <input 
                   type="text" 
                   value={manualLng} 
                   onChange={(e) => {
                     setManualLng(e.target.value);
-                    const val = parseFloat(e.target.value.replace(',', '.'));
-                    if(!isNaN(val)) setDraftPin([draftPin[0], val]);
+                    setLocationName(""); 
                   }} 
-                  className="w-1/2 text-xs border border-gray-300 p-2 rounded-lg bg-white focus:outline-blue-500" placeholder="Länge" 
+                  onBlur={() => {
+                    const val = parseFloat(manualLng.replace(',', '.'));
+                    if(!isNaN(val)) {
+                      setDraftPin([draftPin[0], val]);
+                      setManualLng(val.toFixed(6));
+                      fetchLocationName(draftPin[0], val);
+                      if (map) map.flyTo([draftPin[0], val], 15);
+                    }
+                  }}
+                  className="w-1/2 text-xs border border-gray-300 p-2 rounded-lg bg-white focus:outline-blue-500" placeholder="Längengrad" 
                 />
               </div>
             </div>
