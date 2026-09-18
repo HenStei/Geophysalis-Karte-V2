@@ -55,6 +55,19 @@ export default function MapView() {
         setUserLocation([pos.coords.latitude, pos.coords.longitude]);
       });
     }
+
+    // Supabase Realtime-Verbindung: Lauscht auf Änderungen in der "pins" Tabelle
+    const realtimeSubscription = supabase
+      .channel('public:pins')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pins' }, (payload) => {
+        // Lädt die Pins im Hintergrund neu, sobald sich in der DB etwas tut
+        fetchPins(); 
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(realtimeSubscription);
+    };
   }, []);
 
   const fetchPins = async () => {

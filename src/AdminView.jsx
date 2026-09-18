@@ -16,11 +16,23 @@ export default function AdminView() {
       if (session) fetchAllPins();
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session) fetchAllPins();
     });
-    return () => subscription.unsubscribe();
+
+    // Supabase Realtime-Verbindung für das Admin Dashboard
+    const realtimeSubscription = supabase
+      .channel('admin:pins')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pins' }, () => {
+        fetchAllPins();
+      })
+      .subscribe();
+
+    return () => {
+      authSub.unsubscribe();
+      supabase.removeChannel(realtimeSubscription);
+    };
   }, []);
 
   const fetchAllPins = async () => {
