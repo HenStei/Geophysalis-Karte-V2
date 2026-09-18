@@ -237,7 +237,7 @@ export default function MapView() {
                     </div>
                     <p className="text-sm text-gray-600 font-medium">Foto aufnehmen / auswählen</p>
                   </div>
-                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageSelection} />
+                  <input type="file" accept="image/*" className="hidden" onChange={handleImageSelection} />
                 </label>
               ) : (
                 <div className="relative rounded-2xl overflow-hidden border border-gray-200 shadow-inner">
