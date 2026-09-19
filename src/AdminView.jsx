@@ -98,7 +98,7 @@ export default function AdminView() {
   const displayPins = activeTab === 'pending' ? pendingPins : approvedPins;
 
   return (
-    <div className="min-h-screen bg-[#f3f4f6] p-4 sm:p-8">
+    <div className="min-h-[100dvh] bg-[#f3f4f6] p-4 sm:p-8 w-full">
       <div className="max-w-7xl mx-auto">
         
         {/* Header Section */}

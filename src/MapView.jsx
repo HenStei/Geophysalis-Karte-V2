@@ -219,7 +219,7 @@ export default function MapView() {
   };
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-[100dvh] overflow-hidden overscroll-none">
       <div className="absolute top-4 left-4 right-4 z-[1000] pointer-events-none flex justify-between items-start">
         <div className="flex flex-col gap-3 pointer-events-auto">
           <div className="bg-white/95 backdrop-blur-md px-6 py-3 rounded-3xl shadow-xl border border-gray-100 flex items-center justify-center">
