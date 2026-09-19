@@ -267,35 +267,45 @@ export default function MapView() {
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden overscroll-none">
       
-      {/* Top Left Header & Counter */}
-      <div className="absolute top-4 left-4 z-[1000] pointer-events-none flex flex-col gap-3">
-        <div className="bg-white/95 backdrop-blur-md px-6 py-3 rounded-3xl shadow-xl border border-gray-100 flex items-center justify-center pointer-events-auto">
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Geophysalis</h1>
-        </div>
-        <div className="bg-white/95 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-gray-100 flex items-center gap-2.5 self-start transition-all hover:scale-105 pointer-events-auto">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
-          </span>
-          <p className="text-xs font-bold text-gray-700 tracking-wide uppercase mt-0.5">
-            {pins.length} Sticker weltweit
-          </p>
+      {/* Top Left Header & Counter (Optimized for Mobile) */}
+      <div className="absolute top-4 left-4 z-[1000] pointer-events-none flex flex-col gap-2 sm:gap-3">
+        <div className="bg-white/95 backdrop-blur-md px-4 py-2 sm:px-6 sm:py-3 rounded-2xl sm:rounded-3xl shadow-xl border border-gray-100 flex items-center gap-2 sm:gap-3 pointer-events-auto transition-all">
+          <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight hidden sm:block">Geophysalis</h1>
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+            </span>
+            <p className="text-[10px] sm:text-xs font-bold text-gray-700 tracking-wide uppercase mt-0.5">
+              {pins.length} <span className="hidden sm:inline">Sticker weltweit</span><span className="sm:hidden">Sticker</span>
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Layer Menu (Top Right) */}
+      {/* Layer Menu & About Button (Top Right) */}
       <div className="absolute top-4 right-4 z-[1000] pointer-events-auto flex flex-col items-end gap-2">
-        <button 
-          onClick={() => setShowLayerMenu(!showLayerMenu)}
-          className="bg-white/95 backdrop-blur-md p-3.5 rounded-2xl shadow-xl border border-gray-100 text-gray-700 hover:bg-gray-50 transition"
-        >
-          <Layers size={24} />
-        </button>
+        <div className="flex gap-2">
+          <Link 
+            to="/about"
+            className="bg-white/95 backdrop-blur-md p-3 sm:p-3.5 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-gray-700 hover:bg-gray-50 transition flex items-center justify-center font-bold text-sm"
+          >
+            <Info size={20} className="sm:mr-1" />
+            <span className="hidden sm:inline">Story</span>
+          </Link>
+          
+          <button 
+            onClick={() => setShowLayerMenu(!showLayerMenu)}
+            className="bg-white/95 backdrop-blur-md p-3 sm:p-3.5 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-gray-700 hover:bg-gray-50 transition"
+          >
+            <Layers size={20} className="sm:w-6 sm:h-6" />
+          </button>
+        </div>
 
         {showLayerMenu && (
-          <div className="bg-white/95 backdrop-blur-md p-4 rounded-3xl shadow-2xl border border-gray-100 flex flex-col gap-4 w-48 animate-in slide-in-from-top-4">
+          <div className="bg-white/95 backdrop-blur-md p-4 rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-100 flex flex-col gap-4 w-44 sm:w-48 animate-in slide-in-from-top-4 origin-top-right">
             <div>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Karten-Stil</p>
+              <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Karten-Stil</p>
               <div className="flex flex-col gap-1">
                 <button onClick={() => setMapStyle('street')} className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition ${mapStyle === 'street' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Standard</button>
                 <button onClick={() => setMapStyle('satellite')} className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition ${mapStyle === 'satellite' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Satellit</button>
@@ -304,7 +314,7 @@ export default function MapView() {
             </div>
             <div className="h-px bg-gray-200 w-full"></div>
             <div>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Ansicht</p>
+              <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Ansicht</p>
               <div className="flex flex-col gap-1">
                 <button onClick={() => setShowHeatmap(false)} className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition ${!showHeatmap ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Foto-Pins</button>
                 <button onClick={() => setShowHeatmap(true)} className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition ${showHeatmap ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Heatmap</button>
@@ -314,7 +324,7 @@ export default function MapView() {
         )}
         
         {!draftPin && (
-          <Link to="/admin" className="mt-2 bg-white/95 backdrop-blur-md px-5 py-3 rounded-2xl shadow-xl border border-gray-100 text-sm font-bold text-gray-700 hover:bg-gray-50 pointer-events-auto transition self-end">
+          <Link to="/admin" className="mt-1 sm:mt-2 bg-white/95 backdrop-blur-md px-4 py-2 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-xs sm:text-sm font-bold text-gray-400 hover:text-gray-700 hover:bg-gray-50 pointer-events-auto transition self-end">
             Admin
           </Link>
         )}
@@ -345,7 +355,7 @@ export default function MapView() {
         
         {/* Marker Layer (Hidden when Heatmap is active) */}
         {!showHeatmap && (
-          <MarkerClusterGroup chunkedLoading>
+          <MarkerClusterGroup chunkedLoading maxClusterRadius={50} showCoverageOnHover={false} spiderfyOnMaxZoom={true}>
             {pins.map(pin => (
               <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getStickerIcon(pin.image_url)}>
                 <Popup>
@@ -378,8 +388,8 @@ export default function MapView() {
       </MapContainer>
 
       {!draftPin ? (
-        <button onClick={handleStartNewPin} className="absolute bottom-8 right-8 z-[1000] bg-blue-600 text-white px-6 py-4 rounded-2xl shadow-xl hover:bg-blue-700 hover:scale-105 hover:-translate-y-1 transition-all font-bold text-lg pointer-events-auto flex items-center gap-2">
-          <MapPin size={24} /> Sticker setzen
+        <button onClick={handleStartNewPin} className="absolute bottom-6 right-4 sm:bottom-8 sm:right-8 z-[1000] bg-blue-600 text-white px-5 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl shadow-xl hover:bg-blue-700 hover:scale-105 hover:-translate-y-1 transition-all font-bold text-base sm:text-lg pointer-events-auto flex items-center gap-2">
+          <MapPin size={22} className="sm:w-6 sm:h-6" /> Sticker setzen
         </button>
       ) : !isModalOpen && (
         <div className="absolute bottom-6 left-4 right-4 z-[1000] bg-white/95 backdrop-blur-md p-4 rounded-3xl shadow-2xl border border-blue-100 flex flex-col sm:flex-row items-center justify-between gap-4 pointer-events-auto animate-in slide-in-from-bottom-10">
