@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMapEvents, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMapEvents, useMap, Rectangle } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import imageCompression from 'browser-image-compression';
 import { X, Upload, MapPin, Check, Info, LocateFixed, Layers } from 'lucide-react';
@@ -62,18 +62,13 @@ function HeatmapLayer({ pins, isVisible }) {
     }
 
     if (!heatLayerRef.current && pins.length > 0) {
-      // Höhere Intensität (3 statt 1) für kräftigeres Leuchten
       const heatPoints = pins.map(p => [p.lat, p.lng, 3]);
       heatLayerRef.current = L.heatLayer(heatPoints, {
-        radius: 40, // Größere Leuchtkreise
-        blur: 25,   // Weicherer, aber weiterer Glow
+        radius: 40, 
+        blur: 25,   
         maxZoom: 10,
         gradient: { 
-          0.1: 'blue', 
-          0.3: 'cyan', 
-          0.5: 'lime', 
-          0.7: 'yellow', 
-          1.0: 'red' 
+          0.1: 'blue', 0.3: 'cyan', 0.5: 'lime', 0.7: 'yellow', 1.0: 'red' 
         }
       }).addTo(map);
     } else if (heatLayerRef.current) {
@@ -89,6 +84,33 @@ function HeatmapLayer({ pins, isVisible }) {
   }, [map, pins, isVisible]);
 
   return null;
+}
+
+// Minimap Syncer
+function MinimapBounds({ parentMap }) {
+  const minimap = useMap();
+  const [bounds, setBounds] = useState(parentMap.getBounds());
+  
+  useEffect(() => {
+    if (!parentMap) return;
+    
+    const update = () => {
+      setBounds(parentMap.getBounds());
+      // Zentriere Minimap und setze Zoom (ca. 6 Level weiter raus als Hauptkarte, mindestens Level 0)
+      minimap.setView(parentMap.getCenter(), Math.max(0, parentMap.getZoom() - 6));
+    };
+    
+    parentMap.on('move', update);
+    parentMap.on('zoom', update);
+    update();
+    
+    return () => {
+      parentMap.off('move', update);
+      parentMap.off('zoom', update);
+    };
+  }, [minimap, parentMap]);
+  
+  return <Rectangle bounds={bounds} pathOptions={{ color: '#2563eb', weight: 2, fillOpacity: 0.2 }} />;
 }
 
 export default function MapView() {
@@ -403,6 +425,25 @@ export default function MapView() {
               <Check size={20}/> Bestätigen
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Floating Minimap (Desktop Only) */}
+      {!draftPin && !isModalOpen && map && (
+        <div className="absolute bottom-8 left-20 z-[1000] hidden lg:block w-44 h-44 rounded-full border-4 border-white shadow-2xl overflow-hidden pointer-events-none transition-all">
+          <MapContainer 
+            center={userLocation} 
+            zoom={0} 
+            zoomControl={false} 
+            dragging={false} 
+            scrollWheelZoom={false}
+            doubleClickZoom={false}
+            attributionControl={false}
+            className="w-full h-full bg-[#e5e5e5]"
+          >
+            <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}" />
+            <MinimapBounds parentMap={map} />
+          </MapContainer>
         </div>
       )}
 
