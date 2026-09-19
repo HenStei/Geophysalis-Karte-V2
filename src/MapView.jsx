@@ -220,7 +220,6 @@ export default function MapView() {
     }
   };
 
-  const markerRef = useRef(null);
   const dragHandlers = useMemo(() => ({
     dragend() {
       const marker = markerRef.current;
