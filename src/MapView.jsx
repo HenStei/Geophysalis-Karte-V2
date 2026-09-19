@@ -286,6 +286,11 @@ export default function MapView() {
     }
   };
 
+  const worldBounds = [
+    [-90, -180],
+    [90, 180]
+  ];
+
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden overscroll-none">
       
@@ -352,24 +357,36 @@ export default function MapView() {
         )}
       </div>
       
-      <MapContainer center={userLocation} zoom={5} zoomControl={false} ref={setMap} className={`w-full h-full z-0 ${mapStyle === 'dark' ? 'bg-[#1a1a1a]' : 'bg-[#e5e5e5]'}`}>
+      <MapContainer 
+        center={userLocation} 
+        zoom={5} 
+        minZoom={2}
+        maxBounds={worldBounds}
+        maxBoundsViscosity={1.0}
+        zoomControl={false} 
+        ref={setMap} 
+        className={`w-full h-full z-0 ${mapStyle === 'dark' ? 'bg-[#1a1a1a]' : 'bg-[#e5e5e5]'}`}
+      >
         <ZoomControl position="bottomleft" />
         
         {/* Map Styles */}
         {mapStyle === 'street' && (
           <TileLayer 
+            noWrap={true}
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}" 
             attribution='Tiles &copy; Esri'
           />
         )}
         {mapStyle === 'satellite' && (
           <TileLayer 
+            noWrap={true}
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" 
             attribution='Tiles &copy; Esri'
           />
         )}
         {mapStyle === 'dark' && (
           <TileLayer 
+            noWrap={true}
             url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}" 
             attribution='Tiles &copy; Esri'
           />
@@ -441,7 +458,7 @@ export default function MapView() {
             attributionControl={false}
             className="w-full h-full bg-[#e5e5e5]"
           >
-            <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}" />
+            <TileLayer noWrap={true} url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}" />
             <MinimapBounds parentMap={map} />
           </MapContainer>
         </div>
