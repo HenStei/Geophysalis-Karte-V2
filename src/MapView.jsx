@@ -221,11 +221,24 @@ export default function MapView() {
   return (
     <div className="relative w-full h-full">
       <div className="absolute top-4 left-4 right-4 z-[1000] pointer-events-none flex justify-between items-start">
-        <div className="bg-white/95 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-xl border border-gray-100 pointer-events-auto">
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Geophysalis</h1>
+        <div className="flex flex-col gap-3 pointer-events-auto">
+          <div className="bg-white/95 backdrop-blur-md px-6 py-3 rounded-3xl shadow-xl border border-gray-100 flex items-center justify-center">
+            <h1 className="text-2xl font-black text-gray-900 tracking-tight">Geophysalis</h1>
+          </div>
+          {/* Live Counter Badge */}
+          <div className="bg-white/95 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-gray-100 flex items-center gap-2.5 self-start transition-all hover:scale-105">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+            </span>
+            <p className="text-xs font-bold text-gray-700 tracking-wide uppercase mt-0.5">
+              {pins.length} Sticker weltweit
+            </p>
+          </div>
         </div>
+
         {!draftPin && (
-          <Link to="/admin" className="bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-xl shadow-xl border border-gray-100 text-sm font-bold text-gray-700 hover:bg-gray-50 pointer-events-auto transition">
+          <Link to="/admin" className="bg-white/95 backdrop-blur-md px-5 py-3 rounded-2xl shadow-xl border border-gray-100 text-sm font-bold text-gray-700 hover:bg-gray-50 pointer-events-auto transition">
             Admin
           </Link>
         )}
