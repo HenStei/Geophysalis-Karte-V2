@@ -129,14 +129,14 @@ export default function MapView() {
     const params = new URLSearchParams(window.location.search);
     const pinParam = params.get('pin');
     if (pinParam) {
-      setTargetPinId(parseInt(pinParam));
+      setTargetPinId(pinParam.toString()); // Sicherstellen, dass es ein String ist (für UUIDs oder BigInt)
     }
   }, []);
 
   // Fly to target pin once map and pins are loaded
   useEffect(() => {
     if (targetPinId && map && pins.length > 0) {
-      const targetPin = pins.find(p => p.id === targetPinId);
+      const targetPin = pins.find(p => p.id.toString() === targetPinId);
       if (targetPin) {
         // Leichte Verzögerung für weicheren Start der Kamera-Fahrt
         setTimeout(() => {
@@ -421,7 +421,7 @@ export default function MapView() {
         {!showHeatmap && (
           <MarkerClusterGroup chunkedLoading maxClusterRadius={50} showCoverageOnHover={false} spiderfyOnMaxZoom={true} disableClusteringAtZoom={15}>
             {pins.map(pin => (
-              <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getStickerIcon(pin.image_url, pin.id === targetPinId)}>
+              <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getStickerIcon(pin.image_url, targetPinId && pin.id.toString() === targetPinId)}>
                 <Popup>
                   <div className="flex flex-col bg-white">
                     <img src={pin.image_url} alt="Sticker" className="w-full h-48 object-cover rounded-t-xl" />
