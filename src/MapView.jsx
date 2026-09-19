@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMapEvents, useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import imageCompression from 'browser-image-compression';
-import exifr from 'exifr';
-import { X, Upload, MapPin, Check, Info, LocateFixed } from 'lucide-react';
+import { X, Upload, MapPin, Check, Info, LocateFixed, Layers } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import L from 'leaflet';
 import { supabase } from './supabase';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.heat';
 
 // Fix für Leaflet-Marker-Icons als Fallback
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -47,6 +47,44 @@ function MapClickHandler({ onMapClick }) {
   return null;
 }
 
+// Custom Heatmap Layer Component
+function HeatmapLayer({ pins, isVisible }) {
+  const map = useMap();
+  const heatLayerRef = useRef(null);
+
+  useEffect(() => {
+    if (!isVisible) {
+      if (heatLayerRef.current) {
+        map.removeLayer(heatLayerRef.current);
+        heatLayerRef.current = null;
+      }
+      return;
+    }
+
+    if (!heatLayerRef.current && pins.length > 0) {
+      const heatPoints = pins.map(p => [p.lat, p.lng, 1]);
+      heatLayerRef.current = L.heatLayer(heatPoints, {
+        radius: 25,
+        blur: 15,
+        maxZoom: 12,
+        gradient: { 0.4: 'blue', 0.6: 'cyan', 0.7: 'lime', 0.8: 'yellow', 1.0: 'red' }
+      }).addTo(map);
+    } else if (heatLayerRef.current) {
+      // Update data if it changes while visible
+      heatLayerRef.current.setLatLngs(pins.map(p => [p.lat, p.lng, 1]));
+    }
+
+    return () => {
+      if (heatLayerRef.current) {
+        map.removeLayer(heatLayerRef.current);
+        heatLayerRef.current = null;
+      }
+    };
+  }, [map, pins, isVisible]);
+
+  return null;
+}
+
 export default function MapView() {
   const [map, setMap] = useState(null);
   const [pins, setPins] = useState([]);
@@ -54,7 +92,6 @@ export default function MapView() {
   const [draftPin, setDraftPin] = useState(null); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  // Eigene States für die Eingabefelder, damit das Tippen und Löschen flüssig funktioniert
   const [manualLat, setManualLat] = useState("");
   const [manualLng, setManualLng] = useState("");
 
@@ -70,6 +107,11 @@ export default function MapView() {
   
   const [userLocation, setUserLocation] = useState([50.1109, 8.6821]); 
 
+  // Layer State
+  const [mapStyle, setMapStyle] = useState('street'); 
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  const [showLayerMenu, setShowLayerMenu] = useState(false);
+
   useEffect(() => {
     fetchPins();
     if ("geolocation" in navigator) {
@@ -78,11 +120,9 @@ export default function MapView() {
       });
     }
 
-    // Supabase Realtime-Verbindung: Lauscht auf Änderungen in der "pins" Tabelle
     const realtimeSubscription = supabase
       .channel('public:pins')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'pins' }, (payload) => {
-        // Lädt die Pins im Hintergrund neu, sobald sich in der DB etwas tut
         fetchPins(); 
       })
       .subscribe();
@@ -220,56 +260,107 @@ export default function MapView() {
 
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden overscroll-none">
-      <div className="absolute top-4 left-4 right-4 z-[1000] pointer-events-none flex justify-between items-start">
-        <div className="flex flex-col gap-3 pointer-events-auto">
-          <div className="bg-white/95 backdrop-blur-md px-6 py-3 rounded-3xl shadow-xl border border-gray-100 flex items-center justify-center">
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight">Geophysalis</h1>
-          </div>
-          {/* Live Counter Badge */}
-          <div className="bg-white/95 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-gray-100 flex items-center gap-2.5 self-start transition-all hover:scale-105">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
-            </span>
-            <p className="text-xs font-bold text-gray-700 tracking-wide uppercase mt-0.5">
-              {pins.length} Sticker weltweit
-            </p>
-          </div>
+      
+      {/* Top Left Header & Counter */}
+      <div className="absolute top-4 left-4 z-[1000] pointer-events-none flex flex-col gap-3">
+        <div className="bg-white/95 backdrop-blur-md px-6 py-3 rounded-3xl shadow-xl border border-gray-100 flex items-center justify-center pointer-events-auto">
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Geophysalis</h1>
         </div>
+        <div className="bg-white/95 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-gray-100 flex items-center gap-2.5 self-start transition-all hover:scale-105 pointer-events-auto">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+          </span>
+          <p className="text-xs font-bold text-gray-700 tracking-wide uppercase mt-0.5">
+            {pins.length} Sticker weltweit
+          </p>
+        </div>
+      </div>
 
+      {/* Layer Menu (Top Right) */}
+      <div className="absolute top-4 right-4 z-[1000] pointer-events-auto flex flex-col items-end gap-2">
+        <button 
+          onClick={() => setShowLayerMenu(!showLayerMenu)}
+          className="bg-white/95 backdrop-blur-md p-3.5 rounded-2xl shadow-xl border border-gray-100 text-gray-700 hover:bg-gray-50 transition"
+        >
+          <Layers size={24} />
+        </button>
+
+        {showLayerMenu && (
+          <div className="bg-white/95 backdrop-blur-md p-4 rounded-3xl shadow-2xl border border-gray-100 flex flex-col gap-4 w-48 animate-in slide-in-from-top-4">
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Karten-Stil</p>
+              <div className="flex flex-col gap-1">
+                <button onClick={() => setMapStyle('street')} className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition ${mapStyle === 'street' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Standard</button>
+                <button onClick={() => setMapStyle('satellite')} className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition ${mapStyle === 'satellite' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Satellit</button>
+                <button onClick={() => setMapStyle('dark')} className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition ${mapStyle === 'dark' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Dark Mode</button>
+              </div>
+            </div>
+            <div className="h-px bg-gray-200 w-full"></div>
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Ansicht</p>
+              <div className="flex flex-col gap-1">
+                <button onClick={() => setShowHeatmap(false)} className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition ${!showHeatmap ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Foto-Pins</button>
+                <button onClick={() => setShowHeatmap(true)} className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition ${showHeatmap ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Heatmap</button>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {!draftPin && (
-          <Link to="/admin" className="bg-white/95 backdrop-blur-md px-5 py-3 rounded-2xl shadow-xl border border-gray-100 text-sm font-bold text-gray-700 hover:bg-gray-50 pointer-events-auto transition">
+          <Link to="/admin" className="mt-2 bg-white/95 backdrop-blur-md px-5 py-3 rounded-2xl shadow-xl border border-gray-100 text-sm font-bold text-gray-700 hover:bg-gray-50 pointer-events-auto transition self-end">
             Admin
           </Link>
         )}
       </div>
       
-      <MapContainer center={userLocation} zoom={5} zoomControl={false} ref={setMap} className="w-full h-full z-0 bg-[#e5e5e5]">
+      <MapContainer center={userLocation} zoom={5} zoomControl={false} ref={setMap} className={`w-full h-full z-0 ${mapStyle === 'dark' ? 'bg-[#1a1a1a]' : 'bg-[#e5e5e5]'}`}>
         <ZoomControl position="bottomleft" />
-        {/* Moderne Esri World Street Map (kostenlos, kein API Key nötig) */}
-        <TileLayer 
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}" 
-          attribution='Tiles &copy; Esri'
-        />
         
-        <MarkerClusterGroup chunkedLoading>
-          {pins.map(pin => (
-            <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getStickerIcon(pin.image_url)}>
-              <Popup>
-                <div className="flex flex-col bg-white">
-                  <img src={pin.image_url} alt="Sticker" className="w-full h-48 object-cover" />
-                  <div className="p-4">
-                    {pin.location_name && <p className="font-bold text-gray-900 text-sm mb-1">{pin.location_name}</p>}
-                    {pin.message && <p className="text-gray-600 text-sm italic mb-2">"{pin.message}"</p>}
-                    <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-1">
-                      Gefunden am {new Date(pin.created_at).toLocaleDateString()}
-                    </p>
+        {/* Map Styles */}
+        {mapStyle === 'street' && (
+          <TileLayer 
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}" 
+            attribution='Tiles &copy; Esri'
+          />
+        )}
+        {mapStyle === 'satellite' && (
+          <TileLayer 
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" 
+            attribution='Tiles &copy; Esri'
+          />
+        )}
+        {mapStyle === 'dark' && (
+          <TileLayer 
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" 
+            attribution='&copy; CARTO'
+          />
+        )}
+        
+        {/* Marker Layer (Hidden when Heatmap is active) */}
+        {!showHeatmap && (
+          <MarkerClusterGroup chunkedLoading>
+            {pins.map(pin => (
+              <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getStickerIcon(pin.image_url)}>
+                <Popup>
+                  <div className="flex flex-col bg-white">
+                    <img src={pin.image_url} alt="Sticker" className="w-full h-48 object-cover" />
+                    <div className="p-4">
+                      {pin.location_name && <p className="font-bold text-gray-900 text-sm mb-1">{pin.location_name}</p>}
+                      {pin.message && <p className="text-gray-600 text-sm italic mb-2">"{pin.message}"</p>}
+                      <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-1">
+                        Gefunden am {new Date(pin.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
-        </MarkerClusterGroup>
+                </Popup>
+              </Marker>
+            ))}
+          </MarkerClusterGroup>
+        )}
+
+        {/* Heatmap Layer */}
+        <HeatmapLayer pins={pins} isVisible={showHeatmap} />
 
         {draftPin && !isModalOpen && (
           <Marker position={draftPin} draggable={true} ref={markerRef} eventHandlers={dragHandlers} icon={draftIcon}>
@@ -285,7 +376,7 @@ export default function MapView() {
           <MapPin size={24} /> Sticker setzen
         </button>
       ) : !isModalOpen && (
-        <div className="absolute bottom-6 left-4 right-4 z-[1000] bg-white/95 backdrop-blur-md p-4 rounded-3xl shadow-2xl border border-blue-100 flex flex-col sm:flex-row items-center justify-between gap-4 pointer-events-auto">
+        <div className="absolute bottom-6 left-4 right-4 z-[1000] bg-white/95 backdrop-blur-md p-4 rounded-3xl shadow-2xl border border-blue-100 flex flex-col sm:flex-row items-center justify-between gap-4 pointer-events-auto animate-in slide-in-from-bottom-10">
           <div className="flex-1">
             <h3 className="font-bold text-gray-900 flex items-center gap-2"><MapPin size={18} className="text-blue-600"/> Pin platzieren</h3>
             <p className="text-sm text-gray-600">Verschiebe den Pin auf der Karte an die exakte Stelle.</p>
@@ -327,7 +418,7 @@ export default function MapView() {
                   value={manualLat} 
                   onChange={(e) => {
                     setManualLat(e.target.value);
-                    setLocationName(""); // Lösche den alten Ort während des Tippens
+                    setLocationName(""); 
                   }} 
                   onBlur={() => {
                     const val = parseFloat(manualLat.replace(',', '.'));
