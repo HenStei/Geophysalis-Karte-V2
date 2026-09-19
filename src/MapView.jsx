@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMapEvents, useMap, Rectangle } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import imageCompression from 'browser-image-compression';
-import { X, Upload, MapPin, Check, Info, LocateFixed, Layers, Share2 } from 'lucide-react';
+import { X, Upload, MapPin, Check, Info, LocateFixed, Layers, Share2, Dices, Compass, Navigation2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import L from 'leaflet';
 import { supabase } from './supabase';
@@ -121,6 +121,51 @@ export default function MapView() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
   const [targetPinId, setTargetPinId] = useState(null);
+
+  // Radar & Roulette States
+  const [radarActive, setRadarActive] = useState(false);
+  const [radarState, setRadarState] = useState(''); 
+  const [nearestData, setNearestData] = useState(null);
+
+  const handleRoulette = () => {
+    if (pins.length === 0 || !map) return;
+    const randomPin = pins[Math.floor(Math.random() * pins.length)];
+    map.flyTo([randomPin.lat, randomPin.lng], 16, { animate: true, duration: 2.5 });
+  };
+
+  const handleRadar = () => {
+    if (!map || pins.length === 0) return;
+    setRadarActive(true);
+    setRadarState('searching');
+    
+    if (!("geolocation" in navigator)) {
+      setRadarState('error');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const userLat = pos.coords.latitude;
+        const userLng = pos.coords.longitude;
+        
+        let closest = null;
+        let minDistance = Infinity;
+        
+        pins.forEach(pin => {
+          const dist = map.distance([userLat, userLng], [pin.lat, pin.lng]);
+          if (dist < minDistance) {
+            minDistance = dist;
+            closest = pin;
+          }
+        });
+        
+        setNearestData({ pin: closest, distance: minDistance });
+        setRadarState('found');
+      },
+      () => setRadarState('error'),
+      { enableHighAccuracy: true, timeout: 5000 }
+    );
+  };
 
   const markerRef = useRef(null);
 
@@ -464,6 +509,26 @@ export default function MapView() {
         )}
       </MapContainer>
 
+      {/* Radar & Roulette Buttons */}
+      {!draftPin && !isModalOpen && pins.length > 0 && (
+        <div className="absolute bottom-24 right-4 sm:bottom-28 sm:right-8 z-[1000] flex flex-col gap-3 pointer-events-none">
+          <button 
+            onClick={handleRoulette} 
+            title="Zufälliger Sticker"
+            className="bg-white/95 backdrop-blur-md p-3 sm:p-3.5 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition pointer-events-auto flex items-center justify-center hover:scale-110 active:scale-95"
+          >
+            <Dices size={24} />
+          </button>
+          <button 
+            onClick={handleRadar} 
+            title="Radar (Nächster Sticker)"
+            className="bg-white/95 backdrop-blur-md p-3 sm:p-3.5 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition pointer-events-auto flex items-center justify-center hover:scale-110 active:scale-95"
+          >
+            <Compass size={24} />
+          </button>
+        </div>
+      )}
+
       {!draftPin ? (
         <button onClick={handleStartNewPin} className="absolute bottom-6 right-4 sm:bottom-8 sm:right-8 z-[1000] bg-blue-600 text-white px-5 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl shadow-xl hover:bg-blue-700 hover:scale-105 hover:-translate-y-1 transition-all font-bold text-base sm:text-lg pointer-events-auto flex items-center gap-2">
           <MapPin size={22} className="sm:w-6 sm:h-6" /> Sticker setzen
@@ -500,6 +565,57 @@ export default function MapView() {
             <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}" />
             <MinimapBounds parentMap={map} />
           </MapContainer>
+        </div>
+      )}
+
+      {/* Radar Overlay */}
+      {radarActive && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[2000] w-[92%] sm:w-[400px] bg-white/95 backdrop-blur-md p-6 rounded-3xl shadow-2xl border border-blue-100 animate-in slide-in-from-bottom-10 pointer-events-auto">
+          <button onClick={() => setRadarActive(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition bg-gray-100 rounded-full p-1"><X size={18}/></button>
+          
+          {radarState === 'searching' && (
+            <div className="flex flex-col items-center gap-4 py-4">
+               <Compass size={40} className="text-blue-500 animate-spin" />
+               <div className="text-center">
+                 <p className="font-bold text-gray-900 text-lg">Radar aktiv...</p>
+                 <p className="text-sm text-gray-500">Peile deinen Standort an.</p>
+               </div>
+            </div>
+          )}
+          
+          {radarState === 'error' && (
+            <div className="text-center py-4">
+               <div className="mx-auto bg-red-100 w-12 h-12 rounded-full flex items-center justify-center mb-3">
+                 <MapPin size={24} className="text-red-500" />
+               </div>
+               <p className="font-bold text-gray-900 text-lg mb-1">Standort verweigert</p>
+               <p className="text-sm text-gray-500">Wir brauchen deinen Standort, um den nächsten Sticker zu finden.</p>
+            </div>
+          )}
+          
+          {radarState === 'found' && nearestData && (
+            <div className="flex flex-col items-center text-center">
+               <div className="bg-blue-100 p-3 rounded-2xl mb-3">
+                 <Navigation2 size={32} className="text-blue-600" />
+               </div>
+               <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black mb-1">Nächster Sticker in</p>
+               <p className="text-4xl font-black text-gray-900 mb-1 tracking-tight">
+                 {nearestData.distance > 1000 ? `${(nearestData.distance / 1000).toFixed(1)} km` : `${Math.round(nearestData.distance)} m`}
+               </p>
+               <p className="text-sm text-gray-600 font-medium mb-6">📍 {nearestData.pin.location_name}</p>
+               
+               <button 
+                 onClick={() => {
+                   setRadarActive(false);
+                   setTargetPinId(nearestData.pin.id.toString());
+                   map.flyTo([nearestData.pin.lat, nearestData.pin.lng], 16, { animate: true, duration: 2.5 });
+                 }}
+                 className="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition shadow-md flex items-center justify-center gap-2"
+               >
+                 Hinfliegen <Navigation2 size={18} />
+               </button>
+            </div>
+          )}
         </div>
       )}
 
