@@ -286,9 +286,11 @@ export default function MapView() {
     }
   };
 
+  // Wir blockieren nur den Nord-/Südpol (vertikal), erlauben aber endloses seitliches Scrollen,
+  // damit man über den Pazifik fliegen kann und keine grauen Fehler-Kacheln entstehen.
   const worldBounds = [
-    [-90, -180],
-    [90, 180]
+    [-90, -2000],
+    [90, 2000]
   ];
 
   return (
@@ -372,21 +374,18 @@ export default function MapView() {
         {/* Map Styles */}
         {mapStyle === 'street' && (
           <TileLayer 
-            noWrap={true}
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}" 
             attribution='Tiles &copy; Esri'
           />
         )}
         {mapStyle === 'satellite' && (
           <TileLayer 
-            noWrap={true}
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" 
             attribution='Tiles &copy; Esri'
           />
         )}
         {mapStyle === 'dark' && (
           <TileLayer 
-            noWrap={true}
             url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}" 
             attribution='Tiles &copy; Esri'
           />
@@ -458,7 +457,7 @@ export default function MapView() {
             attributionControl={false}
             className="w-full h-full bg-[#e5e5e5]"
           >
-            <TileLayer noWrap={true} url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}" />
+            <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}" />
             <MinimapBounds parentMap={map} />
           </MapContainer>
         </div>
