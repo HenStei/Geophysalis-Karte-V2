@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMapEvents, useMap, Rectangle } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import imageCompression from 'browser-image-compression';
-import { X, Upload, MapPin, Check, Info, LocateFixed, Layers } from 'lucide-react';
+import { X, Upload, MapPin, Check, Info, LocateFixed, Layers, Share2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import L from 'leaflet';
 import { supabase } from './supabase';
@@ -18,12 +18,12 @@ let DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 // Custom Icons generieren
-const getStickerIcon = (url) => {
+const getStickerIcon = (url, isTarget = false) => {
   return L.divIcon({
-    className: 'custom-sticker-icon',
+    className: `custom-sticker-icon ${isTarget ? 'is-target' : ''}`,
     html: `<div style="background-image: url('${url}');"></div>`,
-    iconSize: [46, 46],
-    iconAnchor: [23, 23],
+    iconSize: isTarget ? [60, 60] : [46, 46],
+    iconAnchor: isTarget ? [30, 30] : [23, 23],
     popupAnchor: [0, -20]
   });
 };
@@ -119,7 +119,33 @@ export default function MapView() {
   
   const [draftPin, setDraftPin] = useState(null); 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+  const [copiedId, setCopiedId] = useState(null);
+  const [targetPinId, setTargetPinId] = useState(null);
+
+  const markerRef = useRef(null);
+
+  // Parse URL Parameters for Deep Linking on first mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const pinParam = params.get('pin');
+    if (pinParam) {
+      setTargetPinId(parseInt(pinParam));
+    }
+  }, []);
+
+  // Fly to target pin once map and pins are loaded
+  useEffect(() => {
+    if (targetPinId && map && pins.length > 0) {
+      const targetPin = pins.find(p => p.id === targetPinId);
+      if (targetPin) {
+        // Leichte Verzögerung für weicheren Start der Kamera-Fahrt
+        setTimeout(() => {
+          map.flyTo([targetPin.lat, targetPin.lng], 16, { animate: true, duration: 2 });
+        }, 600);
+      }
+    }
+  }, [targetPinId, map, pins]);
+
   const [manualLat, setManualLat] = useState("");
   const [manualLng, setManualLng] = useState("");
 
@@ -394,18 +420,31 @@ export default function MapView() {
         
         {/* Marker Layer (Hidden when Heatmap is active) */}
         {!showHeatmap && (
-          <MarkerClusterGroup chunkedLoading maxClusterRadius={50} showCoverageOnHover={false} spiderfyOnMaxZoom={true}>
+          <MarkerClusterGroup chunkedLoading maxClusterRadius={50} showCoverageOnHover={false} spiderfyOnMaxZoom={true} disableClusteringAtZoom={15}>
             {pins.map(pin => (
-              <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getStickerIcon(pin.image_url)}>
+              <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getStickerIcon(pin.image_url, pin.id === targetPinId)}>
                 <Popup>
                   <div className="flex flex-col bg-white">
-                    <img src={pin.image_url} alt="Sticker" className="w-full h-48 object-cover" />
+                    <img src={pin.image_url} alt="Sticker" className="w-full h-48 object-cover rounded-t-xl" />
                     <div className="p-4">
                       {pin.location_name && <p className="font-bold text-gray-900 text-sm mb-1">{pin.location_name}</p>}
                       {pin.message && <p className="text-gray-600 text-sm italic mb-2">"{pin.message}"</p>}
                       <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-1">
                         Gefunden am {new Date(pin.created_at).toLocaleDateString()}
                       </p>
+                      
+                      <button 
+                        onClick={() => {
+                          const url = `${window.location.origin}/?pin=${pin.id}`;
+                          navigator.clipboard.writeText(url);
+                          setCopiedId(pin.id);
+                          setTimeout(() => setCopiedId(null), 2000);
+                        }}
+                        className="mt-3 w-full bg-blue-50 text-blue-600 font-bold py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-blue-100 transition active:scale-95"
+                      >
+                        {copiedId === pin.id ? <Check size={16} /> : <Share2 size={16} />}
+                        {copiedId === pin.id ? 'Link kopiert!' : 'Sticker teilen'}
+                      </button>
                     </div>
                   </div>
                 </Popup>
