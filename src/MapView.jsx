@@ -62,16 +62,22 @@ function HeatmapLayer({ pins, isVisible }) {
     }
 
     if (!heatLayerRef.current && pins.length > 0) {
-      const heatPoints = pins.map(p => [p.lat, p.lng, 1]);
+      // Höhere Intensität (3 statt 1) für kräftigeres Leuchten
+      const heatPoints = pins.map(p => [p.lat, p.lng, 3]);
       heatLayerRef.current = L.heatLayer(heatPoints, {
-        radius: 25,
-        blur: 15,
-        maxZoom: 12,
-        gradient: { 0.4: 'blue', 0.6: 'cyan', 0.7: 'lime', 0.8: 'yellow', 1.0: 'red' }
+        radius: 40, // Größere Leuchtkreise
+        blur: 25,   // Weicherer, aber weiterer Glow
+        maxZoom: 10,
+        gradient: { 
+          0.1: 'blue', 
+          0.3: 'cyan', 
+          0.5: 'lime', 
+          0.7: 'yellow', 
+          1.0: 'red' 
+        }
       }).addTo(map);
     } else if (heatLayerRef.current) {
-      // Update data if it changes while visible
-      heatLayerRef.current.setLatLngs(pins.map(p => [p.lat, p.lng, 1]));
+      heatLayerRef.current.setLatLngs(pins.map(p => [p.lat, p.lng, 3]));
     }
 
     return () => {
@@ -332,8 +338,8 @@ export default function MapView() {
         )}
         {mapStyle === 'dark' && (
           <TileLayer 
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" 
-            attribution='&copy; CARTO'
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}" 
+            attribution='Tiles &copy; Esri'
           />
         )}
         
