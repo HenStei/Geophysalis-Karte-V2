@@ -130,7 +130,8 @@ export default function MapView() {
   const handleRoulette = () => {
     if (pins.length === 0 || !map) return;
     const randomPin = pins[Math.floor(Math.random() * pins.length)];
-    map.flyTo([randomPin.lat, randomPin.lng], 16, { animate: true, duration: 2.5 });
+    // "Teleport" statt Kameraflug, damit der Browser nicht hunderte Kacheln über dem Ozean laden muss
+    map.setView([randomPin.lat, randomPin.lng], 16, { animate: false });
   };
 
   const handleRadar = () => {
@@ -162,8 +163,16 @@ export default function MapView() {
         setNearestData({ pin: closest, distance: minDistance });
         setRadarState('found');
       },
-      () => setRadarState('error'),
-      { enableHighAccuracy: true, timeout: 5000 }
+      (err) => {
+        // Code 1: Nutzer hat abgelehnt oder Browser blockiert generell
+        if (err.code === 1) {
+          setRadarState('denied');
+        } else {
+          setRadarState('error');
+        }
+      },
+      // Timeout auf 15 Sekunden erhöht, da GPS auf Handys etwas dauern kann
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
 
@@ -588,8 +597,18 @@ export default function MapView() {
                <div className="mx-auto bg-red-100 w-12 h-12 rounded-full flex items-center justify-center mb-3">
                  <MapPin size={24} className="text-red-500" />
                </div>
-               <p className="font-bold text-gray-900 text-lg mb-1">Standort verweigert</p>
-               <p className="text-sm text-gray-500">Wir brauchen deinen Standort, um den nächsten Sticker zu finden.</p>
+               <p className="font-bold text-gray-900 text-lg mb-1">Standort nicht gefunden</p>
+               <p className="text-sm text-gray-500">Das GPS Signal ist zu schwach oder hat einen Timeout.</p>
+            </div>
+          )}
+
+          {radarState === 'denied' && (
+            <div className="text-center py-4">
+               <div className="mx-auto bg-red-100 w-12 h-12 rounded-full flex items-center justify-center mb-3">
+                 <MapPin size={24} className="text-red-500" />
+               </div>
+               <p className="font-bold text-gray-900 text-lg mb-1">Standort blockiert</p>
+               <p className="text-sm text-gray-500">Du musst oben im Browser (Schloss-Symbol) den Zugriff auf den Standort erlauben, damit das Radar funktioniert.</p>
             </div>
           )}
           
