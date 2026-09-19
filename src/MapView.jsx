@@ -9,12 +9,34 @@ import L from 'leaflet';
 import { supabase } from './supabase';
 import 'leaflet/dist/leaflet.css';
 
+// Fix für Leaflet-Marker-Icons als Fallback
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 let DefaultIcon = L.icon({
     iconUrl: icon, shadowUrl: iconShadow, iconAnchor: [12, 41], popupAnchor: [1, -34],
 });
 L.Marker.prototype.options.icon = DefaultIcon;
+
+// Custom Icons generieren
+const getStickerIcon = (url) => {
+  return L.divIcon({
+    className: 'custom-sticker-icon',
+    html: `<div style="background-image: url('${url}');"></div>`,
+    iconSize: [46, 46],
+    iconAnchor: [23, 23],
+    popupAnchor: [0, -20]
+  });
+};
+
+const draftIcon = L.divIcon({
+  className: 'bg-transparent border-none',
+  html: `<div class="relative flex items-center justify-center w-12 h-12">
+           <div class="absolute w-full h-full bg-blue-500 rounded-full animate-ping opacity-60"></div>
+           <div class="relative z-10 w-5 h-5 bg-blue-600 border-[3px] border-white rounded-full shadow-lg"></div>
+         </div>`,
+  iconSize: [48, 48],
+  iconAnchor: [24, 24]
+});
 
 function MapClickHandler({ onMapClick }) {
   useMapEvents({
@@ -199,29 +221,37 @@ export default function MapView() {
   return (
     <div className="relative w-full h-full">
       <div className="absolute top-4 left-4 right-4 z-[1000] pointer-events-none flex justify-between items-start">
-        <div className="bg-white/90 backdrop-blur-md px-5 py-2 rounded-2xl shadow-lg border border-gray-200 pointer-events-auto">
+        <div className="bg-white/95 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-xl border border-gray-100 pointer-events-auto">
           <h1 className="text-2xl font-black text-gray-900 tracking-tight">Geophysalis</h1>
         </div>
         {!draftPin && (
-          <Link to="/admin" className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg border border-gray-200 text-sm font-bold text-gray-700 hover:bg-gray-50 pointer-events-auto transition">
+          <Link to="/admin" className="bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-xl shadow-xl border border-gray-100 text-sm font-bold text-gray-700 hover:bg-gray-50 pointer-events-auto transition">
             Admin
           </Link>
         )}
       </div>
       
-      <MapContainer center={userLocation} zoom={5} zoomControl={false} ref={setMap} className="w-full h-full z-0">
+      <MapContainer center={userLocation} zoom={5} zoomControl={false} ref={setMap} className="w-full h-full z-0 bg-[#e5e5e5]">
         <ZoomControl position="bottomleft" />
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        {/* Moderne CartoDB Voyager Map Tiles anstatt Standard OSM */}
+        <TileLayer 
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" 
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        />
         
         <MarkerClusterGroup chunkedLoading>
           {pins.map(pin => (
-            <Marker key={pin.id} position={[pin.lat, pin.lng]}>
+            <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getStickerIcon(pin.image_url)}>
               <Popup>
-                <div className="w-56 p-1">
-                  <img src={pin.image_url} alt="Sticker" className="w-full h-40 object-cover rounded-lg mb-2 shadow-sm" />
-                  {pin.location_name && <p className="font-bold text-gray-800 text-sm mb-1">{pin.location_name}</p>}
-                  {pin.message && <p className="text-gray-700 text-sm italic mb-1">"{pin.message}"</p>}
-                  <p className="text-xs text-gray-500 font-medium">Gefunden am: {new Date(pin.created_at).toLocaleDateString()}</p>
+                <div className="flex flex-col bg-white">
+                  <img src={pin.image_url} alt="Sticker" className="w-full h-48 object-cover" />
+                  <div className="p-4">
+                    {pin.location_name && <p className="font-bold text-gray-900 text-sm mb-1">{pin.location_name}</p>}
+                    {pin.message && <p className="text-gray-600 text-sm italic mb-2">"{pin.message}"</p>}
+                    <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-1">
+                      Gefunden am {new Date(pin.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
               </Popup>
             </Marker>
@@ -229,8 +259,10 @@ export default function MapView() {
         </MarkerClusterGroup>
 
         {draftPin && !isModalOpen && (
-          <Marker position={draftPin} draggable={true} ref={markerRef} eventHandlers={dragHandlers}>
-            <Popup>Zieh mich an die genaue Stelle!</Popup>
+          <Marker position={draftPin} draggable={true} ref={markerRef} eventHandlers={dragHandlers} icon={draftIcon}>
+            <Popup>
+              <div className="text-center font-bold text-gray-800 p-1">Zieh mich an die genaue Stelle!</div>
+            </Popup>
           </Marker>
         )}
       </MapContainer>
