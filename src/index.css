@@ -47,3 +47,42 @@ body {
   transform: scale(1.2) translateY(-4px);
 }
 
+/* Custom Marker Cluster (Zusammengefasste Pins beim Rauszoomen) */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+  background-color: transparent !important;
+}
+
+.marker-cluster div {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  
+  background-color: #2563eb !important; /* Strahlendes Blau */
+  color: white !important;
+  font-weight: 900 !important;
+  font-size: 16px !important;
+  
+  border: 3px solid white !important;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -1px rgba(0,0,0,0.1) !important;
+  
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  
+  /* Fix für die Positionierung des Kreises in Leaflet */
+  margin-left: 0 !important;
+  margin-top: 0 !important;
+}
+
+.marker-cluster:hover div {
+  transform: scale(1.15) !important;
+  background-color: #1d4ed8 !important; /* Dunkleres Blau beim Hover */
+}
+
+.marker-cluster div span {
+  line-height: 1 !important;
+}
+
