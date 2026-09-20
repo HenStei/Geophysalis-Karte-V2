@@ -144,6 +144,44 @@ const Snowflakes = () => {
   );
 };
 
+// Zufällige Winter-Requisiten auf der Karte
+const WinterAssets = () => {
+  const map = useMap();
+  const [assets, setAssets] = useState([]);
+
+  useEffect(() => {
+    if (!map) return;
+    const generateAssets = () => {
+      if (map.getZoom() < 8) {
+        setAssets([]);
+        return;
+      }
+      const bounds = map.getBounds();
+      const newAssets = Array.from({ length: 5 }).map((_, i) => {
+        const lat = bounds.getSouth() + Math.random() * (bounds.getNorth() - bounds.getSouth());
+        const lng = bounds.getWest() + Math.random() * (bounds.getEast() - bounds.getWest());
+        const isReindeer = Math.random() > 0.5;
+        return {
+          id: i,
+          pos: [lat, lng],
+          icon: L.icon({
+            iconUrl: isReindeer ? '/assets/reindeer.jpg' : '/assets/present.jpg',
+            iconSize: [40, 40],
+            className: 'rounded-lg border-2 border-pink-500/0 mix-blend-multiply' // simple blend hack for pink background
+          })
+        };
+      });
+      setAssets(newAssets);
+    };
+
+    map.on('moveend', generateAssets);
+    generateAssets();
+    return () => map.off('moveend', generateAssets);
+  }, [map]);
+
+  return assets.map(a => <Marker key={a.id} position={a.pos} icon={a.icon} interactive={false} />);
+};
+
 export default function MapView() {
   const [map, setMap] = useState(null);
   const [pins, setPins] = useState([]);
@@ -163,6 +201,12 @@ export default function MapView() {
   // Achievements Logic
   const myPins = session ? pins.filter(p => p.user_id === session.user.id) : [];
   const isAdmin = profile?.is_admin === true;
+
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentDay = today.getDate();
+  const isHalloweenActive = (currentMonth === 9 && currentDay >= 25) || (currentMonth === 10 && currentDay <= 5);
+  const isWinterActive = currentMonth === 11;
   
   const hasFirstStep = myPins.length >= 1;
   const hasLocalHero = myPins.length >= 5;
@@ -541,8 +585,21 @@ export default function MapView() {
             <p className="text-[10px] sm:text-xs font-bold text-gray-700 tracking-wide uppercase mt-0.5">
               {displayPins.length} <span className="hidden sm:inline">Sticker weltweit</span><span className="sm:hidden">Sticker</span>
             </p>
-          </div>
         </div>
+        
+        {/* Event Banners */}
+        {isHalloweenActive && (
+          <div className="bg-orange-500/90 backdrop-blur-md px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl shadow-lg border border-orange-400 pointer-events-auto flex items-center gap-2 animate-bounce">
+            <span>🎃</span>
+            <span className="text-[10px] sm:text-xs font-black text-white uppercase tracking-wider">Halloween Event aktiv!</span>
+          </div>
+        )}
+        {isWinterActive && (
+          <div className="bg-blue-500/90 backdrop-blur-md px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl shadow-lg border border-blue-400 pointer-events-auto flex items-center gap-2 animate-bounce">
+            <span>❄️</span>
+            <span className="text-[10px] sm:text-xs font-black text-white uppercase tracking-wider">Winterwunder aktiv!</span>
+          </div>
+        )}
       </div>
 
       {/* Layer Menu & Auth Button (Top Right) */}
@@ -711,8 +768,9 @@ export default function MapView() {
         )}
         {mapStyle === 'snow' && (
           <TileLayer 
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}" 
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" 
             attribution='Tiles &copy; Esri'
+            className="map-frozen"
           />
         )}
         
@@ -1094,8 +1152,12 @@ export default function MapView() {
                     <img src="/badges/night_owl.jpg" alt="Nachteule" className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <p className="text-sm font-black text-gray-800">Nachteule {canUseDark && '✅'}</p>
-                    <p className="text-xs text-gray-500 font-medium">Nachts (22-4 Uhr) geklebt. Schaltet Dark Mode frei.</p>
+                    <p className="text-sm font-black text-gray-800">
+                      {canUseDark ? 'Nachteule ✅' : '??? (Nachteule)'}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {canUseDark ? 'Nachts (22-4 Uhr) geklebt. Schaltet Dark Mode frei.' : 'Ein Geheimnis, das im Schutz der Dunkelheit ruht...'}
+                    </p>
                   </div>
                 </div>
                 
@@ -1104,8 +1166,12 @@ export default function MapView() {
                     <img src="/badges/local_hero.jpg" alt="Lokalmatador" className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <p className="text-sm font-black text-gray-800">Lokalmatador {canUseVintage && '✅'}</p>
-                    <p className="text-xs text-gray-500 font-medium">5 Sticker geklebt. Schaltet Explorer-Karte frei.</p>
+                    <p className="text-sm font-black text-gray-800">
+                      {canUseVintage ? 'Lokalmatador ✅' : '??? (Lokalmatador)'}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {canUseVintage ? '5 Sticker geklebt. Schaltet Explorer-Karte frei.' : 'Nur wer Ausdauer beweist, wird die alte Welt sehen...'}
+                    </p>
                   </div>
                 </div>
 
@@ -1114,8 +1180,12 @@ export default function MapView() {
                     <img src="/badges/early_bird.jpg" alt="Frühaufsteher" className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <p className="text-sm font-black text-gray-800">Frühaufsteher {canUseSunrise && '✅'}</p>
-                    <p className="text-xs text-gray-500 font-medium">Morgens (5-8 Uhr) geklebt. Schaltet Sunrise-Karte frei.</p>
+                    <p className="text-sm font-black text-gray-800">
+                      {canUseSunrise ? 'Frühaufsteher ✅' : '??? (Frühaufsteher)'}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {canUseSunrise ? 'Morgens (5-8 Uhr) geklebt. Schaltet Sunrise-Karte frei.' : 'Der frühe Vogel fängt den Wurm...'}
+                    </p>
                   </div>
                 </div>
 
@@ -1124,8 +1194,12 @@ export default function MapView() {
                     <img src="/badges/halloween.jpg" alt="Süßes oder Saures" className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <p className="text-sm font-black text-gray-800">Süßes oder Saures {canUseSpooky && '✅'}</p>
-                    <p className="text-xs text-gray-500 font-medium">Halloween Event. Schaltet Spooky-Karte frei.</p>
+                    <p className="text-sm font-black text-gray-800">
+                      {canUseSpooky ? 'Süßes oder Saures ✅' : '??? (Zeitlich begrenzt)'}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {canUseSpooky ? 'Halloween Event. Schaltet Spooky-Karte frei.' : 'Ein Ereignis, das nur einmal im Jahr aus den Schatten tritt...'}
+                    </p>
                   </div>
                 </div>
 
@@ -1134,8 +1208,12 @@ export default function MapView() {
                     <img src="/badges/winter.jpg" alt="Winterwunder" className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <p className="text-sm font-black text-gray-800">Winterwunder {canUseSnow && '✅'}</p>
-                    <p className="text-xs text-gray-500 font-medium">Weihnachts Event. Schaltet Snow-Karte frei.</p>
+                    <p className="text-sm font-black text-gray-800">
+                      {canUseSnow ? 'Winterwunder ✅' : '??? (Zeitlich begrenzt)'}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {canUseSnow ? 'Weihnachts Event. Schaltet Snow-Karte frei.' : 'Wenn die Tage kürzer werden und die Welt erfrischt...'}
+                    </p>
                   </div>
                 </div>
 
@@ -1144,8 +1222,12 @@ export default function MapView() {
                     <img src="/badges/world_traveler.jpg" alt="Weltenbummler" className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <p className="text-sm font-black text-gray-800">Weltenbummler {(isAdmin || hasWorldTraveler) && '✅'}</p>
-                    <p className="text-xs text-gray-500 font-medium">In mind. 3 Ländern geklebt. (WIP)</p>
+                    <p className="text-sm font-black text-gray-800">
+                      {(isAdmin || hasWorldTraveler) ? 'Weltenbummler ✅' : '??? (Weltenbummler)'}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {(isAdmin || hasWorldTraveler) ? 'In mind. 3 Ländern geklebt. (WIP)' : 'Die Welt ist groß, bereise sie...'}
+                    </p>
                   </div>
                 </div>
               </div>
