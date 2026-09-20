@@ -1306,7 +1306,7 @@ export default function MapView() {
             {/* Avatar & Rahmen Sektion */}
             <div className="bg-gray-50 rounded-2xl p-5 mb-4 border border-gray-100 text-left">
               <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <UserIcon className="text-purple-500" size={16} /> Mein Avatar
+                <User className="text-purple-500" size={16} /> Mein Avatar
               </h3>
               
               <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
