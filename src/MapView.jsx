@@ -18,22 +18,13 @@ let DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 // Custom Icons generieren
-const getStickerIcon = (url, isTarget = false) => {
+const getStickerIcon = (url, isTarget = false, isNewPin = false) => {
   return L.divIcon({
-    className: `custom-sticker-icon ${isTarget ? 'is-target' : ''}`,
+    className: `custom-sticker-icon ${isTarget ? 'is-target' : ''} ${isNewPin ? 'is-new' : ''}`,
     html: `<div style="background-image: url('${url}');"></div>`,
     iconSize: isTarget ? [60, 60] : [46, 46],
     iconAnchor: isTarget ? [30, 30] : [23, 23],
     popupAnchor: [0, -20]
-  });
-};
-
-const getPulseIcon = () => {
-  return L.divIcon({
-    className: 'pulse-new-pin',
-    html: '<div></div>',
-    iconSize: [40, 40],
-    iconAnchor: [20, 20]
   });
 };
 
@@ -520,17 +511,12 @@ export default function MapView() {
         
         {/* Heatmap Layer */}
         {showHeatmap && <HeatmapLayer points={pins} />}
-        
-        {/* Heatmap Pulse (Shows glowing rings under new pins, always visible) */}
-        {pins.filter(pin => isNew(pin.created_at)).map(pin => (
-          <Marker key={`pulse-${pin.id}`} position={[pin.lat, pin.lng]} icon={getPulseIcon()} interactive={false} />
-        ))}
 
         {/* Marker Layer (Hidden when Heatmap is active) */}
         {!showHeatmap && (
           <MarkerClusterGroup chunkedLoading maxClusterRadius={50} showCoverageOnHover={false} spiderfyOnMaxZoom={true} disableClusteringAtZoom={15}>
             {pins.map(pin => (
-              <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getStickerIcon(pin.image_url, targetPinId && pin.id.toString() === targetPinId)}>
+              <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getStickerIcon(pin.image_url, targetPinId && pin.id.toString() === targetPinId, isNew(pin.created_at))}>
                 <Popup>
                   <div className="flex flex-col bg-white">
                     <img src={pin.image_url} alt="Sticker" className="w-full h-48 object-cover rounded-t-xl" />
