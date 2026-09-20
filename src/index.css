@@ -96,6 +96,16 @@ body {
   filter: grayscale(80%) sepia(20%) hue-rotate(180deg) brightness(120%) contrast(110%);
 }
 
+/* Aurora Borealis Filter */
+.map-aurora {
+  filter: grayscale(80%) sepia(50%) hue-rotate(100deg) brightness(80%) contrast(150%);
+}
+
+/* Cyberpunk City Filter */
+.map-cyberpunk {
+  filter: invert(100%) hue-rotate(270deg) saturate(300%) contrast(150%);
+}
+
 /* Snowfall Animation */
 @keyframes snowfall {
   0% { transform: translateY(-10vh) translateX(0); opacity: 0; }

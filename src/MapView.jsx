@@ -249,6 +249,12 @@ export default function MapView() {
   const hasFirstStep = myPins.length >= 1;
   const hasLocalHero = myPins.length >= 5;
   
+  const hasPolarExplorer = myPins.some(p => Math.abs(p.lat) >= 60);
+  const hasUrbanLegend = myPins.some(p => {
+    if (!p.location_name) return false;
+    return /berlin|new york|london|tokyo|paris|sydney|los angeles/i.test(p.location_name);
+  });
+  
   const hasNightOwl = myPins.some(p => {
     const hours = new Date(p.created_at).getHours();
     return hours >= 22 || hours <= 4;
@@ -282,6 +288,8 @@ export default function MapView() {
   const canUseSunrise = isAdmin || hasEarlyBird;
   const canUseSpooky = isAdmin || hasHalloween;
   const canUseSnow = isAdmin || hasWinter;
+  const canUseAurora = isAdmin || hasPolarExplorer;
+  const canUseCyberpunk = isAdmin || hasUrbanLegend;
 
   // Helper: Prüft ob Sticker in den letzten 7 Tagen gesetzt wurde
   const isNew = (dateString) => {
@@ -728,6 +736,20 @@ export default function MapView() {
                 >
                   Winter (Schnee) {!canUseSnow && <Lock size={14} className="text-gray-400" />}
                 </button>
+
+                <button 
+                  onClick={() => canUseAurora ? setMapStyle('aurora') : alert("Du benötigst das Abzeichen 'Polarforscher'!")} 
+                  className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition flex justify-between items-center ${mapStyle === 'aurora' ? 'bg-teal-100 text-teal-700' : canUseAurora ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
+                >
+                  Polarlichter {!canUseAurora && <Lock size={14} className="text-gray-400" />}
+                </button>
+
+                <button 
+                  onClick={() => canUseCyberpunk ? setMapStyle('cyberpunk') : alert("Du benötigst das Abzeichen 'Urban Legend'!")} 
+                  className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition flex justify-between items-center ${mapStyle === 'cyberpunk' ? 'bg-pink-100 text-pink-700' : canUseCyberpunk ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
+                >
+                  Cyberpunk (Neon) {!canUseCyberpunk && <Lock size={14} className="text-gray-400" />}
+                </button>
               </div>
             </div>
             <div className="h-px bg-gray-200 w-full"></div>
@@ -810,6 +832,20 @@ export default function MapView() {
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" 
             attribution='Tiles &copy; Esri'
             className="map-frozen"
+          />
+        )}
+        {mapStyle === 'aurora' && (
+          <TileLayer 
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" 
+            attribution='Tiles &copy; Esri'
+            className="map-aurora"
+          />
+        )}
+        {mapStyle === 'cyberpunk' && (
+          <TileLayer 
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
+            attribution='Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            className="map-cyberpunk"
           />
         )}
         
@@ -1255,6 +1291,34 @@ export default function MapView() {
                     </p>
                     <p className="text-xs text-gray-500 font-medium">
                       {canUseSnow ? 'Weihnachts Event. Schaltet Snow-Karte frei.' : 'Wenn die Tage kürzer werden und die Welt erfrischt...'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${canUseAurora ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${canUseAurora ? 'ring-2 ring-teal-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                    <img src="/badges/polar.jpg" alt="Polarforscher" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-gray-800">
+                      {canUseAurora ? 'Polarforscher ✅' : '??? (Polarforscher)'}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {canUseAurora ? 'Extrem weit im Norden oder Süden geklebt. Schaltet Aurora-Karte frei.' : 'Nur wer der extremen Kälte trotzt...'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${canUseCyberpunk ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${canUseCyberpunk ? 'ring-2 ring-pink-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                    <img src="/badges/urban.jpg" alt="Urban Legend" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-gray-800">
+                      {canUseCyberpunk ? 'Urban Legend ✅' : '??? (Großstadt)'}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {canUseCyberpunk ? 'In einer Weltmetropole geklebt. Schaltet Cyberpunk-Karte frei.' : 'Dort wo das Neonlicht niemals schläft...'}
                     </p>
                   </div>
                 </div>
