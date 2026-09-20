@@ -611,8 +611,8 @@ export default function MapView() {
         {/* Map Layers */}
         {mapStyle === 'street' && (
           <TileLayer 
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" 
-            attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
         )}
         {mapStyle === 'satellite' && (
@@ -635,8 +635,8 @@ export default function MapView() {
         )}
         {mapStyle === 'neon' && (
           <TileLayer 
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}" 
-            attribution='Tiles &copy; Esri'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
+            attribution='Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             className="map-cyberpunk"
           />
         )}
