@@ -239,6 +239,17 @@ export default function MapView() {
   const [leaderboardTab, setLeaderboardTab] = useState('alltime'); // weekly, monthly, alltime
   const [allProfiles, setAllProfiles] = useState({});
 
+  // Avatar State
+  const [editAvatar, setEditAvatar] = useState('default');
+  const [editFrame, setEditFrame] = useState('none');
+
+  useEffect(() => {
+    if (profile) {
+      setEditAvatar(profile.avatar || 'default');
+      setEditFrame(profile.frame_style || 'none');
+    }
+  }, [profile]);
+
   // Achievements Logic
   const myPins = session ? pins.filter(p => p.user_id === session.user.id) : [];
   const isAdmin = profile?.is_admin === true;
@@ -479,12 +490,33 @@ export default function MapView() {
     if (data) setPins(data);
   };
 
+  const handleUpdateAvatarAndFrame = async (newAvatar, newFrame) => {
+    if (!session) return;
+    try {
+      const { error } = await supabase.from('profiles').update({ avatar: newAvatar, frame_style: newFrame }).eq('id', session.user.id);
+      if (!error) {
+        setProfile(prev => ({ ...prev, avatar: newAvatar, frame_style: newFrame }));
+        alert("Avatar und Rahmen gespeichert! 🎨");
+      } else {
+        alert("Fehler beim Speichern. Hast du den SQL Befehl ausgeführt?");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const fetchAllProfiles = async () => {
     try {
-      const { data, error } = await supabase.from('profiles').select('id, nickname');
+      const { data, error } = await supabase.from('profiles').select('id, nickname, avatar, frame_style');
       if (data) {
         const profileMap = {};
-        data.forEach(p => profileMap[p.id] = p.nickname);
+        data.forEach(p => {
+          profileMap[p.id] = {
+            nickname: p.nickname,
+            avatar: p.avatar || 'default',
+            frame_style: p.frame_style || 'none'
+          };
+        });
         setAllProfiles(profileMap);
       }
     } catch (e) {
@@ -1271,6 +1303,52 @@ export default function MapView() {
               </p>
             </div>
 
+            {/* Avatar & Rahmen Sektion */}
+            <div className="bg-gray-50 rounded-2xl p-5 mb-4 border border-gray-100 text-left">
+              <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <UserIcon className="text-purple-500" size={16} /> Mein Avatar
+              </h3>
+              
+              <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
+                <div className="flex-shrink-0 flex flex-col items-center">
+                  <div className={`avatar-frame frame-${editFrame} w-20 h-20 text-4xl shadow-md bg-white`}>
+                    {editAvatar === 'default' ? '🧑‍🚀' : editAvatar === 'ghost' ? '👻' : editAvatar === 'bat' ? '🦇' : editAvatar === 'reindeer' ? '🦌' : editAvatar === 'snowman' ? '⛄' : editAvatar === 'fire' ? '🔥' : '🧑‍🚀'}
+                  </div>
+                </div>
+
+                <div className="flex-1 w-full space-y-3">
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Avatar wählen</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button onClick={() => setEditAvatar('default')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'default' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>🧑‍🚀</button>
+                      {hasHalloween && <button onClick={() => setEditAvatar('ghost')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'ghost' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>👻</button>}
+                      {hasHalloween && <button onClick={() => setEditAvatar('bat')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'bat' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>🦇</button>}
+                      {hasWinter && <button onClick={() => setEditAvatar('reindeer')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'reindeer' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>🦌</button>}
+                      {hasWinter && <button onClick={() => setEditAvatar('snowman')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'snowman' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>⛄</button>}
+                      {hasMarathon && <button onClick={() => setEditAvatar('fire')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'fire' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>🔥</button>}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Rahmen wählen</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button onClick={() => setEditFrame('none')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'none' ? 'bg-gray-800 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>Keiner</button>
+                      {(isAdmin || hasUrbanLegend) && <button onClick={() => setEditFrame('neon')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'neon' ? 'bg-purple-600 text-white shadow-md shadow-purple-500/30' : 'bg-white border border-purple-200 text-purple-600 hover:bg-purple-50'}`}>Neon</button>}
+                      {(isAdmin || hasPolarExplorer || hasWinter) && <button onClick={() => setEditFrame('frost')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'frost' ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/30' : 'bg-white border border-cyan-200 text-cyan-600 hover:bg-cyan-50'}`}>Frost</button>}
+                      {(isAdmin || hasMarathon) && <button onClick={() => setEditFrame('fire')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'fire' ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'bg-white border border-orange-200 text-orange-600 hover:bg-orange-50'}`}>Feuer</button>}
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => handleUpdateAvatarAndFrame(editAvatar, editFrame)}
+                    className="mt-1 w-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold py-2 rounded-lg transition"
+                  >
+                    Speichern
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Badges / Achievements */}
             <div className="bg-gray-50 rounded-2xl p-4 mb-6 text-left">
               <p className="text-sm text-gray-800 font-bold mb-3 flex items-center justify-between">
@@ -1475,21 +1553,30 @@ export default function MapView() {
                 {sortedUsers.length === 0 ? (
                   <p className="text-center text-gray-400 font-medium py-10">Noch keine Einträge in diesem Zeitraum.</p>
                 ) : (
-                  sortedUsers.map((u, i) => (
-                    <div key={u.userId} className={`flex items-center justify-between p-4 rounded-2xl border ${i === 0 ? 'bg-yellow-50 border-yellow-200' : i === 1 ? 'bg-gray-50 border-gray-200' : i === 2 ? 'bg-orange-50 border-orange-200' : 'bg-white border-gray-100 shadow-sm'}`}>
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">
-                          {i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-lg font-black text-gray-400 ml-1">{i + 1}.</span>}
-                        </span>
-                        <span className={`font-black ${i === 0 ? 'text-yellow-700 text-lg' : i === 1 ? 'text-gray-700' : i === 2 ? 'text-orange-800' : 'text-gray-700'}`}>
-                          {u.nickname}
-                        </span>
+                  sortedUsers.map((u, i) => {
+                    const avatar = u.avatar || 'default';
+                    const frame = u.frame_style || 'none';
+                    const avatarEmoji = avatar === 'ghost' ? '👻' : avatar === 'bat' ? '🦇' : avatar === 'reindeer' ? '🦌' : avatar === 'snowman' ? '⛄' : avatar === 'fire' ? '🔥' : '🧑‍🚀';
+
+                    return (
+                      <div key={u.userId} className={`flex items-center justify-between p-3 rounded-2xl border ${i === 0 ? 'bg-yellow-50 border-yellow-200' : i === 1 ? 'bg-gray-50 border-gray-200' : i === 2 ? 'bg-orange-50 border-orange-200' : 'bg-white border-gray-100 shadow-sm'}`}>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl w-6 text-center">
+                            {i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-sm font-black text-gray-400">{i + 1}.</span>}
+                          </span>
+                          <div className={`avatar-frame frame-${frame} w-10 h-10 text-xl shadow-sm bg-white shrink-0`}>
+                            {avatarEmoji}
+                          </div>
+                          <span className={`font-black ${i === 0 ? 'text-yellow-700' : i === 1 ? 'text-gray-700' : i === 2 ? 'text-orange-800' : 'text-gray-700'}`}>
+                            {u.nickname}
+                          </span>
+                        </div>
+                        <div className={`font-black text-sm ${i === 0 ? 'text-yellow-600' : 'text-gray-500'}`}>
+                          {u.count} <span className="text-[10px] uppercase font-bold text-gray-400 hidden sm:inline">Sticker</span>
+                        </div>
                       </div>
-                      <div className={`font-black ${i === 0 ? 'text-yellow-600' : 'text-gray-500'}`}>
-                        {u.count} Sticker
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>

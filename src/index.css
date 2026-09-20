@@ -155,6 +155,45 @@ body {
   100% { transform: translateY(-50px) rotate(-10deg) scaleX(1); }
 }
 
+/* Avatar Profile Frames */
+.avatar-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: #f3f4f6;
+  transition: all 0.3s ease;
+}
+
+.frame-none {
+  border: 2px solid #e5e7eb;
+}
+
+.frame-neon {
+  border: 2px solid #ff00ff;
+  box-shadow: 0 0 10px #ff00ff, inset 0 0 8px #00ffff;
+  background-color: #2e004f;
+  color: white;
+}
+
+.frame-frost {
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 12px #00ffff, inset 0 0 10px #00aaff;
+  background-color: #e0f7fa;
+}
+
+.frame-fire {
+  border: 2px solid #ff8c00;
+  box-shadow: 0 0 15px #ff4500, inset 0 0 10px #ffd700;
+  background-color: #fff3e0;
+  animation: pulse-fire 2s infinite alternate;
+}
+
+@keyframes pulse-fire {
+  0% { box-shadow: 0 0 10px #ff4500, inset 0 0 5px #ffd700; }
+  100% { box-shadow: 0 0 20px #ff0000, inset 0 0 15px #ff8c00; }
+}
+
 /* Float & Fly Animations (for Emojis) */
 @keyframes float {
   0% { transform: translateY(0px); }
