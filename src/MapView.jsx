@@ -1529,7 +1529,16 @@ export default function MapView() {
         });
         
         const sortedUsers = Object.entries(counts)
-          .map(([userId, count]) => ({ userId, count, nickname: allProfiles[userId] || 'Anonym' }))
+          .map(([userId, count]) => {
+            const prof = allProfiles[userId] || {};
+            return {
+              userId,
+              count,
+              nickname: prof.nickname || 'Anonym',
+              avatar: prof.avatar || 'default',
+              frame_style: prof.frame_style || 'none'
+            };
+          })
           .sort((a, b) => b.count - a.count)
           .slice(0, 10); // Top 10
 
