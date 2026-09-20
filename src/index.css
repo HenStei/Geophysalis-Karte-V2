@@ -182,7 +182,7 @@ body {
 
 /* Frozen Winter Map Filter */
 .map-frozen {
-  filter: grayscale(85%) sepia(15%) hue-rotate(180deg) brightness(110%) contrast(100%);
+  filter: sepia(10%) hue-rotate(180deg) brightness(105%) contrast(100%);
 }
 
 /* Frost Winter Overlay */
