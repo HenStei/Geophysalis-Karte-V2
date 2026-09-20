@@ -164,10 +164,9 @@ const WinterAssets = () => {
         return {
           id: i,
           pos: [lat, lng],
-          icon: L.icon({
-            iconUrl: isReindeer ? '/assets/reindeer.jpg' : '/assets/present.jpg',
-            iconSize: [40, 40],
-            className: 'rounded-lg border-2 border-pink-500/0 mix-blend-multiply' // simple blend hack for pink background
+          icon: L.divIcon({
+            html: `<div style="font-size: 32px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3));">${isReindeer ? '🦌' : '🎁'}</div>`,
+            className: 'bg-transparent border-none'
           })
         };
       });
@@ -202,10 +201,9 @@ const HalloweenAssets = () => {
         return {
           id: i,
           pos: [lat, lng],
-          icon: L.icon({
-            iconUrl: isGhost ? '/assets/ghost.jpg' : '/assets/bat.jpg',
-            iconSize: [40, 40],
-            className: 'rounded-lg border-2 border-pink-500/0 mix-blend-multiply opacity-80' 
+          icon: L.divIcon({
+            html: `<div style="font-size: 32px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.4)); animation: ${isGhost ? 'float 3s ease-in-out infinite' : 'fly 2s linear infinite'};">${isGhost ? '👻' : '🦇'}</div>`,
+            className: 'bg-transparent border-none'
           })
         };
       });
@@ -773,7 +771,13 @@ export default function MapView() {
         )}
       </div>
       
-      {mapStyle === 'snow' && <Snowflakes />}
+      {mapStyle === 'snow' && (
+        <>
+          <Snowflakes />
+          <div className="frost-overlay"></div>
+        </>
+      )}
+      {mapStyle === 'aurora' && <div className="aurora-overlay"></div>}
 
       <MapContainer 
         center={userLocation} 

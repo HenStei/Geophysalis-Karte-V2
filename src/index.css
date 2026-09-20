@@ -91,21 +91,6 @@ body {
   filter: sepia(50%) hue-rotate(-20deg) saturate(180%) brightness(105%);
 }
 
-/* Frozen Winter Map Filter */
-.map-frozen {
-  filter: grayscale(80%) sepia(20%) hue-rotate(180deg) brightness(120%) contrast(110%);
-}
-
-/* Aurora Borealis Filter */
-.map-aurora {
-  filter: grayscale(80%) sepia(50%) hue-rotate(100deg) brightness(80%) contrast(150%);
-}
-
-/* Cyberpunk City Filter */
-.map-cyberpunk {
-  filter: invert(100%) hue-rotate(270deg) saturate(300%) contrast(150%);
-}
-
 /* Snowfall Animation */
 @keyframes snowfall {
   0% { transform: translateY(-10vh) translateX(0); opacity: 0; }
@@ -122,6 +107,66 @@ body {
   pointer-events: none;
   z-index: 2000;
   animation: snowfall linear infinite;
+  text-shadow: 0 0 5px rgba(255,255,255,0.8);
+}
+
+/* Aurora Animation Overlay */
+@keyframes aurora-shift {
+  0% { background-position: 0% 50%; opacity: 0.5; }
+  50% { background-position: 100% 50%; opacity: 0.8; }
+  100% { background-position: 0% 50%; opacity: 0.5; }
+}
+
+.aurora-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+  background: linear-gradient(60deg, rgba(0, 255, 128, 0.15), rgba(128, 0, 255, 0.25), rgba(0, 255, 255, 0.15));
+  background-size: 300% 300%;
+  animation: aurora-shift 12s ease-in-out infinite;
+  mix-blend-mode: color-dodge;
+}
+
+/* Float & Fly Animations (for Emojis) */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes fly {
+  0% { transform: translateY(0px) rotate(0deg); }
+  25% { transform: translateY(-5px) rotate(5deg); }
+  50% { transform: translateY(0px) rotate(0deg); }
+  75% { transform: translateY(5px) rotate(-5deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+/* Cyberpunk City Filter */
+.map-cyberpunk {
+  filter: invert(100%) hue-rotate(270deg) saturate(300%) contrast(150%);
+}
+
+/* Aurora Base Filter */
+.map-aurora {
+  filter: grayscale(100%) brightness(50%) contrast(150%);
+}
+
+/* Frozen Winter Map Filter */
+.map-frozen {
+  filter: grayscale(40%) sepia(20%) hue-rotate(180deg) brightness(140%) contrast(110%);
+}
+
+/* Frost Winter Overlay */
+.frost-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+  box-shadow: inset 0 0 150px rgba(255,255,255,0.6);
+  background: radial-gradient(circle, transparent 40%, rgba(255,255,255,0.4) 120%);
+  backdrop-filter: contrast(110%) saturate(80%);
 }
 
 /* Custom Marker Cluster (Zusammengefasste Pins beim Rauszoomen) */
