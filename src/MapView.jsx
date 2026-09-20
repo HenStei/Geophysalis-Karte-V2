@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMapEvents, useMap, Rectangle } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import imageCompression from 'browser-image-compression';
-import { X, Upload, MapPin, Check, Info, LocateFixed, Layers, Share2, Dices, Compass, Navigation2 } from 'lucide-react';
+import { X, Upload, MapPin, Check, Info, LocateFixed, Layers, Share2, Dices, Compass, Navigation2, User, LogIn, Mail, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import L from 'leaflet';
 import { supabase } from './supabase';
@@ -25,6 +25,15 @@ const getStickerIcon = (url, isTarget = false) => {
     iconSize: isTarget ? [60, 60] : [46, 46],
     iconAnchor: isTarget ? [30, 30] : [23, 23],
     popupAnchor: [0, -20]
+  });
+};
+
+const getPulseIcon = () => {
+  return L.divIcon({
+    className: 'pulse-new-pin',
+    html: '<div></div>',
+    iconSize: [40, 40],
+    iconAnchor: [20, 20]
   });
 };
 
@@ -117,6 +126,32 @@ export default function MapView() {
   const [map, setMap] = useState(null);
   const [pins, setPins] = useState([]);
   
+  // Auth & Session
+  const [session, setSession] = useState(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  // Helper: Prüft ob Sticker in den letzten 7 Tagen gesetzt wurde
+  const isNew = (dateString) => {
+    const pinDate = new Date(dateString);
+    const now = new Date();
+    const diffDays = Math.ceil(Math.abs(now - pinDate) / (1000 * 60 * 60 * 24)); 
+    return diffDays <= 7;
+  };
+
+  useEffect(() => {
+    // Initial Session Check
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // Listen on Auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const [draftPin, setDraftPin] = useState(null); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
@@ -391,12 +426,24 @@ export default function MapView() {
         </div>
       </div>
 
-      {/* Layer Menu & About Button (Top Right) */}
+      {/* Layer Menu & Auth Button (Top Right) */}
       <div className="absolute top-4 right-4 z-[1000] pointer-events-auto flex flex-col items-end gap-2">
         <div className="flex gap-2">
+          {session ? (
+            <button onClick={() => setIsAuthModalOpen(true)} className="bg-white/95 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-gray-700 hover:bg-gray-50 transition flex items-center justify-center font-bold text-sm">
+              <User size={20} className="sm:mr-1 text-blue-600" />
+              <span className="hidden sm:inline">Profil</span>
+            </button>
+          ) : (
+            <button onClick={() => setIsAuthModalOpen(true)} className="bg-white/95 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition flex items-center justify-center font-bold text-sm">
+              <LogIn size={20} className="sm:mr-1" />
+              <span className="hidden sm:inline">Login</span>
+            </button>
+          )}
+
           <Link 
             to="/about"
-            className="bg-white/95 backdrop-blur-md p-3 sm:p-3.5 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-gray-700 hover:bg-gray-50 transition flex items-center justify-center font-bold text-sm"
+            className="bg-white/95 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-gray-700 hover:bg-gray-50 transition flex items-center justify-center font-bold text-sm"
           >
             <Info size={20} className="sm:mr-1" />
             <span className="hidden sm:inline">Story</span>
@@ -471,6 +518,14 @@ export default function MapView() {
           />
         )}
         
+        {/* Heatmap Layer */}
+        {showHeatmap && <HeatmapLayer points={pins} />}
+        
+        {/* Heatmap Pulse (Shows glowing rings under new pins, always visible) */}
+        {pins.filter(pin => isNew(pin.created_at)).map(pin => (
+          <Marker key={`pulse-${pin.id}`} position={[pin.lat, pin.lng]} icon={getPulseIcon()} interactive={false} />
+        ))}
+
         {/* Marker Layer (Hidden when Heatmap is active) */}
         {!showHeatmap && (
           <MarkerClusterGroup chunkedLoading maxClusterRadius={50} showCoverageOnHover={false} spiderfyOnMaxZoom={true} disableClusteringAtZoom={15}>
@@ -744,6 +799,57 @@ export default function MapView() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Auth Modal */}
+      {!session && isAuthModalOpen && (
+        <div className="absolute inset-0 z-[3000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl relative">
+            <button onClick={() => setIsAuthModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition">
+              <X size={24} />
+            </button>
+            <div className="text-center mb-6">
+              <Sparkles size={40} className="text-blue-500 mx-auto mb-3" />
+              <h2 className="text-2xl font-black text-gray-900 mb-2">Login</h2>
+              <p className="text-sm text-gray-600">Melde dich an, um in Zukunft Abzeichen zu sammeln und Styles freizuschalten.</p>
+            </div>
+            
+            <button 
+              onClick={() => supabase.auth.signInWithOAuth({ provider: 'google' })}
+              className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-200 text-gray-800 font-bold py-3 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition mb-3"
+            >
+              <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
+              Weiter mit Google
+            </button>
+            
+            <p className="text-xs text-center text-gray-400 mt-4">
+              (Hinweis: Der Google-Login muss vom Admin im Supabase-Dashboard unter "Authentication - Providers" freigeschaltet werden.)
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Profile Modal */}
+      {session && isAuthModalOpen && (
+        <div className="absolute inset-0 z-[3000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl relative text-center">
+            <button onClick={() => setIsAuthModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition">
+              <X size={24} />
+            </button>
+            <User size={48} className="text-blue-500 mx-auto mb-4 bg-blue-50 p-3 rounded-full" />
+            <h2 className="text-2xl font-black text-gray-900 mb-1">Dein Profil</h2>
+            <p className="text-sm text-gray-600 mb-6">{session.user.email}</p>
+            
+            <button 
+              onClick={() => {
+                supabase.auth.signOut();
+                setIsAuthModalOpen(false);
+              }}
+              className="w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl hover:bg-red-100 transition"
+            >
+              Abmelden
+            </button>
           </div>
         </div>
       )}
