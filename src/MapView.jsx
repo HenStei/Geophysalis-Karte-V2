@@ -568,9 +568,9 @@ export default function MapView() {
 
                 <button 
                   onClick={() => canUseNeon ? setMapStyle('neon') : alert("Du benötigst das Abzeichen 'Nachteule' (Nachts geklebt)!")} 
-                  className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition flex justify-between items-center ${mapStyle === 'neon' ? 'bg-blue-100 text-blue-700' : canUseNeon ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
+                  className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition flex justify-between items-center ${mapStyle === 'neon' ? 'bg-orange-100 text-orange-700' : canUseNeon ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
                 >
-                  Cyberpunk (Neon) {!canUseNeon && <Lock size={14} className="text-gray-400" />}
+                  Spooky (Halloween) {!canUseNeon && <Lock size={14} className="text-gray-400" />}
                 </button>
               </div>
             </div>
@@ -947,7 +947,7 @@ export default function MapView() {
       {/* Profile Modal */}
       {session && isAuthModalOpen && (
         <div className="absolute inset-0 z-[3000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-6 sm:p-8 shadow-2xl relative text-center">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-6 sm:p-8 shadow-2xl relative text-center max-h-[90vh] overflow-y-auto custom-scrollbar">
             <button onClick={() => setIsAuthModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition">
               <X size={24} />
             </button>
@@ -1035,12 +1035,12 @@ export default function MapView() {
                 </div>
 
                 <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${canUseNeon ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${canUseNeon ? 'ring-2 ring-fuchsia-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${canUseNeon ? 'ring-2 ring-orange-400 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/night_owl.jpg" alt="Nachteule" className="w-full h-full object-cover" />
                   </div>
                   <div>
                     <p className="text-sm font-black text-gray-800">Nachteule {canUseNeon && '✅'}</p>
-                    <p className="text-xs text-gray-500 font-medium">Nachts geklebt. Schaltet Cyberpunk-Karte frei.</p>
+                    <p className="text-xs text-gray-500 font-medium">Nachts geklebt. Schaltet Spooky-Karte frei.</p>
                   </div>
                 </div>
 
