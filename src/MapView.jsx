@@ -182,6 +182,44 @@ const WinterAssets = () => {
   return assets.map(a => <Marker key={a.id} position={a.pos} icon={a.icon} interactive={false} />);
 };
 
+// Zufällige Halloween-Requisiten auf der Karte
+const HalloweenAssets = () => {
+  const map = useMap();
+  const [assets, setAssets] = useState([]);
+
+  useEffect(() => {
+    if (!map) return;
+    const generateAssets = () => {
+      if (map.getZoom() < 8) {
+        setAssets([]);
+        return;
+      }
+      const bounds = map.getBounds();
+      const newAssets = Array.from({ length: 5 }).map((_, i) => {
+        const lat = bounds.getSouth() + Math.random() * (bounds.getNorth() - bounds.getSouth());
+        const lng = bounds.getWest() + Math.random() * (bounds.getEast() - bounds.getWest());
+        const isGhost = Math.random() > 0.5;
+        return {
+          id: i,
+          pos: [lat, lng],
+          icon: L.icon({
+            iconUrl: isGhost ? '/assets/ghost.jpg' : '/assets/bat.jpg',
+            iconSize: [40, 40],
+            className: 'rounded-lg border-2 border-pink-500/0 mix-blend-multiply opacity-80' 
+          })
+        };
+      });
+      setAssets(newAssets);
+    };
+
+    map.on('moveend', generateAssets);
+    generateAssets();
+    return () => map.off('moveend', generateAssets);
+  }, [map]);
+
+  return assets.map(a => <Marker key={a.id} position={a.pos} icon={a.icon} interactive={false} />);
+};
+
 export default function MapView() {
   const [map, setMap] = useState(null);
   const [pins, setPins] = useState([]);
@@ -585,6 +623,7 @@ export default function MapView() {
             <p className="text-[10px] sm:text-xs font-bold text-gray-700 tracking-wide uppercase mt-0.5">
               {displayPins.length} <span className="hidden sm:inline">Sticker weltweit</span><span className="sm:hidden">Sticker</span>
             </p>
+          </div>
         </div>
         
         {/* Event Banners */}
@@ -774,6 +813,9 @@ export default function MapView() {
           />
         )}
         
+        {mapStyle === 'snow' && <WinterAssets />}
+        {mapStyle === 'neon' && <HalloweenAssets />}
+
         {/* Heatmap Layer */}
         {showHeatmap && <HeatmapLayer points={displayPins} />}
 
