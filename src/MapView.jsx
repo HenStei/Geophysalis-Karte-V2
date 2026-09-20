@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMapEvents, useMap, Rectangle } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import imageCompression from 'browser-image-compression';
-import { X, Upload, MapPin, Check, Info, LocateFixed, Layers, Share2, Dices, Compass, Navigation2, User, LogIn, Mail, Sparkles } from 'lucide-react';
+import { X, Upload, MapPin, Check, Info, LocateFixed, Layers, Share2, Dices, Compass, Navigation2, User, LogIn, Mail, Sparkles, Shield, CheckCircle, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import L from 'leaflet';
 import { supabase } from './supabase';
@@ -124,6 +124,10 @@ export default function MapView() {
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [tempNickname, setTempNickname] = useState("");
   const [showOnlyMyPins, setShowOnlyMyPins] = useState(false);
+
+  // Admin
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [unapprovedPins, setUnapprovedPins] = useState([]);
 
   // Helper: Prüft ob Sticker in den letzten 7 Tagen gesetzt wurde
   const isNew = (dateString) => {
@@ -289,6 +293,36 @@ export default function MapView() {
     if (data) setPins(data);
   };
 
+  const fetchUnapprovedPins = async () => {
+    const { data, error } = await supabase.from('pins').select('*').eq('approved', false).order('created_at', { ascending: false });
+    if (data) setUnapprovedPins(data);
+  };
+
+  const handleApprovePin = async (id) => {
+    const { error } = await supabase.from('pins').update({ approved: true }).eq('id', id);
+    if (!error) {
+      setUnapprovedPins(prev => prev.filter(p => p.id !== id));
+      fetchPins();
+    } else {
+      alert("Fehler beim Freigeben!");
+    }
+  };
+
+  const handleRejectPin = async (id, imageUrl) => {
+    if (!window.confirm("Sticker wirklich löschen?")) return;
+    
+    const { error } = await supabase.from('pins').delete().eq('id', id);
+    if (!error) {
+      setUnapprovedPins(prev => prev.filter(p => p.id !== id));
+      
+      // Optional: Bild aus Storage löschen (Vorausgesetzt das format ist exakt der Dateiname)
+      const fileName = imageUrl.split('/').pop();
+      if (fileName) {
+        await supabase.storage.from('stickers').remove([fileName]);
+      }
+    }
+  };
+
   const fetchLocationName = async (lat, lng) => {
     setIsFetchingLocation(true);
     try {
@@ -442,6 +476,20 @@ export default function MapView() {
       {/* Layer Menu & Auth Button (Top Right) */}
       <div className="absolute top-4 right-4 z-[1000] pointer-events-auto flex flex-col items-end gap-2">
         <div className="flex gap-2">
+          
+          {profile?.is_admin && (
+            <button 
+              onClick={() => {
+                fetchUnapprovedPins();
+                setIsAdminModalOpen(true);
+              }}
+              className="bg-red-50 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-red-200 text-red-600 hover:bg-red-100 transition flex items-center justify-center font-bold text-sm animate-pulse"
+            >
+              <Shield size={20} className="sm:mr-1" />
+              <span className="hidden sm:inline">Admin</span>
+            </button>
+          )}
+
           {session ? (
             <button onClick={() => setIsAuthModalOpen(true)} className="bg-white/95 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-gray-700 hover:bg-gray-50 transition flex items-center justify-center font-bold text-sm">
               <User size={20} className="sm:mr-1 text-blue-600" />
@@ -884,7 +932,7 @@ export default function MapView() {
                   </button>
                 </div>
               )}
-              <p className="text-xs text-gray-400 mt-2">{session.user.email}</p>
+              <p className="text-xs text-gray-400 mt-2 break-all">{session.user.email}</p>
             </div>
 
             {/* Stats */}
@@ -917,6 +965,53 @@ export default function MapView() {
             >
               Abmelden
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Modal */}
+      {isAdminModalOpen && (
+        <div className="absolute inset-0 z-[4000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-4xl h-[80vh] p-6 sm:p-8 shadow-2xl relative flex flex-col">
+            <button onClick={() => setIsAdminModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition">
+              <X size={28} />
+            </button>
+            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 flex items-center gap-3 mb-6 border-b pb-4">
+              <Shield className="text-red-600" size={32} /> Admin Kontrollzentrum
+            </h2>
+            
+            <div className="flex-1 overflow-y-auto pr-2">
+              {unapprovedPins.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                  <CheckCircle size={64} className="mb-4 text-green-400" />
+                  <p className="text-xl font-bold">Alles erledigt!</p>
+                  <p className="text-sm">Keine neuen Sticker zum Freischalten.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {unapprovedPins.map(pin => (
+                    <div key={pin.id} className="bg-gray-50 rounded-2xl overflow-hidden border border-gray-200 flex flex-col">
+                      <img src={pin.image_url} alt="Sticker" className="w-full h-48 object-cover bg-gray-200" />
+                      <div className="p-4 flex-1 flex flex-col">
+                        <p className="text-sm font-bold text-gray-800 mb-1 flex items-center gap-1">
+                          <MapPin size={14} className="text-blue-500" /> {pin.location_name || 'Unbekannt'}
+                        </p>
+                        <p className="text-xs text-gray-500 italic mb-4 flex-1">"{pin.message || 'Keine Nachricht'}"</p>
+                        
+                        <div className="flex gap-2 mt-auto">
+                          <button onClick={() => handleApprovePin(pin.id)} className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded-xl flex justify-center items-center gap-1 transition">
+                            <Check size={16} /> Freigeben
+                          </button>
+                          <button onClick={() => handleRejectPin(pin.id, pin.image_url)} className="bg-red-100 hover:bg-red-200 text-red-600 font-bold p-2 rounded-xl transition">
+                            <Trash2 size={20} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
