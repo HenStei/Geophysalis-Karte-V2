@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMapEvents, useMap, Rectangle } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import imageCompression from 'browser-image-compression';
-import { X, Upload, MapPin, Check, Info, LocateFixed, Layers, Share2, Dices, Compass, Navigation2, User, LogIn, Mail, Sparkles, Shield, CheckCircle, Trash2, Lock, Moon, Award, Globe, Footprints } from 'lucide-react';
+import { X, Upload, MapPin, Check, Info, LocateFixed, Layers, Share2, Dices, Compass, Navigation2, User, LogIn, Mail, Sparkles, Shield, CheckCircle, Trash2, Lock, Moon, Award, Globe, Footprints, Trophy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import L from 'leaflet';
 import { supabase } from './supabase';
@@ -234,6 +234,11 @@ export default function MapView() {
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [unapprovedPins, setUnapprovedPins] = useState([]);
 
+  // Leaderboard
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [leaderboardTab, setLeaderboardTab] = useState('alltime'); // weekly, monthly, alltime
+  const [allProfiles, setAllProfiles] = useState({});
+
   // Achievements Logic
   const myPins = session ? pins.filter(p => p.user_id === session.user.id) : [];
   const isAdmin = profile?.is_admin === true;
@@ -253,6 +258,27 @@ export default function MapView() {
     return /berlin|new york|london|tokyo|paris|sydney|los angeles/i.test(p.location_name);
   });
   
+  // Streak Berechnung
+  const hasMarathon = (() => {
+    const dates = myPins.map(p => new Date(p.created_at).toISOString().split('T')[0]);
+    const uniqueDates = [...new Set(dates)].sort();
+    let maxStreak = 1;
+    let currentStreak = 1;
+    for (let i = 1; i < uniqueDates.length; i++) {
+      const prevDate = new Date(uniqueDates[i-1]);
+      const currDate = new Date(uniqueDates[i]);
+      const diffTime = Math.abs(currDate - prevDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+      if (diffDays === 1) {
+        currentStreak++;
+        if (currentStreak > maxStreak) maxStreak = currentStreak;
+      } else {
+        currentStreak = 1;
+      }
+    }
+    return maxStreak >= 3;
+  })();
+
   const hasNightOwl = myPins.some(p => {
     const hours = new Date(p.created_at).getHours();
     return hours >= 22 || hours <= 4;
@@ -453,6 +479,19 @@ export default function MapView() {
     if (data) setPins(data);
   };
 
+  const fetchAllProfiles = async () => {
+    try {
+      const { data, error } = await supabase.from('profiles').select('id, nickname');
+      if (data) {
+        const profileMap = {};
+        data.forEach(p => profileMap[p.id] = p.nickname);
+        setAllProfiles(profileMap);
+      }
+    } catch (e) {
+      console.error("Fehler beim Laden aller Profile", e);
+    }
+  };
+
   const fetchUnapprovedPins = async () => {
     const { data, error } = await supabase.from('pins').select('*').eq('approved', false).order('created_at', { ascending: false });
     if (data) setUnapprovedPins(data);
@@ -651,6 +690,17 @@ export default function MapView() {
       <div className="absolute top-4 right-4 z-[1000] pointer-events-auto flex flex-col items-end gap-2">
         <div className="flex gap-2">
           
+          <button 
+            onClick={() => {
+              fetchAllProfiles();
+              setIsLeaderboardOpen(true);
+            }}
+            className="bg-yellow-50 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-yellow-200 text-yellow-700 hover:bg-yellow-100 transition flex items-center justify-center font-bold text-sm"
+          >
+            <Trophy size={20} className="sm:mr-1" />
+            <span className="hidden sm:inline">Rangliste</span>
+          </button>
+
           {profile?.is_admin && (
             <button 
               onClick={() => {
@@ -1340,6 +1390,20 @@ export default function MapView() {
                     </p>
                   </div>
                 </div>
+
+                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${hasMarathon ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 flex items-center justify-center bg-gray-900 ${hasMarathon ? 'ring-2 ring-orange-500 shadow-md' : 'border-2 border-gray-300'}`}>
+                    <div style={{ fontSize: '32px', filter: hasMarathon ? 'drop-shadow(0 0 10px orange)' : 'none' }}>🔥</div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-gray-800">
+                      {hasMarathon ? 'Feuer & Flamme ✅' : '??? (Marathon)'}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {hasMarathon ? 'An 3 aufeinanderfolgenden Tagen geklebt. Du brennst!' : 'Konstanz ist der Schlüssel zum wahren Feuer...'}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1367,6 +1431,71 @@ export default function MapView() {
           </div>
         </div>
       )}
+
+      {/* Leaderboard Modal */}
+      {isLeaderboardOpen && (() => {
+        // Compute Leaderboard Data inline
+        const now = new Date();
+        const filteredPins = pins.filter(p => {
+          if (leaderboardTab === 'alltime') return true;
+          const pinDate = new Date(p.created_at);
+          const diffDays = (now - pinDate) / (1000 * 60 * 60 * 24);
+          if (leaderboardTab === 'weekly') return diffDays <= 7;
+          if (leaderboardTab === 'monthly') return diffDays <= 30;
+          return true;
+        });
+
+        const counts = {};
+        filteredPins.forEach(p => {
+          if (p.user_id) counts[p.user_id] = (counts[p.user_id] || 0) + 1;
+        });
+        
+        const sortedUsers = Object.entries(counts)
+          .map(([userId, count]) => ({ userId, count, nickname: allProfiles[userId] || 'Anonym' }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 10); // Top 10
+
+        return (
+          <div className="absolute inset-0 z-[4000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] p-6 sm:p-8 shadow-2xl relative flex flex-col">
+              <button onClick={() => setIsLeaderboardOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition">
+                <X size={28} />
+              </button>
+              <h2 className="text-2xl font-black text-gray-900 flex items-center gap-3 mb-6">
+                <Trophy className="text-yellow-500" size={32} /> Rangliste
+              </h2>
+
+              <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
+                <button onClick={() => setLeaderboardTab('weekly')} className={`flex-1 text-sm font-bold py-2 rounded-lg transition ${leaderboardTab === 'weekly' ? 'bg-white shadow-sm text-yellow-600' : 'text-gray-500'}`}>Wöchentlich</button>
+                <button onClick={() => setLeaderboardTab('monthly')} className={`flex-1 text-sm font-bold py-2 rounded-lg transition ${leaderboardTab === 'monthly' ? 'bg-white shadow-sm text-yellow-600' : 'text-gray-500'}`}>Monatlich</button>
+                <button onClick={() => setLeaderboardTab('alltime')} className={`flex-1 text-sm font-bold py-2 rounded-lg transition ${leaderboardTab === 'alltime' ? 'bg-white shadow-sm text-yellow-600' : 'text-gray-500'}`}>All-Time</button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-3">
+                {sortedUsers.length === 0 ? (
+                  <p className="text-center text-gray-400 font-medium py-10">Noch keine Einträge in diesem Zeitraum.</p>
+                ) : (
+                  sortedUsers.map((u, i) => (
+                    <div key={u.userId} className={`flex items-center justify-between p-4 rounded-2xl border ${i === 0 ? 'bg-yellow-50 border-yellow-200' : i === 1 ? 'bg-gray-50 border-gray-200' : i === 2 ? 'bg-orange-50 border-orange-200' : 'bg-white border-gray-100 shadow-sm'}`}>
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">
+                          {i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-lg font-black text-gray-400 ml-1">{i + 1}.</span>}
+                        </span>
+                        <span className={`font-black ${i === 0 ? 'text-yellow-700 text-lg' : i === 1 ? 'text-gray-700' : i === 2 ? 'text-orange-800' : 'text-gray-700'}`}>
+                          {u.nickname}
+                        </span>
+                      </div>
+                      <div className={`font-black ${i === 0 ? 'text-yellow-600' : 'text-gray-500'}`}>
+                        {u.count} Sticker
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Admin Modal */}
       {isAdminModalOpen && (
