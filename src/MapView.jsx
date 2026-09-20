@@ -120,6 +120,10 @@ export default function MapView() {
   // Auth & Session
   const [session, setSession] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [isEditingNickname, setIsEditingNickname] = useState(false);
+  const [tempNickname, setTempNickname] = useState("");
+  const [showOnlyMyPins, setShowOnlyMyPins] = useState(false);
 
   // Helper: Prüft ob Sticker in den letzten 7 Tagen gesetzt wurde
   const isNew = (dateString) => {
@@ -129,15 +133,29 @@ export default function MapView() {
     return diffDays <= 7;
   };
 
+  const fetchProfile = async (userId) => {
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    if (data) {
+      setProfile(data);
+    } else {
+      const { data: newProfile } = await supabase.from('profiles').insert({ id: userId }).select().single();
+      if (newProfile) setProfile(newProfile);
+    }
+  };
+
   useEffect(() => {
-    // Initial Session Check
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session) fetchProfile(session.user.id);
     });
 
-    // Listen on Auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session) fetchProfile(session.user.id);
+      else {
+        setProfile(null);
+        setShowOnlyMyPins(false);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -370,7 +388,8 @@ export default function MapView() {
         lng: draftPin[1],
         image_url: publicUrl,
         message: message || null,
-        location_name: locationName || null
+        location_name: locationName || null,
+        user_id: session ? session.user.id : null
       });
       if (dbError) throw dbError;
 
@@ -398,6 +417,9 @@ export default function MapView() {
     [90, 2000]
   ];
 
+  // Computed Pins based on toggle
+  const displayPins = showOnlyMyPins && session ? pins.filter(p => p.user_id === session.user.id) : pins;
+
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden overscroll-none">
       
@@ -411,7 +433,7 @@ export default function MapView() {
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
             </span>
             <p className="text-[10px] sm:text-xs font-bold text-gray-700 tracking-wide uppercase mt-0.5">
-              {pins.length} <span className="hidden sm:inline">Sticker weltweit</span><span className="sm:hidden">Sticker</span>
+              {displayPins.length} <span className="hidden sm:inline">Sticker weltweit</span><span className="sm:hidden">Sticker</span>
             </p>
           </div>
         </div>
@@ -510,12 +532,12 @@ export default function MapView() {
         )}
         
         {/* Heatmap Layer */}
-        {showHeatmap && <HeatmapLayer points={pins} />}
+        {showHeatmap && <HeatmapLayer points={displayPins} />}
 
         {/* Marker Layer (Hidden when Heatmap is active) */}
         {!showHeatmap && (
           <MarkerClusterGroup chunkedLoading maxClusterRadius={50} showCoverageOnHover={false} spiderfyOnMaxZoom={true} disableClusteringAtZoom={15}>
-            {pins.map(pin => (
+            {displayPins.map(pin => (
               <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getStickerIcon(pin.image_url, targetPinId && pin.id.toString() === targetPinId, isNew(pin.created_at))}>
                 <Popup>
                   <div className="flex flex-col bg-white">
@@ -819,20 +841,83 @@ export default function MapView() {
       {/* Profile Modal */}
       {session && isAuthModalOpen && (
         <div className="absolute inset-0 z-[3000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl relative text-center">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-6 sm:p-8 shadow-2xl relative text-center">
             <button onClick={() => setIsAuthModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition">
               <X size={24} />
             </button>
-            <User size={48} className="text-blue-500 mx-auto mb-4 bg-blue-50 p-3 rounded-full" />
-            <h2 className="text-2xl font-black text-gray-900 mb-1">Dein Profil</h2>
-            <p className="text-sm text-gray-600 mb-6">{session.user.email}</p>
+            
+            <div className="mb-6 mt-2">
+              <img src={session.user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${session.user.email}&background=random`} alt="Avatar" className="w-20 h-20 rounded-full mx-auto mb-4 border-4 border-blue-50 shadow-md" />
+              
+              {isEditingNickname ? (
+                <div className="flex flex-col gap-2">
+                  <input 
+                    type="text" 
+                    value={tempNickname} 
+                    onChange={e => setTempNickname(e.target.value)} 
+                    placeholder="Wähle einen Nicknamen..."
+                    className="w-full px-4 py-2 border-2 border-blue-100 rounded-xl focus:outline-none focus:border-blue-500 font-bold text-center"
+                    maxLength={20}
+                  />
+                  <div className="flex gap-2">
+                    <button onClick={() => setIsEditingNickname(false)} className="flex-1 bg-gray-100 text-gray-600 font-bold py-2 rounded-xl text-sm">Abbrechen</button>
+                    <button 
+                      onClick={async () => {
+                        if (tempNickname.trim().length < 3) return alert("Nickname zu kurz!");
+                        const { error } = await supabase.from('profiles').update({ nickname: tempNickname.trim() }).eq('id', session.user.id);
+                        if (!error) {
+                          setProfile({ ...profile, nickname: tempNickname.trim() });
+                          setIsEditingNickname(false);
+                        } else {
+                          alert("Dieser Name ist wahrscheinlich schon vergeben!");
+                        }
+                      }} 
+                      className="flex-1 bg-blue-600 text-white font-bold py-2 rounded-xl text-sm"
+                    >
+                      Speichern
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h2 className="text-2xl font-black text-gray-900 flex items-center justify-center gap-2">
+                    {profile?.nickname || 'Kein Nickname'}
+                  </h2>
+                  <button onClick={() => { setTempNickname(profile?.nickname || ''); setIsEditingNickname(true); }} className="text-blue-500 text-sm font-bold mt-1 hover:underline">
+                    Nickname ändern
+                  </button>
+                </div>
+              )}
+              <p className="text-xs text-gray-400 mt-2">{session.user.email}</p>
+            </div>
+
+            {/* Stats */}
+            <div className="bg-blue-50 rounded-2xl p-4 mb-6">
+              <p className="text-sm text-blue-800 font-bold mb-1">Deine Statistik</p>
+              <p className="text-3xl font-black text-blue-600">
+                {pins.filter(p => p.user_id === session.user.id).length}
+                <span className="text-base font-normal text-blue-800 ml-1">Sticker weltweit</span>
+              </p>
+            </div>
+
+            {/* Toggle My Pins */}
+            <label className="flex items-center justify-between bg-gray-50 p-4 rounded-xl cursor-pointer hover:bg-gray-100 transition mb-6">
+              <span className="font-bold text-gray-700 text-sm">Nur meine Sticker zeigen</span>
+              <div className={`w-12 h-6 rounded-full transition relative ${showOnlyMyPins ? 'bg-blue-600' : 'bg-gray-300'}`}>
+                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${showOnlyMyPins ? 'left-7' : 'left-1'}`}></div>
+              </div>
+              <input type="checkbox" className="hidden" checked={showOnlyMyPins} onChange={e => {
+                setShowOnlyMyPins(e.target.checked);
+                if (e.target.checked) setIsAuthModalOpen(false);
+              }} />
+            </label>
             
             <button 
               onClick={() => {
                 supabase.auth.signOut();
                 setIsAuthModalOpen(false);
               }}
-              className="w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl hover:bg-red-100 transition"
+              className="w-full bg-white border-2 border-red-100 text-red-500 font-bold py-3 rounded-xl hover:bg-red-50 transition"
             >
               Abmelden
             </button>
