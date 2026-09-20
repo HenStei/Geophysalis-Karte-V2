@@ -830,10 +830,6 @@ export default function MapView() {
               <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
               Weiter mit Google
             </button>
-            
-            <p className="text-xs text-center text-gray-400 mt-4">
-              (Hinweis: Der Google-Login muss vom Admin im Supabase-Dashboard unter "Authentication - Providers" freigeschaltet werden.)
-            </p>
           </div>
         </div>
       )}
