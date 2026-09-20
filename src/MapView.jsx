@@ -115,6 +115,35 @@ function MinimapBounds({ parentMap }) {
   return <Rectangle bounds={bounds} pathOptions={{ color: '#2563eb', weight: 2, fillOpacity: 0.2 }} />;
 }
 
+// Schneeflocken Effekt (Winter Wonderland)
+const Snowflakes = () => {
+  // Generiere 40 Schneeflocken mit zufälligen Werten
+  const flakes = Array.from({ length: 40 }).map((_, i) => ({
+    id: i,
+    left: `${Math.random() * 100}vw`,
+    animationDuration: `${Math.random() * 5 + 5}s`,
+    animationDelay: `${Math.random() * 5}s`,
+    opacity: Math.random() * 0.6 + 0.2,
+    fontSize: `${Math.random() * 15 + 10}px`
+  }));
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[2000] overflow-hidden">
+      {flakes.map(f => (
+        <div key={f.id} className="snowflake" style={{
+          left: f.left,
+          animationDuration: f.animationDuration,
+          animationDelay: f.animationDelay,
+          opacity: f.opacity,
+          fontSize: f.fontSize
+        }}>
+          ❄
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export default function MapView() {
   const [map, setMap] = useState(null);
   const [pins, setPins] = useState([]);
@@ -137,10 +166,25 @@ export default function MapView() {
   
   const hasFirstStep = myPins.length >= 1;
   const hasLocalHero = myPins.length >= 5;
+  
   const hasNightOwl = myPins.some(p => {
     const hours = new Date(p.created_at).getHours();
-    return hours >= 2 && hours <= 5;
+    return hours >= 22 || hours <= 4;
   });
+
+  const hasEarlyBird = myPins.some(p => {
+    const hours = new Date(p.created_at).getHours();
+    return hours >= 5 && hours <= 8;
+  });
+
+  const hasHalloween = myPins.some(p => {
+    const d = new Date(p.created_at);
+    const m = d.getMonth(); // 0 = Jan, 9 = Okt, 10 = Nov
+    const day = d.getDate();
+    return (m === 9 && day >= 25) || (m === 10 && day <= 5);
+  });
+
+  const hasWinter = myPins.some(p => new Date(p.created_at).getMonth() === 11); // Dez
   
   const uniqueCountries = new Set(
     myPins.map(p => {
@@ -151,9 +195,11 @@ export default function MapView() {
   );
   const hasWorldTraveler = uniqueCountries.size >= 3;
 
-  const canUseDark = isAdmin || hasFirstStep;
+  const canUseDark = isAdmin || hasNightOwl;
   const canUseVintage = isAdmin || hasLocalHero;
-  const canUseNeon = isAdmin || hasNightOwl;
+  const canUseSunrise = isAdmin || hasEarlyBird;
+  const canUseSpooky = isAdmin || hasHalloween;
+  const canUseSnow = isAdmin || hasWinter;
 
   // Helper: Prüft ob Sticker in den letzten 7 Tagen gesetzt wurde
   const isNew = (dateString) => {
@@ -567,10 +613,24 @@ export default function MapView() {
                 </button>
 
                 <button 
-                  onClick={() => canUseNeon ? setMapStyle('neon') : alert("Du benötigst das Abzeichen 'Nachteule' (Nachts geklebt)!")} 
-                  className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition flex justify-between items-center ${mapStyle === 'neon' ? 'bg-orange-100 text-orange-700' : canUseNeon ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
+                  onClick={() => canUseSunrise ? setMapStyle('sunrise') : alert("Du benötigst das Abzeichen 'Frühaufsteher' (5-8 Uhr)!")} 
+                  className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition flex justify-between items-center ${mapStyle === 'sunrise' ? 'bg-orange-100 text-orange-700' : canUseSunrise ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
                 >
-                  Spooky (Halloween) {!canUseNeon && <Lock size={14} className="text-gray-400" />}
+                  Sunrise (Morgen) {!canUseSunrise && <Lock size={14} className="text-gray-400" />}
+                </button>
+
+                <button 
+                  onClick={() => canUseSpooky ? setMapStyle('neon') : alert("Du benötigst das Abzeichen 'Süßes oder Saures' (Halloween-Event)!")} 
+                  className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition flex justify-between items-center ${mapStyle === 'neon' ? 'bg-purple-100 text-purple-700' : canUseSpooky ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
+                >
+                  Spooky (Halloween) {!canUseSpooky && <Lock size={14} className="text-gray-400" />}
+                </button>
+
+                <button 
+                  onClick={() => canUseSnow ? setMapStyle('snow') : alert("Du benötigst das Abzeichen 'Winterwunder' (Dezember-Event)!")} 
+                  className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition flex justify-between items-center ${mapStyle === 'snow' ? 'bg-blue-100 text-blue-700' : canUseSnow ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
+                >
+                  Winter (Schnee) {!canUseSnow && <Lock size={14} className="text-gray-400" />}
                 </button>
               </div>
             </div>
@@ -595,6 +655,8 @@ export default function MapView() {
         )}
       </div>
       
+      {mapStyle === 'snow' && <Snowflakes />}
+
       <MapContainer 
         center={userLocation} 
         zoom={5} 
@@ -633,11 +695,24 @@ export default function MapView() {
             attribution='Tiles &copy; Esri - National Geographic'
           />
         )}
+        {mapStyle === 'sunrise' && (
+          <TileLayer 
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}" 
+            attribution='Tiles &copy; Esri'
+            className="map-sunrise"
+          />
+        )}
         {mapStyle === 'neon' && (
           <TileLayer 
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
             attribution='Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            className="map-cyberpunk"
+            className="map-spooky"
+          />
+        )}
+        {mapStyle === 'snow' && (
+          <TileLayer 
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}" 
+            attribution='Tiles &copy; Esri'
           />
         )}
         
@@ -1016,11 +1091,11 @@ export default function MapView() {
               <div className="flex flex-col gap-3">
                 <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${canUseDark ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
                   <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${canUseDark ? 'ring-2 ring-indigo-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/first_step.jpg" alt="Der erste Schritt" className="w-full h-full object-cover" />
+                    <img src="/badges/night_owl.jpg" alt="Nachteule" className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <p className="text-sm font-black text-gray-800">Der erste Schritt {canUseDark && '✅'}</p>
-                    <p className="text-xs text-gray-500 font-medium">1 Sticker geklebt. Schaltet Dark Mode frei.</p>
+                    <p className="text-sm font-black text-gray-800">Nachteule {canUseDark && '✅'}</p>
+                    <p className="text-xs text-gray-500 font-medium">Nachts (22-4 Uhr) geklebt. Schaltet Dark Mode frei.</p>
                   </div>
                 </div>
                 
@@ -1034,13 +1109,33 @@ export default function MapView() {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${canUseNeon ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${canUseNeon ? 'ring-2 ring-orange-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/night_owl.jpg" alt="Nachteule" className="w-full h-full object-cover" />
+                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${canUseSunrise ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${canUseSunrise ? 'ring-2 ring-orange-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                    <img src="/badges/early_bird.jpg" alt="Frühaufsteher" className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <p className="text-sm font-black text-gray-800">Nachteule {canUseNeon && '✅'}</p>
-                    <p className="text-xs text-gray-500 font-medium">Nachts geklebt. Schaltet Spooky-Karte frei.</p>
+                    <p className="text-sm font-black text-gray-800">Frühaufsteher {canUseSunrise && '✅'}</p>
+                    <p className="text-xs text-gray-500 font-medium">Morgens (5-8 Uhr) geklebt. Schaltet Sunrise-Karte frei.</p>
+                  </div>
+                </div>
+
+                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${canUseSpooky ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${canUseSpooky ? 'ring-2 ring-purple-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                    <img src="/badges/halloween.jpg" alt="Süßes oder Saures" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-gray-800">Süßes oder Saures {canUseSpooky && '✅'}</p>
+                    <p className="text-xs text-gray-500 font-medium">Halloween Event. Schaltet Spooky-Karte frei.</p>
+                  </div>
+                </div>
+
+                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${canUseSnow ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${canUseSnow ? 'ring-2 ring-blue-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                    <img src="/badges/winter.jpg" alt="Winterwunder" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-gray-800">Winterwunder {canUseSnow && '✅'}</p>
+                    <p className="text-xs text-gray-500 font-medium">Weihnachts Event. Schaltet Snow-Karte frei.</p>
                   </div>
                 </div>
 

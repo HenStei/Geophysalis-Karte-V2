@@ -81,9 +81,32 @@ body {
   100% { width: 400%; height: 400%; opacity: 0; }
 }
 
-/* Cyberpunk Map Filter */
-.map-cyberpunk {
+/* Spooky Halloween Map Filter */
+.map-spooky {
   filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(150%) saturate(200%);
+}
+
+/* Sunrise Map Filter */
+.map-sunrise {
+  filter: sepia(50%) hue-rotate(-20deg) saturate(180%) brightness(105%);
+}
+
+/* Snowfall Animation */
+@keyframes snowfall {
+  0% { transform: translateY(-10vh) translateX(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(110vh) translateX(30px); opacity: 0; }
+}
+
+.snowflake {
+  position: fixed;
+  top: -20px;
+  color: white;
+  user-select: none;
+  pointer-events: none;
+  z-index: 2000;
+  animation: snowfall linear infinite;
 }
 
 /* Custom Marker Cluster (Zusammengefasste Pins beim Rauszoomen) */
