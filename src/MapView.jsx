@@ -833,7 +833,7 @@ export default function MapView() {
         )}
         {mapStyle === 'snow' && (
           <TileLayer 
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" 
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}" 
             attribution='Tiles &copy; Esri'
             className="map-frozen"
           />

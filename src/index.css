@@ -111,21 +111,48 @@ body {
 }
 
 /* Aurora Animation Overlay */
-@keyframes aurora-shift {
-  0% { background-position: 0% 50%; opacity: 0.5; }
-  50% { background-position: 100% 50%; opacity: 0.8; }
-  100% { background-position: 0% 50%; opacity: 0.5; }
-}
-
 .aurora-overlay {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 1000;
-  background: linear-gradient(60deg, rgba(0, 255, 128, 0.15), rgba(128, 0, 255, 0.25), rgba(0, 255, 255, 0.15));
-  background-size: 300% 300%;
-  animation: aurora-shift 12s ease-in-out infinite;
-  mix-blend-mode: color-dodge;
+  mix-blend-mode: screen;
+  overflow: hidden;
+}
+
+.aurora-overlay::before,
+.aurora-overlay::after {
+  content: '';
+  position: absolute;
+  width: 200vw;
+  height: 60vh;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.6;
+}
+
+.aurora-overlay::before {
+  top: -20vh;
+  left: -50vw;
+  background: radial-gradient(ellipse at bottom, rgba(0, 255, 136, 0.8) 0%, transparent 60%);
+  animation: aurora-sway 12s ease-in-out infinite alternate;
+}
+
+.aurora-overlay::after {
+  top: 10vh;
+  right: -50vw;
+  background: radial-gradient(ellipse at top, rgba(157, 0, 255, 0.6) 0%, transparent 70%);
+  animation: aurora-sway-reverse 16s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-sway {
+  0% { transform: translateY(0) rotate(-10deg) scaleX(1); }
+  100% { transform: translateY(50px) rotate(10deg) scaleX(1.3); }
+}
+
+@keyframes aurora-sway-reverse {
+  0% { transform: translateY(0) rotate(10deg) scaleX(1.3); }
+  100% { transform: translateY(-50px) rotate(-10deg) scaleX(1); }
 }
 
 /* Float & Fly Animations (for Emojis) */
@@ -155,7 +182,7 @@ body {
 
 /* Frozen Winter Map Filter */
 .map-frozen {
-  filter: grayscale(40%) sepia(20%) hue-rotate(180deg) brightness(140%) contrast(110%);
+  filter: grayscale(85%) sepia(15%) hue-rotate(180deg) brightness(110%) contrast(100%);
 }
 
 /* Frost Winter Overlay */
