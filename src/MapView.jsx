@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMapEvents, useMap, Rectangle } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import imageCompression from 'browser-image-compression';
-import { X, Upload, MapPin, Check, Info, LocateFixed, Layers, Share2, Dices, Compass, Navigation2, User, LogIn, Mail, Sparkles, Shield, CheckCircle, Trash2 } from 'lucide-react';
+import { X, Upload, MapPin, Check, Info, LocateFixed, Layers, Share2, Dices, Compass, Navigation2, User, LogIn, Mail, Sparkles, Shield, CheckCircle, Trash2, Lock, Moon, Award, Globe, Footprints } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import L from 'leaflet';
 import { supabase } from './supabase';
@@ -31,11 +31,13 @@ const getStickerIcon = (url, isTarget = false, isNewPin = false) => {
 const draftIcon = L.divIcon({
   className: 'bg-transparent border-none',
   html: `<div class="relative flex items-center justify-center w-12 h-12">
-           <div class="absolute w-full h-full bg-blue-500 rounded-full animate-ping opacity-60"></div>
-           <div class="relative z-10 w-5 h-5 bg-blue-600 border-[3px] border-white rounded-full shadow-lg"></div>
+          <div class="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-50"></div>
+          <div class="relative bg-blue-600 text-white rounded-full p-2 shadow-lg border-2 border-white">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+          </div>
          </div>`,
   iconSize: [48, 48],
-  iconAnchor: [24, 24]
+  iconAnchor: [24, 48]
 });
 
 function MapClickHandler({ onMapClick }) {
@@ -128,6 +130,30 @@ export default function MapView() {
   // Admin
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [unapprovedPins, setUnapprovedPins] = useState([]);
+
+  // Achievements Logic
+  const myPins = session ? pins.filter(p => p.user_id === session.user.id) : [];
+  const isAdmin = profile?.is_admin === true;
+  
+  const hasFirstStep = myPins.length >= 1;
+  const hasLocalHero = myPins.length >= 5;
+  const hasNightOwl = myPins.some(p => {
+    const hours = new Date(p.created_at).getHours();
+    return hours >= 2 && hours <= 5;
+  });
+  
+  const uniqueCountries = new Set(
+    myPins.map(p => {
+      if (!p.location_name) return null;
+      const parts = p.location_name.split(',');
+      return parts[parts.length - 1].trim();
+    }).filter(Boolean)
+  );
+  const hasWorldTraveler = uniqueCountries.size >= 3;
+
+  const canUseDark = isAdmin || hasFirstStep;
+  const canUseVintage = isAdmin || hasLocalHero;
+  const canUseNeon = isAdmin || hasNightOwl;
 
   // Helper: Prüft ob Sticker in den letzten 7 Tagen gesetzt wurde
   const isNew = (dateString) => {
@@ -519,22 +545,45 @@ export default function MapView() {
         </div>
 
         {showLayerMenu && (
-          <div className="bg-white/95 backdrop-blur-md p-4 rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-100 flex flex-col gap-4 w-44 sm:w-48 animate-in slide-in-from-top-4 origin-top-right">
+          <div className="bg-white/95 backdrop-blur-md p-4 rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-100 flex flex-col gap-4 w-56 animate-in slide-in-from-top-4 origin-top-right">
             <div>
               <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Karten-Stil</p>
               <div className="flex flex-col gap-1">
                 <button onClick={() => setMapStyle('street')} className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition ${mapStyle === 'street' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Standard</button>
                 <button onClick={() => setMapStyle('satellite')} className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition ${mapStyle === 'satellite' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Satellit</button>
-                <button onClick={() => setMapStyle('dark')} className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition ${mapStyle === 'dark' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Dark Mode</button>
+                
+                <button 
+                  onClick={() => canUseDark ? setMapStyle('dark') : alert("Du benötigst das Abzeichen 'Der erste Schritt'!")} 
+                  className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition flex justify-between items-center ${mapStyle === 'dark' ? 'bg-blue-100 text-blue-700' : canUseDark ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
+                >
+                  Dark Mode {!canUseDark && <Lock size={14} className="text-gray-400" />}
+                </button>
+                
+                <button 
+                  onClick={() => canUseVintage ? setMapStyle('vintage') : alert("Du benötigst das Abzeichen 'Entdecker' (5 Sticker)!")} 
+                  className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition flex justify-between items-center ${mapStyle === 'vintage' ? 'bg-blue-100 text-blue-700' : canUseVintage ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
+                >
+                  Explorer (Vintage) {!canUseVintage && <Lock size={14} className="text-gray-400" />}
+                </button>
+
+                <button 
+                  onClick={() => canUseNeon ? setMapStyle('neon') : alert("Du benötigst das Abzeichen 'Nachteule' (Nachts geklebt)!")} 
+                  className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition flex justify-between items-center ${mapStyle === 'neon' ? 'bg-blue-100 text-blue-700' : canUseNeon ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
+                >
+                  Cyberpunk (Neon) {!canUseNeon && <Lock size={14} className="text-gray-400" />}
+                </button>
               </div>
             </div>
             <div className="h-px bg-gray-200 w-full"></div>
             <div>
               <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Ansicht</p>
-              <div className="flex flex-col gap-1">
-                <button onClick={() => setShowHeatmap(false)} className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition ${!showHeatmap ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Foto-Pins</button>
-                <button onClick={() => setShowHeatmap(true)} className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition ${showHeatmap ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Heatmap</button>
-              </div>
+              <label className="flex items-center justify-between cursor-pointer px-3 py-2 hover:bg-gray-100 rounded-xl transition">
+                <span className="text-sm font-bold text-gray-600">Heatmap zeigen</span>
+                <input type="checkbox" className="hidden" checked={showHeatmap} onChange={(e) => setShowHeatmap(e.target.checked)} />
+                <div className={`w-8 h-4 rounded-full transition relative ${showHeatmap ? 'bg-blue-500' : 'bg-gray-300'}`}>
+                  <div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-all ${showHeatmap ? 'left-4' : 'left-0.5'}`}></div>
+                </div>
+              </label>
             </div>
           </div>
         )}
@@ -559,11 +608,11 @@ export default function MapView() {
       >
         <ZoomControl position="bottomleft" />
         
-        {/* Map Styles */}
+        {/* Map Layers */}
         {mapStyle === 'street' && (
           <TileLayer 
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}" 
-            attribution='Tiles &copy; Esri'
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" 
+            attribution='&copy; <a href="https://carto.com/">CARTO</a>'
           />
         )}
         {mapStyle === 'satellite' && (
@@ -576,6 +625,19 @@ export default function MapView() {
           <TileLayer 
             url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}" 
             attribution='Tiles &copy; Esri'
+          />
+        )}
+        {mapStyle === 'vintage' && (
+          <TileLayer 
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}" 
+            attribution='Tiles &copy; Esri - National Geographic'
+          />
+        )}
+        {mapStyle === 'neon' && (
+          <TileLayer 
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}" 
+            attribution='Tiles &copy; Esri'
+            className="map-cyberpunk"
           />
         )}
         
@@ -936,12 +998,62 @@ export default function MapView() {
             </div>
 
             {/* Stats */}
-            <div className="bg-blue-50 rounded-2xl p-4 mb-6">
+            <div className="bg-blue-50 rounded-2xl p-4 mb-4">
               <p className="text-sm text-blue-800 font-bold mb-1">Deine Statistik</p>
               <p className="text-3xl font-black text-blue-600">
-                {pins.filter(p => p.user_id === session.user.id).length}
+                {myPins.length}
                 <span className="text-base font-normal text-blue-800 ml-1">Sticker weltweit</span>
               </p>
+            </div>
+
+            {/* Badges / Achievements */}
+            <div className="bg-gray-50 rounded-2xl p-4 mb-6 text-left">
+              <p className="text-sm text-gray-800 font-bold mb-3 flex items-center justify-between">
+                Trophäen-Schrank
+                {isAdmin && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full uppercase">Admin: Alles frei</span>}
+              </p>
+              
+              <div className="flex flex-col gap-3">
+                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${canUseDark ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${canUseDark ? 'ring-2 ring-indigo-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                    <img src="/badges/first_step.jpg" alt="Der erste Schritt" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-gray-800">Der erste Schritt {canUseDark && '✅'}</p>
+                    <p className="text-xs text-gray-500 font-medium">1 Sticker geklebt. Schaltet Dark Mode frei.</p>
+                  </div>
+                </div>
+                
+                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${canUseVintage ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${canUseVintage ? 'ring-2 ring-amber-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                    <img src="/badges/local_hero.jpg" alt="Lokalmatador" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-gray-800">Lokalmatador {canUseVintage && '✅'}</p>
+                    <p className="text-xs text-gray-500 font-medium">5 Sticker geklebt. Schaltet Explorer-Karte frei.</p>
+                  </div>
+                </div>
+
+                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${canUseNeon ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${canUseNeon ? 'ring-2 ring-fuchsia-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                    <img src="/badges/night_owl.jpg" alt="Nachteule" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-gray-800">Nachteule {canUseNeon && '✅'}</p>
+                    <p className="text-xs text-gray-500 font-medium">Nachts geklebt. Schaltet Cyberpunk-Karte frei.</p>
+                  </div>
+                </div>
+
+                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${isAdmin || hasWorldTraveler ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${isAdmin || hasWorldTraveler ? 'ring-2 ring-emerald-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                    <img src="/badges/world_traveler.jpg" alt="Weltenbummler" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-gray-800">Weltenbummler {(isAdmin || hasWorldTraveler) && '✅'}</p>
+                    <p className="text-xs text-gray-500 font-medium">In mind. 3 Ländern geklebt. (WIP)</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Toggle My Pins */}

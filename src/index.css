@@ -81,6 +81,11 @@ body {
   100% { width: 400%; height: 400%; opacity: 0; }
 }
 
+/* Cyberpunk Map Filter */
+.map-cyberpunk {
+  filter: invert(1) hue-rotate(210deg) brightness(0.9) contrast(1.4) saturate(2);
+}
+
 /* Custom Marker Cluster (Zusammengefasste Pins beim Rauszoomen) */
 .marker-cluster-small,
 .marker-cluster-medium,
