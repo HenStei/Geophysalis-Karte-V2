@@ -271,6 +271,13 @@ export default function MapView() {
   const isClaimingRef = useRef(false);
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
   const [profileTab, setProfileTab] = useState('profil');
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  
+  useEffect(() => {
+    if (!localStorage.getItem('geophysalis_onboarded')) {
+      setShowOnboarding(true);
+    }
+  }, []);
 
   // Feature Toggles
   const FEATURE_AVATARS = true;
@@ -522,6 +529,46 @@ const hasNightOwl = myPins.some(p => {
     }).filter(Boolean)
   );
   const hasWorldTraveler = uniqueCountries.size >= 3;
+  // -- NEUE ACHIEVEMENTS --
+  // Globetrotter (6 Kontinente)
+  const getContinent = (lat, lng) => {
+    if (lat < -60) return 'Antarktika';
+    if (lat > 15 && lng < -30) return 'Nordamerika';
+    if (lat <= 15 && lng < -30) return 'Südamerika';
+    if (lat > 35 && lng >= -30 && lng < 40) return 'Europa';
+    if (lat <= 35 && lat > -35 && lng >= -20 && lng < 50) return 'Afrika';
+    if (lat > -10 && lng >= 40 && lng < 180) return 'Asien';
+    if (lat <= -10 && lng >= 100) return 'Ozeanien';
+    return 'Asien';
+  };
+  const continentsVisited = new Set(myPins.map(p => getContinent(p.lat, p.lng)));
+  const hasGlobetrotter = continentsVisited.size >= 6;
+
+  // Grenzgänger (2 Pins in <10km, aber versch. Länder)
+  const hasBorderCrosser = useMemo(() => {
+    if (myPins.length < 2 || uniqueCountries.size < 2) return false;
+    const getCountry = (p) => {
+      if (!p.location_name) return null;
+      const parts = p.location_name.split(',');
+      return parts[parts.length - 1].trim();
+    };
+    for (let i = 0; i < myPins.length; i++) {
+      for (let j = i + 1; j < myPins.length; j++) {
+        const c1 = getCountry(myPins[i]);
+        const c2 = getCountry(myPins[j]);
+        if (c1 && c2 && c1 !== c2) {
+          const R = 6371;
+          const dLat = (myPins[j].lat - myPins[i].lat) * Math.PI / 180;
+          const dLng = (myPins[j].lng - myPins[i].lng) * Math.PI / 180;
+          const a = Math.sin(dLat/2)**2 + Math.cos(myPins[i].lat * Math.PI/180) * Math.cos(myPins[j].lat * Math.PI/180) * Math.sin(dLng/2)**2;
+          const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+          if (dist < 10) return true;
+        }
+      }
+    }
+    return false;
+  }, [myPins, uniqueCountries]);
+
 
   const canUseDark = devMode || hasNightOwl;
   const canUseVintage = devMode || hasLocalHero;
@@ -1665,6 +1712,17 @@ const hasNightOwl = myPins.some(p => {
               {/* TAB: EINSTELLUNGEN */}
               {profileTab === 'einstellungen' && (
                 <div className="flex flex-col gap-3">
+                  <button onClick={() => {
+                    const text = `Ich habe ${myPins.length} Sticker in ${uniqueCountries.size} Ländern auf Geophysalis geklebt! 🌍📍 Versuch es auch und schalte Erfolge frei!`;
+                    if (navigator.share) {
+                      navigator.share({ title: 'Geophysalis', text: text, url: window.location.href }).catch(() => {});
+                    } else {
+                      navigator.clipboard.writeText(text + " " + window.location.href);
+                      alert('In die Zwischenablage kopiert!');
+                    }
+                  }} className="w-full bg-blue-50 text-blue-600 border-2 border-blue-100 font-bold py-3 rounded-2xl hover:bg-blue-100 transition flex items-center justify-center gap-2">
+                    <Share size={18} /> Profil Teilen
+                  </button>
                   <p className="text-xs text-gray-400 text-center break-all">{session.user.email}</p>
                   <label className="flex items-center justify-between bg-gray-50 p-4 rounded-2xl cursor-pointer hover:bg-gray-100 transition">
                     <span className="font-bold text-gray-700 text-sm">Nur meine Sticker zeigen</span>
@@ -1685,6 +1743,38 @@ const hasNightOwl = myPins.some(p => {
       )}
 
       
+      
+
+      {/* Onboarding Modal */}
+      {showOnboarding && (
+        <div className="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl animate-[fade-in_0.5s_ease-out]">
+            <div className="text-6xl mb-4">🌍</div>
+            <h2 className="text-2xl font-black text-gray-900 mb-2">Willkommen bei Geophysalis!</h2>
+            <div className="space-y-4 my-6 text-left">
+              <div className="flex gap-3 items-start">
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 font-black text-blue-600">1</div>
+                <p className="text-sm font-medium text-gray-600 mt-1">Klicke irgendwo auf die Karte, um einen Sticker zu setzen.</p>
+              </div>
+              <div className="flex gap-3 items-start">
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 font-black text-blue-600">2</div>
+                <p className="text-sm font-medium text-gray-600 mt-1">Lade optional ein Foto deines Abenteuers hoch.</p>
+              </div>
+              <div className="flex gap-3 items-start">
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 font-black text-blue-600">3</div>
+                <p className="text-sm font-medium text-gray-600 mt-1">Sammle epische Abzeichen für deine Reisen!</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => { localStorage.setItem('geophysalis_onboarded', 'true'); setShowOnboarding(false); }}
+              className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition transform hover:scale-105"
+            >
+              Los geht's!
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Animated Achievement Popup */}
       {unlockedAchievements.length > 0 && (
         <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
