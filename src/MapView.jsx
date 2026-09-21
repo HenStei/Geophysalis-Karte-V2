@@ -296,7 +296,8 @@ export default function MapView() {
   const hasFirstStep = myPins.length >= 1;
   const hasLocalHero = myPins.length >= 5;
   const hasRetroGamer = myPins.length >= 10;
-  const hasPioneer = myPins.some(pin => new Date(pin.created_at) < new Date('2026-11-01'));
+  const hasPioneerGlobal = globalAchievements.some(g => g.achievement_id.startsWith('pioneer_') && g.user_id === session?.user?.id);
+  const hasPioneer = devMode || hasPioneerGlobal;
   
   const hasPolarExplorer = myPins.some(p => Math.abs(p.lat) >= 60);
   const hasUrbanLegend = myPins.some(p => {
@@ -397,6 +398,24 @@ export default function MapView() {
                }
             }
          }
+      }
+
+      
+      // 3. Pionier der ersten Stunde (Max 15)
+      if (!globalAchievements.some(g => g.achievement_id.startsWith('pioneer_') && g.user_id === session.user.id)) {
+        const pioneers = globalAchievements.filter(g => g.achievement_id.startsWith('pioneer_'));
+        if (pioneers.length < 15 && myPins.length > 0) {
+           for (let i = 1; i <= 15; i++) {
+              if (!pioneers.some(p => p.achievement_id === `pioneer_${i}`)) {
+                 const { error } = await supabase.from('global_achievements').insert({ achievement_id: `pioneer_${i}`, user_id: session.user.id });
+                 if (!error) {
+                   alert(`🌟 Willkommen im exklusiven Club! Du bist Pionier Nr. ${i} von 15!`);
+                   claimsMade = true;
+                   break;
+                 }
+              }
+           }
+        }
       }
 
       if (claimsMade) fetchGlobals();
@@ -1887,7 +1906,7 @@ const hasNightOwl = myPins.some(p => {
                       {hasPioneer ? 'Pionier der ersten Stunde 🌟' : '??? (Gründungsmitglied)'}
                     </p>
                     <p className="text-xs text-gray-500 font-medium">
-                      {hasPioneer ? <>Du warst einer der Ersten! Danke für deine Unterstützung.<br/>{getUnlockDate('pioneer') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('pioneer')}</span>}</> : 'Dieses Abzeichen ist nur für die allerersten Nutzer reserviert...'}
+                      {hasPioneer ? <>Du gehörst zu den ersten 15 Nutzern weltweit! Danke für deine Unterstützung.<br/>{getUnlockDate('pioneer') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('pioneer')}</span>}</> : 'Streng limitiert auf die exakt ersten 15 Nutzer weltweit.'}
                     </p>
                   </div>
                 </div>
