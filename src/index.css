@@ -214,6 +214,11 @@ body {
   filter: invert(100%) hue-rotate(270deg) saturate(300%) contrast(150%);
 }
 
+.map-8bit {
+  filter: url(#retro-8bit) contrast(1.2) saturate(1.5);
+  image-rendering: pixelated;
+}
+
 /* Aurora Base Filter */
 .map-aurora {
   filter: grayscale(100%) brightness(50%) contrast(150%);

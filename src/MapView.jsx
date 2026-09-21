@@ -265,6 +265,7 @@ export default function MapView() {
   
   const hasFirstStep = myPins.length >= 1;
   const hasLocalHero = myPins.length >= 5;
+  const hasRetroGamer = myPins.length >= 10;
   
   const hasPolarExplorer = myPins.some(p => Math.abs(p.lat) >= 60);
   const hasUrbanLegend = myPins.some(p => {
@@ -328,6 +329,7 @@ export default function MapView() {
   const canUseSnow = isAdmin || hasWinter;
   const canUseAurora = isAdmin || hasPolarExplorer;
   const canUseCyberpunk = isAdmin || hasUrbanLegend;
+  const canUse8Bit = isAdmin || hasRetroGamer;
 
   // Helper: Prüft ob Sticker in den letzten 7 Tagen gesetzt wurde
   const isNew = (dateString) => {
@@ -691,6 +693,17 @@ export default function MapView() {
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden overscroll-none">
       
+      {/* SVG Filter für 8-Bit Effekt */}
+      <svg width="0" height="0" className="absolute pointer-events-none">
+        <filter id="retro-8bit">
+          <feComponentTransfer>
+            <feFuncR type="discrete" tableValues="0 0.3 0.6 1"/>
+            <feFuncG type="discrete" tableValues="0 0.3 0.6 1"/>
+            <feFuncB type="discrete" tableValues="0 0.3 0.6 1"/>
+          </feComponentTransfer>
+        </filter>
+      </svg>
+
       {/* Top Left Header & Counter (Optimized for Mobile) */}
       <div className="absolute top-4 left-4 z-[1000] pointer-events-none flex flex-col gap-2 sm:gap-3">
         <div className="bg-white/95 backdrop-blur-md px-4 py-2 sm:px-6 sm:py-3 rounded-2xl sm:rounded-3xl shadow-xl border border-gray-100 flex items-center gap-2 sm:gap-3 pointer-events-auto transition-all">
@@ -935,6 +948,13 @@ export default function MapView() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
             attribution='Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             className="map-cyberpunk"
+          />
+        )}
+        {mapStyle === '8bit' && (
+          <TileLayer 
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
+            attribution='Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            className="map-8bit"
           />
         )}
         
@@ -1323,6 +1343,7 @@ export default function MapView() {
                        editAvatar === 'snowman' ? '⛄' : 
                        editAvatar === 'fire' ? <img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /> : 
                        editAvatar === 'cyberpunk' ? <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /> : 
+                       editAvatar === 'retro' ? <img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" /> : 
                        editAvatar === 'polar' ? <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /> : '🧑‍🚀'}
                     </div>
                   </div>
@@ -1338,6 +1359,7 @@ export default function MapView() {
                         {hasWinter && <button onClick={() => setEditAvatar('snowman')} className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition overflow-hidden ${editAvatar === 'snowman' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>⛄</button>}
                         {hasPolarExplorer && <button onClick={() => setEditAvatar('polar')} className={`w-10 h-10 rounded-lg flex items-center justify-center transition overflow-hidden ${editAvatar === 'polar' ? 'ring-2 ring-purple-500' : 'border border-gray-200 hover:opacity-80'}`}><img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /></button>}
                         {hasUrbanLegend && <button onClick={() => setEditAvatar('cyberpunk')} className={`w-10 h-10 rounded-lg flex items-center justify-center transition overflow-hidden ${editAvatar === 'cyberpunk' ? 'ring-2 ring-purple-500' : 'border border-gray-200 hover:opacity-80'}`}><img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /></button>}
+                        {hasRetroGamer && <button onClick={() => setEditAvatar('retro')} className={`w-10 h-10 rounded-lg flex items-center justify-center transition overflow-hidden ${editAvatar === 'retro' ? 'ring-2 ring-purple-500' : 'border border-gray-200 hover:opacity-80'}`}><img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" /></button>}
                         {hasMarathon && <button onClick={() => setEditAvatar('fire')} className={`w-10 h-10 rounded-lg flex items-center justify-center transition overflow-hidden ${editAvatar === 'fire' ? 'ring-2 ring-purple-500' : 'border border-gray-200 hover:opacity-80'}`}><img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /></button>}
                       </div>
                     </div>
@@ -1496,6 +1518,20 @@ export default function MapView() {
                     </p>
                   </div>
                 </div>
+
+                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${hasRetroGamer ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${hasRetroGamer ? 'ring-2 ring-green-500 shadow-md' : 'border-2 border-gray-300'}`}>
+                    <img src="/badges/retro.jpg" alt="Pixel Pioneer" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-gray-800">
+                      {hasRetroGamer ? 'Pixel Pioneer 👾' : '??? (Retro Gamer)'}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {hasRetroGamer ? '10 Sticker geklebt. 8-Bit Karte freigeschaltet!' : 'Klebe 10 Sticker, um in die Vergangenheit zu reisen...'}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1587,6 +1623,7 @@ export default function MapView() {
                     else if (avatar === 'snowman') avatarContent = '⛄';
                     else if (avatar === 'fire') avatarContent = <img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" />;
                     else if (avatar === 'cyberpunk') avatarContent = <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" />;
+                    else if (avatar === 'retro') avatarContent = <img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" />;
                     else if (avatar === 'polar') avatarContent = <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" />;
                     else avatarContent = '🧑‍🚀';
 
