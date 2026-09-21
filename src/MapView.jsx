@@ -948,9 +948,11 @@ export default function MapView() {
         )}
         {mapStyle === '8bit' && (
           <TileLayer 
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
-            attribution='Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}" 
+            attribution='Tiles &copy; Esri'
             className="map-8bit"
+            maxNativeZoom={7}
+            maxZoom={18}
           />
         )}
         

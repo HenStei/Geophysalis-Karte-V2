@@ -215,9 +215,10 @@ body {
 }
 
 .map-8bit {
-  filter: contrast(1.5) saturate(2) sepia(0.4) hue-rotate(-15deg);
   image-rendering: pixelated;
-  transform: scale(1.01);
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  filter: contrast(1.8) saturate(2.5) hue-rotate(5deg) brightness(1.1);
 }
 
 /* Aurora Base Filter */
