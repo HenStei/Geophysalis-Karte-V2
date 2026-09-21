@@ -945,16 +945,14 @@ export default function MapView() {
         )}
         {mapStyle === 'dark' && (
           <TileLayer 
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            className="map-dark"
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" 
+            attribution='&copy; CARTO'
           />
         )}
         {mapStyle === 'vintage' && (
           <TileLayer 
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            className="map-vintage"
+            url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png" 
+            attribution='&copy; OpenTopoMap'
           />
         )}
         {mapStyle === 'sunrise' && (
@@ -1626,7 +1624,7 @@ export default function MapView() {
                 </div>
 <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${devMode || hasWorldTraveler ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
                   <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${devMode || hasWorldTraveler ? 'ring-2 ring-emerald-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <div className="w-full h-full bg-emerald-100 flex items-center justify-center text-3xl">✈️</div>
+                    <img src="/badges/world_traveler.jpg" alt="Weltenbummler" className="w-full h-full object-cover" />
                   </div>
                   <div>
                     <p className="text-sm font-black text-gray-800">
