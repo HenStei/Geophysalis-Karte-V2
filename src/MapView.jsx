@@ -270,6 +270,7 @@ export default function MapView() {
   const claimedInSessionRef = useRef(new Set());
   const isClaimingRef = useRef(false);
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
+  const [profileTab, setProfileTab] = useState('profil');
 
   // Feature Toggles
   const FEATURE_AVATARS = true;
@@ -530,6 +531,22 @@ const hasNightOwl = myPins.some(p => {
   const canUseAurora = devMode || hasPolarExplorer;
   const canUseCyberpunk = devMode || hasUrbanLegend;
   const canUse8Bit = devMode || hasRetroGamer;
+
+
+  // Stats: Total distance between all pins (Haversine sum)
+  const totalDistanceKm = useMemo(() => {
+    if (myPins.length < 2) return 0;
+    let total = 0;
+    const sorted = [...myPins].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    for (let i = 1; i < sorted.length; i++) {
+      const R = 6371;
+      const dLat = (sorted[i].lat - sorted[i-1].lat) * Math.PI / 180;
+      const dLng = (sorted[i].lng - sorted[i-1].lng) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(sorted[i-1].lat * Math.PI/180) * Math.cos(sorted[i].lat * Math.PI/180) * Math.sin(dLng/2)**2;
+      total += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+    return Math.round(total);
+  }, [myPins]);
 
   // Helper: Prüft ob Sticker in den letzten 7 Tagen gesetzt wurde
   const isNew = (dateString) => {
@@ -1722,7 +1739,12 @@ const hasNightOwl = myPins.some(p => {
 
                 
 
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasPi) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                </div>
+                
+                {/* Spezial Abzeichen */}
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 mt-2 flex items-center gap-1">⭐ Spezial & Zeitlich</p>
+                <div className="flex flex-col gap-2 mb-4">
+                <div className={`flex items-center gap-3 p-3 rounded-2xl transition shadow-sm ${(devMode || hasPi) ? 'bg-white border border-gray-100' : 'opacity-40 grayscale bg-gray-50'}`}>
                   <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${(devMode || hasPi) ? 'ring-2 ring-yellow-400 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/badge_pi.jpg" alt="PI" className="w-full h-full object-cover" />
                   </div>
@@ -1848,7 +1870,12 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasTier5) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                </div>
+
+                {/* Abenteuer */}
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 mt-2 flex items-center gap-1">🌍 Abenteuer & Reisen</p>
+                <div className="flex flex-col gap-2 mb-4">
+                <div className={`flex items-center gap-3 p-3 rounded-2xl transition shadow-sm ${(devMode || hasTier5) ? 'bg-white border border-gray-100' : 'opacity-40 grayscale bg-gray-50'}`}>
                   <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 bg-yellow-700 flex items-center justify-center text-3xl ${(devMode || hasTier5) ? 'ring-2 ring-yellow-800 shadow-md' : 'border-2 border-gray-300'}`}>
                     🥉
                   </div>
