@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMapEvents, useM
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import imageCompression from 'browser-image-compression';
 import { X, Upload, MapPin, Check, Info, LocateFixed, Layers, Share2, Dices, Compass, Navigation2, User, LogIn, Mail, Sparkles, Shield, CheckCircle, Trash2, Lock, Moon, Award, Globe, Footprints, Trophy , Share, Loader2 } from 'lucide-react';
-import html2canvas from 'html2canvas';
+import * as htmlToImage from 'html-to-image';
 import confetti from 'canvas-confetti';
 import { Link } from 'react-router-dom';
 import L from 'leaflet';
@@ -278,12 +278,14 @@ export default function MapView() {
     if (!shareCardRef.current) return;
     setIsSharing(true);
     try {
-      const canvas = await html2canvas(shareCardRef.current, { 
-        useCORS: true, 
-        backgroundColor: '#0f172a',
-        scale: 2
+      const blob = await htmlToImage.toBlob(shareCardRef.current, { 
+        pixelRatio: 2,
+        backgroundColor: '#0f172a'
       });
-      canvas.toBlob(async (blob) => {
+      if (!blob) throw new Error("Blob failed");
+      
+      // Wrapper to keep the structure the same
+      (async (blob) => {
         if (!blob) throw new Error("Blob failed");
         
         const file = new File([blob], 'geophysalis_profil.png', { type: 'image/png' });
@@ -303,7 +305,7 @@ export default function MapView() {
           URL.revokeObjectURL(url);
           alert('Dein Profil-Bild wurde heruntergeladen! Teile es auf Social Media.');
         }
-      }, 'image/png', 1.0);
+      })(blob);
     } catch (e) {
       console.error(e);
       alert('Fehler beim Erstellen des Bildes: ' + e.message);
@@ -1722,10 +1724,10 @@ const hasNightOwl = myPins.some(p => {
                     { label: 'Abenteuer & Reisen', color: 'ring-emerald-400', items: [
                       { has: devMode || hasBorderCrosser, img: '/badges/badge_border.jpg', title: 'Grenzgänger ✅', titleL: '??? (Grenzenlos)', desc: 'Zwei Sticker <10km voneinander, aber in versch. Ländern.', descL: 'Überwinde die Grenzen dieser Welt...', date: null },
                       { has: devMode || hasGlobetrotter, img: '/badges/badge_globetrotter.jpg', title: 'Globetrotter ✅', titleL: '??? (Weltenbummler)', desc: 'Sticker auf allen 6 Kontinenten.', descL: 'Bereise die gesamte Welt...', date: null },
-                      { has: devMode || hasTier100, icon: '💎', bg: 'bg-cyan-300', title: 'Platin Sammler (100 Pins) ✅', titleL: '??? (Sammler)', desc: 'Du bist eine Legende!', descL: 'Klebe 100 Sticker.', date: null },
-                      { has: devMode || hasTier5, icon: '🥉', bg: 'bg-yellow-700', title: 'Bronze Sammler (5 Pins) ✅', titleL: '??? (Sammler)', desc: 'Aller Anfang ist gemacht.', descL: 'Klebe 5 Sticker.', date: getUnlockDate('tier5') },
-                      { has: devMode || hasTier10, icon: '🥈', bg: 'bg-gray-300', title: 'Silber Sammler (10 Pins) ✅', titleL: '??? (Sammler)', desc: 'Eine stolze Sammlung.', descL: 'Klebe 10 Sticker.', date: getUnlockDate('tier10') },
-                      { has: devMode || hasTier50, icon: '🥇', bg: 'bg-yellow-400', title: 'Gold Sammler (50 Pins) ✅', titleL: '??? (Sammler)', desc: 'Eine beachtliche Leistung!', descL: 'Klebe 50 Sticker.', date: getUnlockDate('tier50') },
+                      { has: devMode || hasTier100, img: '/badges/badge_platinum.jpg', title: 'Platin Sammler (100 Pins) ✅', titleL: '??? (Sammler)', desc: 'Du bist eine Legende!', descL: 'Klebe 100 Sticker.', date: null },
+                      { has: devMode || hasTier5, img: '/badges/badge_bronze.jpg', title: 'Bronze Sammler (5 Pins) ✅', titleL: '??? (Sammler)', desc: 'Aller Anfang ist gemacht.', descL: 'Klebe 5 Sticker.', date: getUnlockDate('tier5') },
+                      { has: devMode || hasTier10, img: '/badges/badge_silver.jpg', title: 'Silber Sammler (10 Pins) ✅', titleL: '??? (Sammler)', desc: 'Eine stolze Sammlung.', descL: 'Klebe 10 Sticker.', date: getUnlockDate('tier10') },
+                      { has: devMode || hasTier50, img: '/badges/badge_gold.jpg', title: 'Gold Sammler (50 Pins) ✅', titleL: '??? (Sammler)', desc: 'Eine beachtliche Leistung!', descL: 'Klebe 50 Sticker.', date: getUnlockDate('tier50') },
                       { has: devMode || hasWorldTraveler, img: '/badges/world_traveler.jpg', title: 'Weltenbummler ✅', titleL: '??? (Weltenbummler)', desc: 'In mind. 3 Ländern geklebt.', descL: 'Die Welt ist groß, bereise sie...', date: getUnlockDate('worldTraveler') },
                       { has: hasMarathon, img: '/badges/streak.jpg', title: 'Feuer & Flamme ✅', titleL: '??? (Marathon)', desc: 'An 3 aufeinanderfolgenden Tagen geklebt.', descL: 'Konstanz ist der Schlüssel...', date: getUnlockDate('marathon') },
                       { has: devMode || hasYinYang, img: '/badges/badge_yinyang.jpg', title: 'Yin & Yang ✅', titleL: '??? (Balance)', desc: 'Nord- und Südhalbkugel vereint.', descL: 'Finde das Gleichgewicht...', date: getUnlockDate('yinyang') },
