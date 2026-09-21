@@ -1496,511 +1496,190 @@ const hasNightOwl = myPins.some(p => {
               <X size={24} />
             </button>
 
-            {/* ── Fixed Header ── */}
-            <div className="p-5 pb-0 text-center shrink-0">
-              {/* Avatar */}
+            {/* Fixed Header */}
+            <div className="p-5 pb-3 text-center shrink-0">
               <div className="relative inline-block mb-2">
-                <img src={session.user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${session.user.email}&background=random`} alt="Avatar" className="w-18 h-18 w-[72px] h-[72px] rounded-full border-4 border-white shadow-lg" />
+                <img src={session.user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${session.user.email}&background=random`} alt="Avatar" className="w-[72px] h-[72px] rounded-full border-4 border-white shadow-lg" />
                 {hasPioneer && <span className="absolute -bottom-1 -right-1 bg-yellow-400 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow">No.{myPioneerRank}</span>}
               </div>
 
-              {/* Nickname */}
               {isEditingNickname ? (
-                <div className="flex flex-col gap-2">
-                  <input 
-                    type="text" 
-                    value={tempNickname} 
-                    onChange={e => setTempNickname(e.target.value)} 
-                    placeholder="Wähle einen Nicknamen..."
-                    className="w-full px-4 py-2 border-2 border-blue-100 rounded-full focus:outline-none focus:border-blue-500 font-bold text-center"
-                    maxLength={20}
-                  />
+                <div className="flex flex-col gap-2 mb-2">
+                  <input type="text" value={tempNickname} onChange={e => setTempNickname(e.target.value)} placeholder="Nickname..." className="w-full px-4 py-2 border-2 border-blue-100 rounded-full focus:outline-none focus:border-blue-500 font-bold text-center text-sm" maxLength={20} />
                   <div className="flex gap-2">
-                    <button onClick={() => setIsEditingNickname(false)} className="flex-1 bg-gray-100 text-gray-600 font-bold py-2 rounded-full text-sm">Abbrechen</button>
-                    <button 
-                      onClick={async () => {
-                        if (tempNickname.trim().length < 3) return alert("Nickname zu kurz!");
-                        const { error } = await supabase.from('profiles').update({ nickname: tempNickname.trim() }).eq('id', session.user.id);
-                        if (!error) {
-                          setProfile({ ...profile, nickname: tempNickname.trim() });
-                          setIsEditingNickname(false);
-                        } else {
-                          alert("Dieser Name ist wahrscheinlich schon vergeben!");
-                        }
-                      }} 
-                      className="flex-1 bg-blue-600 text-white font-bold py-2 rounded-full text-sm"
-                    >
-                      Speichern
-                    </button>
+                    <button onClick={() => setIsEditingNickname(false)} className="flex-1 bg-gray-100 text-gray-600 font-bold py-2 rounded-full text-xs">Abbrechen</button>
+                    <button onClick={async () => { if (tempNickname.trim().length < 3) return alert('Nickname zu kurz!'); const { error } = await supabase.from('profiles').update({ nickname: tempNickname.trim() }).eq('id', session.user.id); if (!error) { setProfile({ ...profile, nickname: tempNickname.trim() }); setIsEditingNickname(false); } else alert('Name schon vergeben!'); }} className="flex-1 bg-blue-600 text-white font-bold py-2 rounded-full text-xs">Speichern</button>
                   </div>
                 </div>
               ) : (
-                <div>
-                  <h2 className="text-2xl font-black text-gray-900 flex items-center justify-center gap-2">
-                    {profile?.nickname || 'Kein Nickname'}
-                  </h2>
-                  <button onClick={() => { setTempNickname(profile?.nickname || ''); setIsEditingNickname(true); }} className="text-blue-500 text-sm font-bold mt-1 hover:underline">
-                    Nickname ändern
+                <div className="mb-2">
+                  <h2 className="text-lg font-black text-gray-900">{profile?.nickname || 'Kein Nickname'}</h2>
+                  <button onClick={() => { setTempNickname(profile?.nickname || ''); setIsEditingNickname(true); }} className="text-blue-500 text-xs font-bold hover:underline">Nickname ändern</button>
+                </div>
+              )}
+
+              {/* Stats Bar */}
+              <div className="flex items-stretch justify-center mb-3 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100">
+                <div className="flex-1 text-center py-3">
+                  <p className="text-xl font-black text-gray-900">{myPins.length}</p>
+                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Sticker</p>
+                </div>
+                <div className="w-px bg-gray-200"/>
+                <div className="flex-1 text-center py-3">
+                  <p className="text-xl font-black text-gray-900">{totalDistanceKm > 999 ? `${(totalDistanceKm/1000).toFixed(1)}k` : totalDistanceKm}</p>
+                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">km Reise</p>
+                </div>
+                <div className="w-px bg-gray-200"/>
+                <div className="flex-1 text-center py-3">
+                  <p className="text-xl font-black text-gray-900">{uniqueCountries.size}</p>
+                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Länder</p>
+                </div>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex bg-gray-100 rounded-2xl p-1">
+                {[['profil','👤 Profil'],['abzeichen','🏆 Abzeichen'],['⚙️','⚙️ Einst.']].map(([tab, label]) => (
+                  <button key={tab} onClick={() => setProfileTab(tab)} className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${profileTab === tab ? 'bg-white shadow text-gray-900' : 'text-gray-400 hover:text-gray-700'}`}>{label}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="overflow-y-auto custom-scrollbar flex-1 p-5 pt-3 flex flex-col gap-4">
+
+              {/* TAB: PROFIL */}
+              {profileTab === 'profil' && (
+                <div className="bg-gray-50 rounded-2xl p-4 text-left">
+                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Avatar & Rahmen</h3>
+                  {FEATURE_AVATARS ? (
+                    <div className="flex gap-4 items-start">
+                      <div className={`avatar-frame frame-${editFrame} relative w-16 h-16 text-3xl shadow bg-white rounded-full shrink-0`}>
+                        <div className="w-full h-full overflow-hidden rounded-full flex items-center justify-center">
+                          {editAvatar === 'default' ? '🦊' : editAvatar === 'ghost' ? '👻' : editAvatar === 'bat' ? '🦇' : editAvatar === 'reindeer' ? '🦌' : editAvatar === 'snowman' ? '⛄' : editAvatar === 'fire' ? <img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /> : editAvatar === 'cyberpunk' ? <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /> : editAvatar === 'retro' ? <img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" /> : editAvatar === 'pioneer' ? <img src="/badges/avatar_pioneer.jpg" className="w-full h-full object-cover" /> : editAvatar === 'admin' ? <img src="/badges/avatar_admin.jpg" className="w-full h-full object-cover" /> : editAvatar === 'polar' ? <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /> : '🦊'}
+                        </div>
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Avatar</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            <button onClick={() => setEditAvatar('default')} className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'default' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>🦊</button>
+                            {hasHalloween && <button onClick={() => setEditAvatar('ghost')} className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'ghost' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>👻</button>}
+                            {hasHalloween && <button onClick={() => setEditAvatar('bat')} className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'bat' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>🦇</button>}
+                            {hasWinter && <button onClick={() => setEditAvatar('reindeer')} className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'reindeer' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>🦌</button>}
+                            {hasWinter && <button onClick={() => setEditAvatar('snowman')} className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'snowman' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>⛄</button>}
+                            {hasPolarExplorer && <button onClick={() => setEditAvatar('polar')} className={`w-9 h-9 rounded-lg overflow-hidden transition ${editAvatar === 'polar' ? 'ring-2 ring-purple-500' : 'border border-gray-200'}`}><img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /></button>}
+                            {hasUrbanLegend && <button onClick={() => setEditAvatar('cyberpunk')} className={`w-9 h-9 rounded-lg overflow-hidden transition ${editAvatar === 'cyberpunk' ? 'ring-2 ring-purple-500' : 'border border-gray-200'}`}><img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /></button>}
+                            {hasRetroGamer && <button onClick={() => setEditAvatar('retro')} className={`w-9 h-9 rounded-lg overflow-hidden transition ${editAvatar === 'retro' ? 'ring-2 ring-purple-500' : 'border border-gray-200'}`}><img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" /></button>}
+                            {hasMarathon && <button onClick={() => setEditAvatar('fire')} className={`w-9 h-9 rounded-lg overflow-hidden transition ${editAvatar === 'fire' ? 'ring-2 ring-purple-500' : 'border border-gray-200'}`}><img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /></button>}
+                            {hasPioneer && <button onClick={() => setEditAvatar('pioneer')} className={`w-9 h-9 rounded-lg overflow-hidden transition ${editAvatar === 'pioneer' ? 'ring-2 ring-purple-500' : 'border border-gray-200'}`}><img src="/badges/avatar_pioneer.jpg" className="w-full h-full object-cover" /></button>}
+                            {isAdmin && <button onClick={() => setEditAvatar('admin')} className={`w-9 h-9 rounded-lg overflow-hidden ring-2 ring-yellow-400 transition ${editAvatar === 'admin' ? 'ring-purple-500' : ''}`}><img src="/badges/avatar_admin.jpg" className="w-full h-full object-cover" /></button>}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Rahmen</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            <button onClick={() => setEditFrame('none')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'none' ? 'bg-gray-800 text-white' : 'bg-white border border-gray-200 text-gray-600'}`}>Keiner</button>
+                            {(devMode || hasUrbanLegend) && <button onClick={() => setEditFrame('neon')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'neon' ? 'bg-purple-600 text-white' : 'bg-white border border-purple-200 text-purple-600'}`}>Neon</button>}
+                            {(devMode || hasPolarExplorer || hasWinter) && <button onClick={() => setEditFrame('frost')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'frost' ? 'bg-cyan-500 text-white' : 'bg-white border border-cyan-200 text-cyan-600'}`}>Frost</button>}
+                            {(devMode || hasMarathon) && <button onClick={() => setEditFrame('fire')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'fire' ? 'bg-orange-500 text-white' : 'bg-white border border-orange-200 text-orange-600'}`}>Feuer</button>}
+                          </div>
+                        </div>
+                        <button onClick={() => handleUpdateAvatarAndFrame(editAvatar, editFrame)} className="w-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold py-2 rounded-xl transition">Speichern</button>
+                      </div>
+                    </div>
+                  ) : <p className="text-sm text-gray-400 text-center">Avatar-Auswahl kommt bald!</p>}
+                </div>
+              )}
+
+              {/* TAB: ABZEICHEN */}
+              {profileTab === 'abzeichen' && (
+                <div className="flex flex-col gap-4">
+                  {devMode && <div className="text-center text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full uppercase">DevMode: Alles frei</div>}
+
+                  <div className="bg-gray-50 rounded-2xl p-3 border border-gray-100">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Sammler Fortschritt</p>
+                      <span className="text-xs font-bold text-gray-700">{myPins.length}/50</span>
+                    </div>
+                    <div className="bg-gray-200 rounded-full h-2.5 mb-1">
+                      <div className="bg-gradient-to-r from-yellow-500 to-orange-400 h-2.5 rounded-full transition-all duration-500" style={{width: `${Math.min(100, (myPins.length / 50) * 100)}%`}} />
+                    </div>
+                    <p className="text-[10px] text-gray-400">{myPins.length < 5 ? `Noch ${5 - myPins.length} bis Bronze` : myPins.length < 10 ? `Noch ${10 - myPins.length} bis Silber` : myPins.length < 50 ? `Noch ${50 - myPins.length} bis Gold` : 'Gold Sammler erreicht!'}</p>
+                  </div>
+
+                  {[
+                    { label: 'Exklusiv & Limitiert', color: 'ring-blue-400', items: [
+                      { has: devMode || hasEuCenter, icon: '🇪🇺', bg: 'bg-blue-800', title: 'Mitte der EU', titleL: '??? (Limit: 1 Weltweit)', desc: 'Du warst der Erste in der Mitte der EU!', descL: euOwner ? 'Bereits von jemand anderem ergattert!' : 'Klebe als allererster Nutzer in die Mitte der EU.', date: getUnlockDate('eu_center') },
+                      { has: devMode || hasGipfeli, img: '/badges/badge_gipfeli.jpg', title: 'Gipfeli Alpinist', titleL: '??? (Alpinist)', desc: `Gipfeli erkraxelt!${myGipfeliPeakName ? ' 📍 ' + myGipfeliPeakName : ''}`, descL: 'Klebe als Erster auf den Gipfel eines Bundeslandes.', date: getUnlockDate('gipfeli') },
+                      { has: hasPioneer, img: '/badges/badge_pioneer.jpg', title: `Pionier der ersten Stunde (No. ${myPioneerRank}/15) 🌟`, titleL: 'Pionier der ersten Stunde (Limit: 15)', desc: 'Du gehörst zu den ersten 15 Nutzern weltweit!', descL: 'Streng limitiert auf die exakt ersten 15 Nutzer.', date: getUnlockDate('pioneer') },
+                    ]},
+                    { label: 'Karten-Freischaltungen', color: 'ring-indigo-400', items: [
+                      { has: canUseDark, img: '/badges/night_owl.jpg', title: 'Nachteule ✅', titleL: '??? (Nachteule)', desc: 'Nachts (22–4 Uhr) geklebt. Dark Mode frei.', descL: 'Ein Geheimnis, das im Schutz der Dunkelheit ruht...', date: getUnlockDate('nightOwl') },
+                      { has: canUseVintage, img: '/badges/local_hero.jpg', title: 'Lokalmatador ✅', titleL: '??? (Lokalmatador)', desc: '5 Sticker geklebt. Explorer-Karte frei.', descL: 'Nur wer Ausdauer beweist, wird die alte Welt sehen...', date: getUnlockDate('localHero') },
+                      { has: canUseSunrise, img: '/badges/early_bird.jpg', title: 'Frühaufsteher ✅', titleL: '??? (Frühaufsteher)', desc: 'Morgens (5–8 Uhr) geklebt. Sunrise-Karte frei.', descL: 'Der frühe Vogel fängt den Wurm...', date: getUnlockDate('earlyBird') },
+                      { has: canUseSpooky, img: '/badges/halloween.jpg', title: 'Süßes oder Saures ✅', titleL: '??? (Zeitlich begrenzt)', desc: 'Halloween Event. Spooky-Karte frei.', descL: 'Nur einmal im Jahr aus den Schatten...', date: getUnlockDate('halloween') },
+                      { has: canUseSnow, img: '/badges/winter.jpg', title: 'Winterwunder ✅', titleL: '??? (Zeitlich begrenzt)', desc: 'Weihnachts Event. Snow-Karte frei.', descL: 'Wenn die Tage kürzer werden...', date: getUnlockDate('winter') },
+                      { has: canUseAurora, img: '/badges/polar.jpg', title: 'Polarforscher ✅', titleL: '??? (Polarforscher)', desc: 'Im hohen Norden/Süden. Aurora-Karte frei.', descL: 'Nur wer der extremen Kälte trotzt...', date: getUnlockDate('polar') },
+                      { has: canUseCyberpunk, img: '/badges/urban.jpg', title: 'Urban Legend ✅', titleL: '??? (Großstadt)', desc: 'In einer Weltmetropole. Cyberpunk frei.', descL: 'Dort wo das Neonlicht niemals schläft...', date: getUnlockDate('urban') },
+                      { has: devMode || hasRetroGamer, img: '/badges/retro.jpg', title: 'Pixel Pioneer 👾', titleL: '??? (Retro Gamer)', desc: '10 Sticker geklebt. 8-Bit Karte frei!', descL: 'Klebe 10 Sticker, um in die Vergangenheit zu reisen...', date: null },
+                    ]},
+                    { label: 'Spezial & Zeitlich', color: 'ring-yellow-400', items: [
+                      { has: devMode || hasPi, img: '/badges/badge_pi.jpg', title: 'PI (3,14) ✅', titleL: '??? (Mathematiker)', desc: 'Auf dem 3,14 Breiten- oder Längengrad.', descL: 'Nur für wahre Geeks und Nerds...', date: getUnlockDate('pi') },
+                      { has: devMode || hasMay4, img: '/badges/badge_may4.jpg', title: 'May the force be with you ✅', titleL: '??? (Sci-Fi Fan)', desc: 'Am 4. Mai geklebt.', descL: 'Spüre die Macht an einem ganz bestimmten Tag...', date: getUnlockDate('may4') },
+                      { has: devMode || hasLove, img: '/badges/badge_love.jpg', title: 'True Love ✅', titleL: '??? (Romantiker)', desc: 'Am Valentinstag (14. Feb) geklebt.', descL: 'Die Liebe liegt in der Luft...', date: getUnlockDate('love') },
+                      { has: devMode || hasSilvester, img: '/badges/badge_silvester.jpg', title: 'Silvester 🎆', titleL: '??? (Feuerwerk)', desc: 'An Silvester oder Neujahr geklebt.', descL: 'Lass es knallen zum Jahreswechsel!', date: getUnlockDate('silvester') },
+                    ]},
+                    { label: 'Abenteuer & Reisen', color: 'ring-emerald-400', items: [
+                      { has: devMode || hasTier5, icon: '🏉', bg: 'bg-yellow-700', title: 'Bronze Sammler (5 Pins) ✅', titleL: '??? (Sammler)', desc: 'Aller Anfang ist gemacht.', descL: 'Klebe 5 Sticker.', date: getUnlockDate('tier5') },
+                      { has: devMode || hasTier10, icon: '🥈', bg: 'bg-gray-300', title: 'Silber Sammler (10 Pins) ✅', titleL: '??? (Sammler)', desc: 'Eine stolze Sammlung.', descL: 'Klebe 10 Sticker.', date: getUnlockDate('tier10') },
+                      { has: devMode || hasTier50, icon: '🥇', bg: 'bg-yellow-400', title: 'Gold Sammler (50 Pins) ✅', titleL: '??? (Sammler)', desc: 'Eine beachtliche Leistung!', descL: 'Klebe 50 Sticker.', date: getUnlockDate('tier50') },
+                      { has: devMode || hasWorldTraveler, img: '/badges/world_traveler.jpg', title: 'Weltenbummler ✅', titleL: '??? (Weltenbummler)', desc: 'In mind. 3 Ländern geklebt.', descL: 'Die Welt ist groß, bereise sie...', date: getUnlockDate('worldTraveler') },
+                      { has: hasMarathon, img: '/badges/streak.jpg', title: 'Feuer & Flamme ✅', titleL: '??? (Marathon)', desc: 'An 3 aufeinanderfolgenden Tagen geklebt.', descL: 'Konstanz ist der Schlüssel...', date: getUnlockDate('marathon') },
+                      { has: devMode || hasYinYang, img: '/badges/badge_yinyang.jpg', title: 'Yin & Yang ✅', titleL: '??? (Balance)', desc: 'Nord- und Südhalbkugel vereint.', descL: 'Finde das Gleichgewicht...', date: getUnlockDate('yinyang') },
+                      { has: devMode || hasVivaldi, img: '/badges/badge_vivaldi.jpg', title: 'Die 4 Jahreszeiten ✅', titleL: '??? (Vivaldi)', desc: 'In allen 4 Jahreszeiten geklebt.', descL: 'Erlebe den Kreislauf der Natur...', date: getUnlockDate('vivaldi') },
+                      { has: devMode || hasNz, img: '/badges/badge_nz.jpg', title: 'One Geophysalis to rule them all ✅', titleL: '??? (Neuseeland)', desc: 'In Neuseeland (Mittelerde) geklebt.', descL: 'Wirf den Ring ins Feuer...', date: getUnlockDate('nz') },
+                      { has: devMode || hasUshuaia, img: '/badges/badge_ushuaia.jpg', title: 'Im Auge des Sturms ✅', titleL: '??? (Feuerland)', desc: 'Am Südzipfel von Argentinien geklebt.', descL: 'Das Ende der Welt im tiefen Süden...', date: getUnlockDate('ushuaia') },
+                    ]},
+                  ].map(section => (
+                    <div key={section.label}>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">{section.label}</p>
+                      <div className="flex flex-col gap-2">
+                        {section.items.map((b, i) => (
+                          <div key={i} className={`flex items-center gap-3 p-3 rounded-xl transition ${b.has ? 'bg-white border border-gray-100 shadow-sm' : 'opacity-40 grayscale bg-gray-50'}`}>
+                            <div className={`w-12 h-12 rounded-xl overflow-hidden shrink-0 flex items-center justify-center text-2xl ${b.has ? section.color + ' ring-2 shadow' : 'border-2 border-gray-300'} ${b.bg || ''}`}>
+                              {b.img ? <img src={b.img} className="w-full h-full object-cover" /> : b.icon}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-black text-gray-800 leading-tight truncate">{b.has ? b.title : b.titleL}</p>
+                              <p className="text-xs text-gray-500 line-clamp-2">{b.has ? b.desc : b.descL}</p>
+                              {b.has && b.date && <span className="text-[9px] text-gray-400">Freigeschaltet am {b.date}</span>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* TAB: EINSTELLUNGEN */}
+              {profileTab === 'einstellungen' && (
+                <div className="flex flex-col gap-3">
+                  <p className="text-xs text-gray-400 text-center break-all">{session.user.email}</p>
+                  <label className="flex items-center justify-between bg-gray-50 p-4 rounded-2xl cursor-pointer hover:bg-gray-100 transition">
+                    <span className="font-bold text-gray-700 text-sm">Nur meine Sticker zeigen</span>
+                    <div className={`w-12 h-6 rounded-full transition relative ${showOnlyMyPins ? 'bg-blue-600' : 'bg-gray-300'}`}>
+                      <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${showOnlyMyPins ? 'left-7' : 'left-1'}`}></div>
+                    </div>
+                    <input type="checkbox" className="hidden" checked={showOnlyMyPins} onChange={e => { setShowOnlyMyPins(e.target.checked); if (e.target.checked) setIsAuthModalOpen(false); }} />
+                  </label>
+                  <button onClick={() => { supabase.auth.signOut(); setIsAuthModalOpen(false); }} className="w-full bg-white border-2 border-red-100 text-red-500 font-bold py-3 rounded-2xl hover:bg-red-50 transition">
+                    Abmelden
                   </button>
                 </div>
               )}
-              <p className="text-xs text-gray-400 mt-2 break-all">{session.user.email}</p>
+
             </div>
-
-            {/* Stats */}
-            <div className="bg-blue-50 rounded-full p-4 mb-4">
-              <p className="text-sm text-blue-800 font-bold mb-1">Deine Statistik</p>
-              <p className="text-3xl font-black text-blue-600">
-                {myPins.length}
-                <span className="text-base font-normal text-blue-800 ml-1">Sticker weltweit</span>
-              </p>
-            </div>
-
-            {/* Avatar & Rahmen Sektion (Vorübergehend deaktiviert) */}
-            {FEATURE_AVATARS && (
-              <div className="bg-gray-50 rounded-full p-5 mb-4 border border-gray-100 text-left">
-                <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-                  <User className="text-purple-500" size={16} /> Mein Avatar
-                </h3>
-                
-                <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
-                  <div className="flex-shrink-0 flex flex-col items-center">
-                    <div className={`avatar-frame frame-${editFrame} relative w-20 h-20 text-4xl shadow-md bg-white rounded-full`}>
-                      <div className="w-full h-full overflow-hidden rounded-full flex items-center justify-center">
-                        {editAvatar === 'default' ? '🦊' : 
-                         editAvatar === 'ghost' ? '👻' : 
-                         editAvatar === 'bat' ? '🦇' : 
-                         editAvatar === 'reindeer' ? '🦌' : 
-                         editAvatar === 'snowman' ? '⛄' : 
-                         editAvatar === 'fire' ? <img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /> : 
-                         editAvatar === 'cyberpunk' ? <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /> : 
-                         editAvatar === 'retro' ? <img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" /> : 
-                         editAvatar === 'pioneer' ? <img src="/badges/avatar_pioneer.jpg" className="w-full h-full object-cover" /> : 
-                         editAvatar === 'admin' ? <img src="/badges/avatar_admin.jpg" className="w-full h-full object-cover" /> : 
-                         editAvatar === 'polar' ? <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /> : '🦊'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex-1 w-full space-y-3">
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Avatar wählen</p>
-                      <div className="flex flex-wrap gap-2">
-                        <button onClick={() => setEditAvatar('default')} className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition overflow-hidden ${editAvatar === 'default' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>🦊</button>
-                        {hasHalloween && <button onClick={() => setEditAvatar('ghost')} className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition overflow-hidden ${editAvatar === 'ghost' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>👻</button>}
-                        {hasHalloween && <button onClick={() => setEditAvatar('bat')} className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition overflow-hidden ${editAvatar === 'bat' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>🦇</button>}
-                        {hasWinter && <button onClick={() => setEditAvatar('reindeer')} className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition overflow-hidden ${editAvatar === 'reindeer' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>🦌</button>}
-                        {hasWinter && <button onClick={() => setEditAvatar('snowman')} className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition overflow-hidden ${editAvatar === 'snowman' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>⛄</button>}
-                        {hasPolarExplorer && <button onClick={() => setEditAvatar('polar')} className={`w-10 h-10 rounded-lg flex items-center justify-center transition overflow-hidden ${editAvatar === 'polar' ? 'ring-2 ring-purple-500' : 'border border-gray-200 hover:opacity-80'}`}><img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /></button>}
-                        {hasUrbanLegend && <button onClick={() => setEditAvatar('cyberpunk')} className={`w-10 h-10 rounded-lg flex items-center justify-center transition overflow-hidden ${editAvatar === 'cyberpunk' ? 'ring-2 ring-purple-500' : 'border border-gray-200 hover:opacity-80'}`}><img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /></button>}
-                        {hasRetroGamer && <button onClick={() => setEditAvatar('retro')} className={`w-10 h-10 rounded-lg flex items-center justify-center transition overflow-hidden ${editAvatar === 'retro' ? 'ring-2 ring-purple-500' : 'border border-gray-200 hover:opacity-80'}`}><img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" /></button>}
-                        {hasMarathon && <button onClick={() => setEditAvatar('fire')} className={`w-10 h-10 rounded-lg flex items-center justify-center transition overflow-hidden ${editAvatar === 'fire' ? 'ring-2 ring-purple-500' : 'border border-gray-200 hover:opacity-80'}`}><img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /></button>}
-                        {hasPioneer && <button onClick={() => setEditAvatar('pioneer')} className={`w-10 h-10 rounded-lg flex items-center justify-center transition overflow-hidden ${editAvatar === 'pioneer' ? 'ring-2 ring-purple-500' : 'border border-gray-200 hover:opacity-80'}`}><img src="/badges/avatar_pioneer.jpg" className="w-full h-full object-cover" /></button>}
-                        {isAdmin && <button onClick={() => setEditAvatar('admin')} className={`w-10 h-10 rounded-lg flex items-center justify-center transition overflow-hidden ${editAvatar === 'admin' ? 'ring-2 ring-purple-500' : 'border border-gray-200 hover:opacity-80 ring-2 ring-yellow-400'}`}><img src="/badges/avatar_admin.jpg" className="w-full h-full object-cover" /></button>}
-                      </div>
-                    </div>
-
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Rahmen wählen</p>
-                      <div className="flex flex-wrap gap-2">
-                        <button onClick={() => setEditFrame('none')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'none' ? 'bg-gray-800 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>Keiner</button>
-                        {(devMode || hasUrbanLegend) && <button onClick={() => setEditFrame('neon')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'neon' ? 'bg-purple-600 text-white shadow-md shadow-purple-500/30' : 'bg-white border border-purple-200 text-purple-600 hover:bg-purple-50'}`}>Neon</button>}
-                        {(devMode || hasPolarExplorer || hasWinter) && <button onClick={() => setEditFrame('frost')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'frost' ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/30' : 'bg-white border border-cyan-200 text-cyan-600 hover:bg-cyan-50'}`}>Frost</button>}
-                        {(devMode || hasMarathon) && <button onClick={() => setEditFrame('fire')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'fire' ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'bg-white border border-orange-200 text-orange-600 hover:bg-orange-50'}`}>Feuer</button>}
-                      </div>
-                    </div>
-
-                    <button 
-                      onClick={() => handleUpdateAvatarAndFrame(editAvatar, editFrame)}
-                      className="mt-1 w-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold py-2 rounded-lg transition"
-                    >
-                      Speichern
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Badges / Achievements */}
-
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm mb-3 ${(devMode || hasEuCenter) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-blue-800 flex items-center justify-center text-3xl ${(devMode || hasEuCenter) ? 'ring-2 ring-blue-500 shadow-md' : 'border-2 border-gray-300'}`}>
-                    🇪🇺
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {(devMode || hasEuCenter) ? 'Mitte der EU ✅' : '??? (Limit: 1 Weltweit)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {(devMode || hasEuCenter) ? <>Du warst der Erste in der Mitte der EU!<br/>{getUnlockDate('eu_center') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('eu_center')}</span>}</> : 
-                      euOwner ? <span className="text-red-500 font-bold">Dieses Abzeichen wurde bereits von einem anderen User ergattert!</span> : 'Klebe als allererster Nutzer in der Mitte der EU.'}
-                    </p>
-                  </div>
-                </div>
-
-            <div className="bg-gray-50 rounded-full p-4 mb-6 text-left">
-              <p className="text-sm text-gray-800 font-bold mb-3 flex items-center justify-between">
-                Trophäen-Schrank
-                {devMode && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full uppercase">DevMode: Alles frei</span>}
-              </p>
-              
-              <div className="flex flex-col gap-3">
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${canUseDark ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${canUseDark ? 'ring-2 ring-indigo-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/night_owl.jpg" alt="Nachteule" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {canUseDark ? 'Nachteule ✅' : '??? (Nachteule)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {canUseDark ? <>Nachts (22-4 Uhr) geklebt. Schaltet Dark Mode frei.<br/>{getUnlockDate('nightOwl') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('nightOwl')}</span>}</> : 'Ein Geheimnis, das im Schutz der Dunkelheit ruht...'}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${canUseVintage ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${canUseVintage ? 'ring-2 ring-amber-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/local_hero.jpg" alt="Lokalmatador" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {canUseVintage ? 'Lokalmatador ✅' : '??? (Lokalmatador)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {canUseVintage ? <>5 Sticker geklebt. Schaltet Explorer-Karte frei.<br/>{getUnlockDate('localHero') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('localHero')}</span>}</> : 'Nur wer Ausdauer beweist, wird die alte Welt sehen...'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${canUseSunrise ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${canUseSunrise ? 'ring-2 ring-orange-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/early_bird.jpg" alt="Frühaufsteher" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {canUseSunrise ? 'Frühaufsteher ✅' : '??? (Frühaufsteher)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {canUseSunrise ? <>Morgens (5-8 Uhr) geklebt. Schaltet Sunrise-Karte frei.<br/>{getUnlockDate('earlyBird') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('earlyBird')}</span>}</> : 'Der frühe Vogel fängt den Wurm...'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${canUseSpooky ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${canUseSpooky ? 'ring-2 ring-purple-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/halloween.jpg" alt="Süßes oder Saures" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {canUseSpooky ? 'Süßes oder Saures ✅' : '??? (Zeitlich begrenzt)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {canUseSpooky ? <>Halloween Event. Schaltet Spooky-Karte frei.<br/>{getUnlockDate('halloween') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('halloween')}</span>}</> : 'Ein Ereignis, das nur einmal im Jahr aus den Schatten tritt...'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${canUseSnow ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${canUseSnow ? 'ring-2 ring-blue-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/winter.jpg" alt="Winterwunder" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {canUseSnow ? 'Winterwunder ✅' : '??? (Zeitlich begrenzt)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {canUseSnow ? <>Weihnachts Event. Schaltet Snow-Karte frei.<br/>{getUnlockDate('winter') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('winter')}</span>}</> : 'Wenn die Tage kürzer werden und die Welt erfrischt...'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${canUseAurora ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${canUseAurora ? 'ring-2 ring-teal-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/polar.jpg" alt="Polarforscher" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {canUseAurora ? 'Polarforscher ✅' : '??? (Polarforscher)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {canUseAurora ? <>Extrem weit im Norden oder Süden geklebt. Schaltet Aurora-Karte frei.<br/>{getUnlockDate('polar') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('polar')}</span>}</> : 'Nur wer der extremen Kälte trotzt...'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${canUseCyberpunk ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${canUseCyberpunk ? 'ring-2 ring-pink-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/urban.jpg" alt="Urban Legend" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {canUseCyberpunk ? 'Urban Legend ✅' : '??? (Großstadt)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {canUseCyberpunk ? <>In einer Weltmetropole geklebt. Schaltet Cyberpunk-Karte frei.<br/>{getUnlockDate('urban') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('urban')}</span>}</> : 'Dort wo das Neonlicht niemals schläft...'}
-                    </p>
-                  </div>
-                </div>
-
-                
-
-                </div>
-                
-                {/* Spezial Abzeichen */}
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 mt-2 flex items-center gap-1">⭐ Spezial & Zeitlich</p>
-                <div className="flex flex-col gap-2 mb-4">
-                <div className={`flex items-center gap-3 p-3 rounded-2xl transition shadow-sm ${(devMode || hasPi) ? 'bg-white border border-gray-100' : 'opacity-40 grayscale bg-gray-50'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${(devMode || hasPi) ? 'ring-2 ring-yellow-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/badge_pi.jpg" alt="PI" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {(devMode || hasPi) ? 'PI (3,14) ✅' : '??? (Mathematiker)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {(devMode || hasPi) ? <>Auf dem 3,14 Längen- oder Breitengrad geklebt.<br/>{getUnlockDate('pi') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('pi')}</span>}</> : 'Nur für wahre Geeks und Nerds...'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasMay4) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${(devMode || hasMay4) ? 'ring-2 ring-green-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/badge_may4.jpg" alt="May the 4th" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {(devMode || hasMay4) ? 'May the force be with you ✅' : '??? (Sci-Fi Fan)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {(devMode || hasMay4) ? <>Am 4. Mai geklebt. Schaltet einen galaktischen Meister frei!<br/>{getUnlockDate('may4') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('may4')}</span>}</> : 'Spüre die Macht an einem ganz bestimmten Tag im Mai...'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasLove) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${(devMode || hasLove) ? 'ring-2 ring-red-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/badge_love.jpg" alt="True Love" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {(devMode || hasLove) ? 'True Love ✅' : '??? (Romantiker)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {(devMode || hasLove) ? <>Am Valentinstag (14. Feb) geklebt.<br/>{getUnlockDate('love') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('love')}</span>}</> : 'Die Liebe liegt in der Luft... und auf der Karte.'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasSilvester) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${(devMode || hasSilvester) ? 'ring-2 ring-blue-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/badge_silvester.jpg" alt="Silvester" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {(devMode || hasSilvester) ? 'Irgendwas mit Silvester? ✅' : '??? (Feuerwerk)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {(devMode || hasSilvester) ? <>An Silvester oder Neujahr geklebt.<br/>{getUnlockDate('silvester') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('silvester')}</span>}</> : 'Lass es knallen zum Jahreswechsel!'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasNz) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${(devMode || hasNz) ? 'ring-2 ring-yellow-500 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/badge_nz.jpg" alt="Neuseeland" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {(devMode || hasNz) ? 'One Geophysalis to rule them all ✅' : '??? (Neuseeland)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {(devMode || hasNz) ? <>In Neuseeland (Mittelerde) geklebt.<br/>{getUnlockDate('nz') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('nz')}</span>}</> : 'Wirf den Ring ins Feuer...'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasUshuaia) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${(devMode || hasUshuaia) ? 'ring-2 ring-teal-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/badge_ushuaia.jpg" alt="Auge des Sturms" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {(devMode || hasUshuaia) ? 'Im Auge des Sturms ✅' : '??? (Feuerland)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {(devMode || hasUshuaia) ? <>Am Südzipfel von Argentinien (Ushuaia) geklebt.<br/>{getUnlockDate('ushuaia') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('ushuaia')}</span>}</> : 'Das Ende der Welt im tiefen Süden...'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasYinYang) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${(devMode || hasYinYang) ? 'ring-2 ring-gray-800 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/badge_yinyang.jpg" alt="Yin & Yang" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {(devMode || hasYinYang) ? 'Yin & Yang ✅' : '??? (Balance)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {(devMode || hasYinYang) ? <>Perfekte geografische Balance: Nord- und Südhalbkugel vereint.<br/>{getUnlockDate('yinyang') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('yinyang')}</span>}</> : 'Finde das Gleichgewicht zwischen Norden und Süden...'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasGipfeli) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${(devMode || hasGipfeli) ? 'ring-2 ring-orange-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/badge_gipfeli.jpg" alt="Gipfeli" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {(devMode || hasGipfeli) ? 'Gipfeli ✅' : '??? (Alpinist)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {(devMode || hasGipfeli) ? <>Am Gipfel geklebt! Zeit für ein Croissant.<br/>{getUnlockDate('gipfeli') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('gipfeli')}</span>}</> : 'Erklimme einen der höchsten Gipfel...'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasVivaldi) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${(devMode || hasVivaldi) ? 'ring-2 ring-pink-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/badge_vivaldi.jpg" alt="4 Jahreszeiten" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {(devMode || hasVivaldi) ? 'Die 4 Jahreszeiten ✅' : '??? (Vivaldi)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {(devMode || hasVivaldi) ? <>In Frühling, Sommer, Herbst und Winter geklebt.<br/>{getUnlockDate('vivaldi') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('vivaldi')}</span>}</> : 'Erlebe den Kreislauf der Natur...'}
-                    </p>
-                  </div>
-                </div>
-
-                </div>
-
-                {/* Abenteuer */}
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 mt-2 flex items-center gap-1">🌍 Abenteuer & Reisen</p>
-                <div className="flex flex-col gap-2 mb-4">
-                <div className={`flex items-center gap-3 p-3 rounded-2xl transition shadow-sm ${(devMode || hasTier5) ? 'bg-white border border-gray-100' : 'opacity-40 grayscale bg-gray-50'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 bg-yellow-700 flex items-center justify-center text-3xl ${(devMode || hasTier5) ? 'ring-2 ring-yellow-800 shadow-md' : 'border-2 border-gray-300'}`}>
-                    🥉
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {(devMode || hasTier5) ? 'Bronze Sammler (5 Pins) ✅' : '??? (Sammler)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {(devMode || hasTier5) ? <>Aller Anfang ist gemacht.<br/>{getUnlockDate('tier5') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('tier5')}</span>}</> : 'Klebe 5 Sticker, um Bronze zu erhalten.'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasTier10) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 bg-gray-300 flex items-center justify-center text-3xl ${(devMode || hasTier10) ? 'ring-2 ring-gray-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    🥈
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {(devMode || hasTier10) ? 'Silber Sammler (10 Pins) ✅' : '??? (Sammler)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {(devMode || hasTier10) ? <>Eine stolze Sammlung.<br/>{getUnlockDate('tier10') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('tier10')}</span>}</> : 'Klebe 10 Sticker, um Silber zu erhalten.'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasTier50) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 bg-yellow-400 flex items-center justify-center text-3xl ${(devMode || hasTier50) ? 'ring-2 ring-yellow-500 shadow-md' : 'border-2 border-gray-300'}`}>
-                    🥇
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {(devMode || hasTier50) ? 'Gold Sammler (50 Pins) ✅' : '??? (Sammler)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {(devMode || hasTier50) ? <>Eine beachtliche Leistung!<br/>{getUnlockDate('tier50') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('tier50')}</span>}</> : 'Klebe 50 Sticker, um Gold zu erhalten.'}
-                    </p>
-                  </div>
-                </div>
-<div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${devMode || hasWorldTraveler ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${devMode || hasWorldTraveler ? 'ring-2 ring-emerald-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/world_traveler.jpg" alt="Weltenbummler" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {(devMode || hasWorldTraveler) ? 'Weltenbummler ✅' : '??? (Weltenbummler)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {(devMode || hasWorldTraveler) ? <>In mind. 3 Ländern geklebt. (WIP)<br/>{getUnlockDate('worldTraveler') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('worldTraveler')}</span>}</> : 'Die Welt ist groß, bereise sie...'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${hasMarathon ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${hasMarathon ? 'ring-2 ring-orange-500 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/streak.jpg" alt="Feuer & Flamme" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {hasMarathon ? 'Feuer & Flamme ✅' : '??? (Marathon)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {hasMarathon ? <>An 3 aufeinanderfolgenden Tagen geklebt. Du brennst!<br/>{getUnlockDate('marathon') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('marathon')}</span>}</> : 'Konstanz ist der Schlüssel zum wahren Feuer...'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${hasPioneer ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${hasPioneer ? 'ring-2 ring-yellow-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/badge_pioneer.jpg" alt="Pionier" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {hasPioneer ? `Pionier der ersten Stunde (No. ${myPioneerRank}/15) 🌟` : 'Pionier der ersten Stunde (Limit: 15)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {hasPioneer ? <>Du gehörst zu den ersten 15 Nutzern weltweit! Danke für deine Unterstützung.<br/>{getUnlockDate('pioneer') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('pioneer')}</span>}</> : 'Streng limitiert auf die exakt ersten 15 Nutzer weltweit.'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${hasRetroGamer ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${hasRetroGamer ? 'ring-2 ring-green-500 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/retro.jpg" alt="Pixel Pioneer" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {hasRetroGamer ? 'Pixel Pioneer 👾' : '??? (Retro Gamer)'}
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {hasRetroGamer ? '10 Sticker geklebt. 8-Bit Karte freigeschaltet!' : 'Klebe 10 Sticker, um in die Vergangenheit zu reisen...'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Toggle My Pins */}
-            <label className="flex items-center justify-between bg-gray-50 p-4 rounded-full cursor-pointer hover:bg-gray-100 transition mb-6">
-              <span className="font-bold text-gray-700 text-sm">Nur meine Sticker zeigen</span>
-              <div className={`w-12 h-6 rounded-full transition relative ${showOnlyMyPins ? 'bg-blue-600' : 'bg-gray-300'}`}>
-                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${showOnlyMyPins ? 'left-7' : 'left-1'}`}></div>
-              </div>
-              <input type="checkbox" className="hidden" checked={showOnlyMyPins} onChange={e => {
-                setShowOnlyMyPins(e.target.checked);
-                if (e.target.checked) setIsAuthModalOpen(false);
-              }} />
-            </label>
-            
-            <button 
-              onClick={() => {
-                supabase.auth.signOut();
-                setIsAuthModalOpen(false);
-              }}
-              className="w-full bg-white border-2 border-red-100 text-red-500 font-bold py-3 rounded-full hover:bg-red-50 transition"
-            >
-              Abmelden
-            </button>
           </div>
         </div>
       )}
