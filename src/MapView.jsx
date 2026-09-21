@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMapEvents, useMap, Rectangle } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import imageCompression from 'browser-image-compression';
-import { X, Upload, MapPin, Check, Info, LocateFixed, Layers, Share2, Dices, Compass, Navigation2, User, LogIn, Mail, Sparkles, Shield, CheckCircle, Trash2, Lock, Moon, Award, Globe, Footprints, Trophy } from 'lucide-react';
+import { X, Upload, MapPin, Check, Info, LocateFixed, Layers, Share2, Dices, Compass, Navigation2, User, LogIn, Mail, Sparkles, Shield, CheckCircle, Trash2, Lock, Moon, Award, Globe, Footprints, Trophy , Share, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import L from 'leaflet';
 import { supabase } from './supabase';
