@@ -272,6 +272,12 @@ export default function MapView() {
     if (badgeName === 'earlyBird') matching = sorted.filter(p => { const h = new Date(p.created_at).getHours(); return h >= 5 && h <= 8; });
     if (badgeName === 'halloween') matching = sorted.filter(p => { const m = new Date(p.created_at).getMonth(); const d = new Date(p.created_at).getDate(); return (m === 9 && d >= 25) || (m === 10 && d <= 5); });
     if (badgeName === 'winter') matching = sorted.filter(p => new Date(p.created_at).getMonth() === 11);
+    if (badgeName === 'pi') matching = sorted.filter(p => (Math.abs(p.lat) >= 3.14 && Math.abs(p.lat) < 3.15) || (Math.abs(p.lng) >= 3.14 && Math.abs(p.lng) < 3.15));
+    if (badgeName === 'may4') matching = sorted.filter(p => { const d = new Date(p.created_at); return d.getMonth() === 4 && d.getDate() === 4; });
+    if (badgeName === 'love') matching = sorted.filter(p => { const d = new Date(p.created_at); return d.getMonth() === 1 && d.getDate() === 14; });
+    if (badgeName === 'silvester') matching = sorted.filter(p => { const d = new Date(p.created_at); const m = d.getMonth(); const day = d.getDate(); return (m === 11 && day === 31) || (m === 0 && day === 1); });
+    if (badgeName === 'nz') matching = sorted.filter(p => p.lat >= -47.5 && p.lat <= -34 && p.lng >= 165 && p.lng <= 179);
+    if (badgeName === 'ushuaia') matching = sorted.filter(p => p.lat >= -56 && p.lat <= -53 && p.lng >= -69 && p.lng <= -66);
     
     if (matching.length > 0) return new Date(matching[0].created_at).toLocaleDateString('de-DE');
     return null;
@@ -335,6 +341,13 @@ export default function MapView() {
   });
 
   const hasWinter = myPins.some(p => new Date(p.created_at).getMonth() === 11); // Dez
+  
+  const hasPi = myPins.some(p => (Math.abs(p.lat) >= 3.14 && Math.abs(p.lat) < 3.15) || (Math.abs(p.lng) >= 3.14 && Math.abs(p.lng) < 3.15));
+  const hasMay4 = myPins.some(p => { const d = new Date(p.created_at); return d.getMonth() === 4 && d.getDate() === 4; });
+  const hasLove = myPins.some(p => { const d = new Date(p.created_at); return d.getMonth() === 1 && d.getDate() === 14; });
+  const hasSilvester = myPins.some(p => { const d = new Date(p.created_at); const m = d.getMonth(); const day = d.getDate(); return (m === 11 && day === 31) || (m === 0 && day === 1); });
+  const hasNz = myPins.some(p => p.lat >= -47.5 && p.lat <= -34 && p.lng >= 165 && p.lng <= 179);
+  const hasUshuaia = myPins.some(p => p.lat >= -56 && p.lat <= -53 && p.lng >= -69 && p.lng <= -66);
   
   const uniqueCountries = new Set(
     myPins.map(p => {
@@ -1526,7 +1539,92 @@ export default function MapView() {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${devMode || hasWorldTraveler ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                
+
+                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${(devMode || hasPi) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${(devMode || hasPi) ? 'ring-2 ring-yellow-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                    <img src="/badges/badge_pi.jpg" alt="PI" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-gray-800">
+                      {(devMode || hasPi) ? 'PI (3,14) ✅' : '??? (Mathematiker)'}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {(devMode || hasPi) ? <>Auf dem 3,14 Längen- oder Breitengrad geklebt.<br/>{getUnlockDate('pi') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('pi')}</span>}</> : 'Nur für wahre Geeks und Nerds...'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${(devMode || hasMay4) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${(devMode || hasMay4) ? 'ring-2 ring-green-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                    <img src="/badges/badge_may4.jpg" alt="May the 4th" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-gray-800">
+                      {(devMode || hasMay4) ? 'May the 4th be with you ✅' : '??? (Sci-Fi Fan)'}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {(devMode || hasMay4) ? <>Am 4. Mai geklebt. Schaltet einen galaktischen Meister frei!<br/>{getUnlockDate('may4') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('may4')}</span>}</> : 'Spüre die Macht an einem ganz bestimmten Tag im Mai...'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${(devMode || hasLove) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${(devMode || hasLove) ? 'ring-2 ring-red-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                    <img src="/badges/badge_love.jpg" alt="True Love" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-gray-800">
+                      {(devMode || hasLove) ? 'True Love ✅' : '??? (Romantiker)'}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {(devMode || hasLove) ? <>Am Valentinstag (14. Feb) geklebt.<br/>{getUnlockDate('love') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('love')}</span>}</> : 'Die Liebe liegt in der Luft... und auf der Karte.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${(devMode || hasSilvester) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${(devMode || hasSilvester) ? 'ring-2 ring-blue-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                    <img src="/badges/badge_silvester.jpg" alt="Silvester" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-gray-800">
+                      {(devMode || hasSilvester) ? 'Frohes Neues! ✅' : '??? (Feuerwerk)'}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {(devMode || hasSilvester) ? <>An Silvester oder Neujahr geklebt.<br/>{getUnlockDate('silvester') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('silvester')}</span>}</> : 'Lass es knallen zum Jahreswechsel!'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${(devMode || hasNz) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${(devMode || hasNz) ? 'ring-2 ring-yellow-500 shadow-md' : 'border-2 border-gray-300'}`}>
+                    <img src="/badges/badge_nz.jpg" alt="Neuseeland" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-gray-800">
+                      {(devMode || hasNz) ? 'One Geophysalis to rule them all ✅' : '??? (Neuseeland)'}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {(devMode || hasNz) ? <>In Neuseeland (Mittelerde) geklebt.<br/>{getUnlockDate('nz') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('nz')}</span>}</> : 'Wirf den Ring ins Feuer...'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${(devMode || hasUshuaia) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${(devMode || hasUshuaia) ? 'ring-2 ring-teal-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                    <img src="/badges/badge_ushuaia.jpg" alt="Auge des Sturms" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-gray-800">
+                      {(devMode || hasUshuaia) ? 'Im Auge des Sturms ✅' : '??? (Feuerland)'}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {(devMode || hasUshuaia) ? <>Am Südzipfel von Argentinien (Ushuaia) geklebt.<br/>{getUnlockDate('ushuaia') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('ushuaia')}</span>}</> : 'Das Ende der Welt im tiefen Süden...'}
+                    </p>
+                  </div>
+                </div>
+<div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${devMode || hasWorldTraveler ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
                   <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${devMode || hasWorldTraveler ? 'ring-2 ring-emerald-400 shadow-md' : 'border-2 border-gray-300'}`}>
                     <div className="w-full h-full bg-emerald-100 flex items-center justify-center text-3xl">✈️</div>
                   </div>
