@@ -693,17 +693,6 @@ export default function MapView() {
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden overscroll-none">
       
-      {/* SVG Filter für 8-Bit Effekt */}
-      <svg width="0" height="0" className="absolute pointer-events-none">
-        <filter id="retro-8bit">
-          <feComponentTransfer>
-            <feFuncR type="discrete" tableValues="0 0.3 0.6 1"/>
-            <feFuncG type="discrete" tableValues="0 0.3 0.6 1"/>
-            <feFuncB type="discrete" tableValues="0 0.3 0.6 1"/>
-          </feComponentTransfer>
-        </filter>
-      </svg>
-
       {/* Top Left Header & Counter (Optimized for Mobile) */}
       <div className="absolute top-4 left-4 z-[1000] pointer-events-none flex flex-col gap-2 sm:gap-3">
         <div className="bg-white/95 backdrop-blur-md px-4 py-2 sm:px-6 sm:py-3 rounded-2xl sm:rounded-3xl shadow-xl border border-gray-100 flex items-center gap-2 sm:gap-3 pointer-events-auto transition-all">
@@ -1336,7 +1325,7 @@ export default function MapView() {
                 <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
                   <div className="flex-shrink-0 flex flex-col items-center">
                     <div className={`avatar-frame frame-${editFrame} w-20 h-20 text-4xl shadow-md bg-white overflow-hidden`}>
-                      {editAvatar === 'default' ? '🧑‍🚀' : 
+                      {editAvatar === 'default' ? '🦊' : 
                        editAvatar === 'ghost' ? '👻' : 
                        editAvatar === 'bat' ? '🦇' : 
                        editAvatar === 'reindeer' ? '🦌' : 
@@ -1344,7 +1333,7 @@ export default function MapView() {
                        editAvatar === 'fire' ? <img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /> : 
                        editAvatar === 'cyberpunk' ? <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /> : 
                        editAvatar === 'retro' ? <img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" /> : 
-                       editAvatar === 'polar' ? <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /> : '🧑‍🚀'}
+                       editAvatar === 'polar' ? <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /> : '🦊'}
                     </div>
                   </div>
 
@@ -1352,7 +1341,7 @@ export default function MapView() {
                     <div>
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Avatar wählen</p>
                       <div className="flex flex-wrap gap-2">
-                        <button onClick={() => setEditAvatar('default')} className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition overflow-hidden ${editAvatar === 'default' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>🧑‍🚀</button>
+                        <button onClick={() => setEditAvatar('default')} className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition overflow-hidden ${editAvatar === 'default' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>🦊</button>
                         {hasHalloween && <button onClick={() => setEditAvatar('ghost')} className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition overflow-hidden ${editAvatar === 'ghost' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>👻</button>}
                         {hasHalloween && <button onClick={() => setEditAvatar('bat')} className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition overflow-hidden ${editAvatar === 'bat' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>🦇</button>}
                         {hasWinter && <button onClick={() => setEditAvatar('reindeer')} className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition overflow-hidden ${editAvatar === 'reindeer' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>🦌</button>}
@@ -1625,7 +1614,7 @@ export default function MapView() {
                     else if (avatar === 'cyberpunk') avatarContent = <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" />;
                     else if (avatar === 'retro') avatarContent = <img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" />;
                     else if (avatar === 'polar') avatarContent = <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" />;
-                    else avatarContent = '🧑‍🚀';
+                    else avatarContent = '🦊';
 
                     return (
                       <div key={u.userId} className={`flex items-center justify-between p-3 rounded-2xl border ${i === 0 ? 'bg-yellow-50 border-yellow-200' : i === 1 ? 'bg-gray-50 border-gray-200' : i === 2 ? 'bg-orange-50 border-orange-200' : 'bg-white border-gray-100 shadow-sm'}`}>

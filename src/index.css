@@ -215,8 +215,9 @@ body {
 }
 
 .map-8bit {
-  filter: url(#retro-8bit) contrast(1.2) saturate(1.5);
+  filter: contrast(1.5) saturate(2) sepia(0.4) hue-rotate(-15deg);
   image-rendering: pixelated;
+  transform: scale(1.01);
 }
 
 /* Aurora Base Filter */
