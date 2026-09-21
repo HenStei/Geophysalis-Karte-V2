@@ -304,7 +304,7 @@ export default function MapView() {
       }, 'image/png', 1.0);
     } catch (e) {
       console.error(e);
-      alert('Fehler beim Erstellen des Bildes.');
+      alert('Fehler beim Erstellen des Bildes: ' + e.message);
     } finally {
       setIsSharing(false);
     }
@@ -2030,7 +2030,7 @@ const hasNightOwl = myPins.some(p => {
              hasGlobetrotter && { icon: '🌍', bg: 'bg-indigo-500' },
              hasWorldTraveler && { icon: '🗺️', bg: 'bg-emerald-500' },
              hasTier50 && { icon: '🥇', bg: 'bg-yellow-400' },
-             hasBorderCrosser && { icon: '🛂', bg: 'bg-orange-600' },
+             hasBorderCrosser && { img: '/badges/badge_border.jpg' },
              hasMarathon && { icon: '🔥', bg: 'bg-orange-500' },
              hasRetroGamer && { icon: '👾', bg: 'bg-green-500' }
            ].filter(Boolean).slice(0, 5).map((b, i) => (
