@@ -1992,66 +1992,67 @@ const hasNightOwl = myPins.some(p => {
         </button>
       </div>
 
-      {/* Hidden Share Card for html2canvas */}
-      <div 
-        ref={shareCardRef}
-        className="fixed top-[-9999px] left-[-9999px] w-[1080px] h-[1080px] bg-gradient-to-br from-indigo-950 via-slate-900 to-black text-white flex flex-col items-center justify-center p-16 overflow-hidden z-[-1]"
-        style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
-      >
-        <div className="absolute top-12 left-12 w-24 h-24 text-8xl opacity-20">🌍</div>
-        <div className="absolute bottom-12 right-12 w-24 h-24 text-8xl opacity-20">📍</div>
+            {/* Hidden Share Card Wrapper */}
+      <div style={{ position: 'absolute', top: 0, left: 0, width: 0, height: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+        <div 
+          ref={shareCardRef}
+          style={{ 
+            width: '1080px', height: '1080px', 
+            backgroundColor: '#0f172a', color: 'white', display: 'flex', flexDirection: 'column', 
+            alignItems: 'center', justifyContent: 'center', padding: '64px', fontFamily: 'system-ui, sans-serif' 
+          }}
+        >
+          <h1 style={{ fontSize: '72px', fontWeight: '900', marginBottom: '48px', color: '#60a5fa' }}>GEOPHYSALIS EXPLORER</h1>
+          
+          <div style={{ marginBottom: '48px', position: 'relative' }}>
+            <img 
+              src={session?.user?.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${session?.user?.email}&background=random`} 
+              crossOrigin="anonymous" 
+              style={{ width: '256px', height: '256px', borderRadius: '50%', border: '12px solid rgba(255,255,255,0.2)' }}
+            />
+            {hasPioneer && <span style={{ position: 'absolute', bottom: '-10px', right: '-10px', backgroundColor: '#facc15', color: '#0f172a', fontSize: '30px', fontWeight: '900', padding: '8px 24px', borderRadius: '99px', border: '4px solid #0f172a' }}>No.{myPioneerRank}</span>}
+          </div>
+          
+          <h2 style={{ fontSize: '60px', fontWeight: 'bold', marginBottom: '80px' }}>{profile?.nickname || 'Neuankömmling'}</h2>
 
-        <h1 className="text-[72px] font-black mb-16 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 z-10 relative drop-shadow-md">GEOPHYSALIS EXPLORER</h1>
-        
-        <div className="relative z-10 mb-12">
-          <img 
-            src={session?.user?.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${session?.user?.email}&background=random`} 
-            crossOrigin="anonymous" 
-            className="w-64 h-64 rounded-full border-[12px] border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] object-cover" 
-          />
-          {hasPioneer && <span className="absolute -bottom-6 -right-6 bg-yellow-400 text-slate-900 text-3xl font-black px-6 py-2 rounded-full shadow-2xl border-4 border-slate-900">No.{myPioneerRank}</span>}
-        </div>
-        
-        <h2 className="text-6xl font-bold mb-20 z-10 relative drop-shadow-xl">{profile?.nickname || 'Neuankömmling'}</h2>
-
-        <div className="flex gap-12 bg-white/5 p-12 rounded-[40px] w-full max-w-4xl justify-around mb-20 border border-white/10 z-10 relative shadow-2xl backdrop-blur-sm">
-           <div className="text-center flex-1">
-              <p className="text-[80px] font-black text-yellow-400 mb-2 drop-shadow-lg leading-none">{myPins.length}</p>
-              <p className="text-3xl uppercase tracking-widest text-gray-300 font-bold opacity-80">Sticker</p>
-           </div>
-           <div className="w-[2px] bg-white/10"></div>
-           <div className="text-center flex-1">
-              <p className="text-[80px] font-black text-cyan-400 mb-2 drop-shadow-lg leading-none">{uniqueCountries.size}</p>
-              <p className="text-3xl uppercase tracking-widest text-gray-300 font-bold opacity-80">Länder</p>
-           </div>
-           <div className="w-[2px] bg-white/10"></div>
-           <div className="text-center flex-1">
-              <p className="text-[80px] font-black text-emerald-400 mb-2 drop-shadow-lg leading-none">{totalDistanceKm > 999 ? (totalDistanceKm/1000).toFixed(1)+'k' : totalDistanceKm}</p>
-              <p className="text-3xl uppercase tracking-widest text-gray-300 font-bold opacity-80">Kilometer</p>
-           </div>
-        </div>
-
-        <div className="flex gap-8 items-center justify-center z-10 relative">
-           {[
-             hasPioneer && { icon: '🌟', bg: 'bg-yellow-500' },
-             hasGlobetrotter && { icon: '🌍', bg: 'bg-indigo-500' },
-             hasWorldTraveler && { icon: '🗺️', bg: 'bg-emerald-500' },
-             hasTier50 && { icon: '🥇', bg: 'bg-yellow-400' },
-             hasBorderCrosser && { img: '/badges/badge_border.jpg' },
-             hasMarathon && { icon: '🔥', bg: 'bg-orange-500' },
-             hasRetroGamer && { icon: '👾', bg: 'bg-green-500' }
-           ].filter(Boolean).slice(0, 5).map((b, i) => (
-             <div key={i} className={`w-24 h-24 rounded-3xl flex items-center justify-center text-5xl shadow-2xl ${b.bg} border-4 border-white/20`}>
-                {b.icon}
+          <div style={{ display: 'flex', gap: '48px', backgroundColor: 'rgba(255,255,255,0.05)', padding: '48px', borderRadius: '40px', width: '100%', maxWidth: '900px', justifyContent: 'space-around', marginBottom: '80px', border: '2px solid rgba(255,255,255,0.1)' }}>
+             <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: '80px', fontWeight: '900', color: '#facc15', margin: '0 0 10px 0' }}>{myPins.length}</p>
+                <p style={{ fontSize: '30px', textTransform: 'uppercase', color: '#cbd5e1', fontWeight: 'bold', margin: 0 }}>Sticker</p>
              </div>
-           ))}
-        </div>
+             <div style={{ width: '2px', backgroundColor: 'rgba(255,255,255,0.1)' }}></div>
+             <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: '80px', fontWeight: '900', color: '#22d3ee', margin: '0 0 10px 0' }}>{uniqueCountries.size}</p>
+                <p style={{ fontSize: '30px', textTransform: 'uppercase', color: '#cbd5e1', fontWeight: 'bold', margin: 0 }}>Länder</p>
+             </div>
+             <div style={{ width: '2px', backgroundColor: 'rgba(255,255,255,0.1)' }}></div>
+             <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: '80px', fontWeight: '900', color: '#34d399', margin: '0 0 10px 0' }}>{totalDistanceKm > 999 ? (totalDistanceKm/1000).toFixed(1)+'k' : totalDistanceKm}</p>
+                <p style={{ fontSize: '30px', textTransform: 'uppercase', color: '#cbd5e1', fontWeight: 'bold', margin: 0 }}>Kilometer</p>
+             </div>
+          </div>
 
-        <div className="absolute bottom-12 flex items-center justify-center z-10 text-gray-500 font-bold text-3xl tracking-widest uppercase">
-           DEINE KARTE. DEIN ABENTEUER.
+          <div style={{ display: 'flex', gap: '32px', alignItems: 'center', justifyContent: 'center' }}>
+             {[
+               hasPioneer && { icon: '🌟', bg: '#eab308' },
+               hasGlobetrotter && { img: '/badges/badge_globetrotter.jpg' },
+               hasBorderCrosser && { img: '/badges/badge_border.jpg' },
+               hasWorldTraveler && { img: '/badges/world_traveler.jpg' },
+               hasTier100 ? { img: '/badges/badge_platinum.jpg' } : hasTier50 ? { img: '/badges/badge_gold.jpg' } : hasTier10 ? { img: '/badges/badge_silver.jpg' } : hasTier5 ? { img: '/badges/badge_bronze.jpg' } : null,
+               hasMarathon && { img: '/badges/streak.jpg' },
+               hasRetroGamer && { img: '/badges/retro.jpg' }
+             ].filter(Boolean).slice(0, 5).map((b, i) => (
+               <div key={i} style={{ width: '120px', height: '120px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '60px', backgroundColor: b.bg || '#334155', border: '4px solid rgba(255,255,255,0.2)', overflow: 'hidden' }}>
+                  {b.img ? <img src={b.img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : b.icon}
+               </div>
+             ))}
+          </div>
+
+          <div style={{ position: 'absolute', bottom: '40px', color: '#64748b', fontWeight: 'bold', fontSize: '30px', letterSpacing: '4px' }}>
+             DEINE KARTE. DEIN ABENTEUER.
+          </div>
         </div>
       </div>
-
     </div>
   );
 }
