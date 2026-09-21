@@ -888,6 +888,10 @@ const hasNightOwl = myPins.some(p => {
   };
 
   const handleStartNewPin = () => {
+    if (!session) {
+      setIsAuthModalOpen(true);
+      return;
+    }
     if (map) {
       const center = map.getCenter();
       setDraftPin([center.lat, center.lng]);
@@ -916,6 +920,10 @@ const hasNightOwl = myPins.some(p => {
   };
 
   const handleLiveGPS = () => {
+    if (!session) {
+      setIsAuthModalOpen(true);
+      return;
+    }
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition((pos) => {
         const lat = pos.coords.latitude;
@@ -933,6 +941,10 @@ const hasNightOwl = myPins.some(p => {
   };
 
   const handleImageSelection = async (e) => {
+    if (!session) {
+      setIsAuthModalOpen(true);
+      return;
+    }
     const file = e.target.files[0];
     if (!file) return;
 
