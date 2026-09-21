@@ -2034,7 +2034,7 @@ const hasNightOwl = myPins.some(p => {
 
           <div style={{ display: 'flex', gap: '32px', alignItems: 'center', justifyContent: 'center' }}>
              {[
-               hasPioneer && { icon: '🌟', bg: '#eab308' },
+               hasPioneer && { img: '/badges/badge_pioneer.jpg' },
                hasGlobetrotter && { img: '/badges/badge_globetrotter.jpg' },
                hasBorderCrosser && { img: '/badges/badge_border.jpg' },
                hasWorldTraveler && { img: '/badges/world_traveler.jpg' },
