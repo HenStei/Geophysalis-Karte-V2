@@ -3,6 +3,8 @@ import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMapEvents, useM
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import imageCompression from 'browser-image-compression';
 import { X, Upload, MapPin, Check, Info, LocateFixed, Layers, Share2, Dices, Compass, Navigation2, User, LogIn, Mail, Sparkles, Shield, CheckCircle, Trash2, Lock, Moon, Award, Globe, Footprints, Trophy , Share, Loader2 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import confetti from 'canvas-confetti';
 import { Link } from 'react-router-dom';
 import L from 'leaflet';
 import { supabase } from './supabase';
@@ -1718,7 +1720,10 @@ const hasNightOwl = myPins.some(p => {
                       { has: devMode || hasSilvester, img: '/badges/badge_silvester.jpg', title: 'Silvester 🎆', titleL: '??? (Feuerwerk)', desc: 'An Silvester oder Neujahr geklebt.', descL: 'Lass es knallen zum Jahreswechsel!', date: getUnlockDate('silvester') },
                     ]},
                     { label: 'Abenteuer & Reisen', color: 'ring-emerald-400', items: [
-                      { has: devMode || hasTier5, icon: '🏉', bg: 'bg-yellow-700', title: 'Bronze Sammler (5 Pins) ✅', titleL: '??? (Sammler)', desc: 'Aller Anfang ist gemacht.', descL: 'Klebe 5 Sticker.', date: getUnlockDate('tier5') },
+                      { has: devMode || hasBorderCrosser, img: '/badges/badge_border.jpg', title: 'Grenzgänger ✅', titleL: '??? (Grenzenlos)', desc: 'Zwei Sticker <10km voneinander, aber in versch. Ländern.', descL: 'Überwinde die Grenzen dieser Welt...', date: null },
+                      { has: devMode || hasGlobetrotter, img: '/badges/badge_globetrotter.jpg', title: 'Globetrotter ✅', titleL: '??? (Weltenbummler)', desc: 'Sticker auf allen 6 Kontinenten.', descL: 'Bereise die gesamte Welt...', date: null },
+                      { has: devMode || hasTier100, icon: '💎', bg: 'bg-cyan-300', title: 'Platin Sammler (100 Pins) ✅', titleL: '??? (Sammler)', desc: 'Du bist eine Legende!', descL: 'Klebe 100 Sticker.', date: null },
+                      { has: devMode || hasTier5, icon: '🥉', bg: 'bg-yellow-700', title: 'Bronze Sammler (5 Pins) ✅', titleL: '??? (Sammler)', desc: 'Aller Anfang ist gemacht.', descL: 'Klebe 5 Sticker.', date: getUnlockDate('tier5') },
                       { has: devMode || hasTier10, icon: '🥈', bg: 'bg-gray-300', title: 'Silber Sammler (10 Pins) ✅', titleL: '??? (Sammler)', desc: 'Eine stolze Sammlung.', descL: 'Klebe 10 Sticker.', date: getUnlockDate('tier10') },
                       { has: devMode || hasTier50, icon: '🥇', bg: 'bg-yellow-400', title: 'Gold Sammler (50 Pins) ✅', titleL: '??? (Sammler)', desc: 'Eine beachtliche Leistung!', descL: 'Klebe 50 Sticker.', date: getUnlockDate('tier50') },
                       { has: devMode || hasWorldTraveler, img: '/badges/world_traveler.jpg', title: 'Weltenbummler ✅', titleL: '??? (Weltenbummler)', desc: 'In mind. 3 Ländern geklebt.', descL: 'Die Welt ist groß, bereise sie...', date: getUnlockDate('worldTraveler') },
