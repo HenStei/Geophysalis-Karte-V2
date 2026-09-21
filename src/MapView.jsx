@@ -243,8 +243,8 @@ export default function MapView() {
   const [editAvatar, setEditAvatar] = useState('default');
   const [editFrame, setEditFrame] = useState('none');
 
-  // Feature Toggles (Für Präsentation deaktiviert)
-  const FEATURE_AVATARS = false;
+  // Feature Toggles
+  const FEATURE_AVATARS = true;
 
   useEffect(() => {
     if (profile) {
@@ -849,7 +849,7 @@ export default function MapView() {
           </div>
         )}
         
-        {!draftPin && (
+        {profile?.is_admin && !draftPin && (
           <Link to="/admin" className="mt-1 sm:mt-2 bg-white/95 backdrop-blur-md px-4 py-2 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-xs sm:text-sm font-bold text-gray-400 hover:text-gray-700 hover:bg-gray-50 pointer-events-auto transition self-end">
             Admin
           </Link>
@@ -1315,8 +1315,15 @@ export default function MapView() {
                 
                 <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
                   <div className="flex-shrink-0 flex flex-col items-center">
-                    <div className={`avatar-frame frame-${editFrame} w-20 h-20 text-4xl shadow-md bg-white`}>
-                      {editAvatar === 'default' ? '🧑‍🚀' : editAvatar === 'ghost' ? '👻' : editAvatar === 'bat' ? '🦇' : editAvatar === 'reindeer' ? '🦌' : editAvatar === 'snowman' ? '⛄' : editAvatar === 'fire' ? '🔥' : '🧑‍🚀'}
+                    <div className={`avatar-frame frame-${editFrame} w-20 h-20 text-4xl shadow-md bg-white overflow-hidden`}>
+                      {editAvatar === 'default' ? '🧑‍🚀' : 
+                       editAvatar === 'ghost' ? '👻' : 
+                       editAvatar === 'bat' ? '🦇' : 
+                       editAvatar === 'reindeer' ? '🦌' : 
+                       editAvatar === 'snowman' ? '⛄' : 
+                       editAvatar === 'fire' ? <img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /> : 
+                       editAvatar === 'cyberpunk' ? <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /> : 
+                       editAvatar === 'polar' ? <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /> : '🧑‍🚀'}
                     </div>
                   </div>
 
@@ -1324,12 +1331,14 @@ export default function MapView() {
                     <div>
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Avatar wählen</p>
                       <div className="flex flex-wrap gap-2">
-                        <button onClick={() => setEditAvatar('default')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'default' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>🧑‍🚀</button>
-                        {hasHalloween && <button onClick={() => setEditAvatar('ghost')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'ghost' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>👻</button>}
-                        {hasHalloween && <button onClick={() => setEditAvatar('bat')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'bat' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>🦇</button>}
-                        {hasWinter && <button onClick={() => setEditAvatar('reindeer')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'reindeer' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>🦌</button>}
-                        {hasWinter && <button onClick={() => setEditAvatar('snowman')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'snowman' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>⛄</button>}
-                        {hasMarathon && <button onClick={() => setEditAvatar('fire')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'fire' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>🔥</button>}
+                        <button onClick={() => setEditAvatar('default')} className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition overflow-hidden ${editAvatar === 'default' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>🧑‍🚀</button>
+                        {hasHalloween && <button onClick={() => setEditAvatar('ghost')} className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition overflow-hidden ${editAvatar === 'ghost' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>👻</button>}
+                        {hasHalloween && <button onClick={() => setEditAvatar('bat')} className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition overflow-hidden ${editAvatar === 'bat' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>🦇</button>}
+                        {hasWinter && <button onClick={() => setEditAvatar('reindeer')} className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition overflow-hidden ${editAvatar === 'reindeer' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>🦌</button>}
+                        {hasWinter && <button onClick={() => setEditAvatar('snowman')} className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition overflow-hidden ${editAvatar === 'snowman' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200 hover:bg-gray-50'}`}>⛄</button>}
+                        {hasPolarExplorer && <button onClick={() => setEditAvatar('polar')} className={`w-10 h-10 rounded-lg flex items-center justify-center transition overflow-hidden ${editAvatar === 'polar' ? 'ring-2 ring-purple-500' : 'border border-gray-200 hover:opacity-80'}`}><img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /></button>}
+                        {hasUrbanLegend && <button onClick={() => setEditAvatar('cyberpunk')} className={`w-10 h-10 rounded-lg flex items-center justify-center transition overflow-hidden ${editAvatar === 'cyberpunk' ? 'ring-2 ring-purple-500' : 'border border-gray-200 hover:opacity-80'}`}><img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /></button>}
+                        {hasMarathon && <button onClick={() => setEditAvatar('fire')} className={`w-10 h-10 rounded-lg flex items-center justify-center transition overflow-hidden ${editAvatar === 'fire' ? 'ring-2 ring-purple-500' : 'border border-gray-200 hover:opacity-80'}`}><img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /></button>}
                       </div>
                     </div>
 
@@ -1475,8 +1484,8 @@ export default function MapView() {
                 </div>
 
                 <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${hasMarathon ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 flex items-center justify-center bg-gray-900 ${hasMarathon ? 'ring-2 ring-orange-500 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <div style={{ fontSize: '32px', filter: hasMarathon ? 'drop-shadow(0 0 10px orange)' : 'none' }}>🔥</div>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${hasMarathon ? 'ring-2 ring-orange-500 shadow-md' : 'border-2 border-gray-300'}`}>
+                    <img src="/badges/streak.jpg" alt="Feuer & Flamme" className="w-full h-full object-cover" />
                   </div>
                   <div>
                     <p className="text-sm font-black text-gray-800">
@@ -1570,7 +1579,16 @@ export default function MapView() {
                   sortedUsers.map((u, i) => {
                     const avatar = u.avatar || 'default';
                     const frame = u.frame_style || 'none';
-                    const avatarEmoji = avatar === 'ghost' ? '👻' : avatar === 'bat' ? '🦇' : avatar === 'reindeer' ? '🦌' : avatar === 'snowman' ? '⛄' : avatar === 'fire' ? '🔥' : '🧑‍🚀';
+                    
+                    let avatarContent;
+                    if (avatar === 'ghost') avatarContent = '👻';
+                    else if (avatar === 'bat') avatarContent = '🦇';
+                    else if (avatar === 'reindeer') avatarContent = '🦌';
+                    else if (avatar === 'snowman') avatarContent = '⛄';
+                    else if (avatar === 'fire') avatarContent = <img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" />;
+                    else if (avatar === 'cyberpunk') avatarContent = <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" />;
+                    else if (avatar === 'polar') avatarContent = <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" />;
+                    else avatarContent = '🧑‍🚀';
 
                     return (
                       <div key={u.userId} className={`flex items-center justify-between p-3 rounded-2xl border ${i === 0 ? 'bg-yellow-50 border-yellow-200' : i === 1 ? 'bg-gray-50 border-gray-200' : i === 2 ? 'bg-orange-50 border-orange-200' : 'bg-white border-gray-100 shadow-sm'}`}>
@@ -1580,8 +1598,8 @@ export default function MapView() {
                           </span>
                           
                           {FEATURE_AVATARS && (
-                            <div className={`avatar-frame frame-${frame} w-10 h-10 text-xl shadow-sm bg-white shrink-0`}>
-                              {avatarEmoji}
+                            <div className={`avatar-frame frame-${frame} w-10 h-10 text-xl shadow-sm bg-white shrink-0 overflow-hidden`}>
+                              {avatarContent}
                             </div>
                           )}
 
