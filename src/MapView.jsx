@@ -237,6 +237,8 @@ const PEAKS = [
   { id: 'bungsberg', lat: 54.212, lng: 10.723, name: 'Bungsberg (SH)' }
 ];
 
+const sessionLocks = new Set();
+
 export default function MapView() {
   const [map, setMap] = useState(null);
   const [pins, setPins] = useState([]);
