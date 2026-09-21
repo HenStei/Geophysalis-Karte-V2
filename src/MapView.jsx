@@ -773,7 +773,7 @@ const hasNightOwl = myPins.some(p => {
       
       {/* Top Left Header & Counter (Optimized for Mobile) */}
       <div className="absolute top-4 left-4 z-[1000] pointer-events-none flex flex-col gap-2 sm:gap-3">
-        <div className="bg-white/95 backdrop-blur-md px-4 py-2 sm:px-6 sm:py-3 rounded-2xl sm:rounded-3xl shadow-xl border border-gray-100 flex items-center gap-2 sm:gap-3 pointer-events-auto transition-all">
+        <div className="bg-white/95 backdrop-blur-md px-4 py-2 sm:px-6 sm:py-3 rounded-full sm:rounded-3xl shadow-xl border border-gray-100 flex items-center gap-2 sm:gap-3 pointer-events-auto transition-all">
           <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight hidden sm:block">Geophysalis</h1>
           <div className="flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5">
@@ -788,13 +788,13 @@ const hasNightOwl = myPins.some(p => {
         
         {/* Event Banners */}
         {isHalloweenActive && (
-          <div className="bg-orange-500/90 backdrop-blur-md px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl shadow-lg border border-orange-400 pointer-events-auto flex items-center gap-2 animate-bounce">
+          <div className="bg-orange-500/90 backdrop-blur-md px-3 py-1.5 sm:px-4 sm:py-2 rounded-full shadow-lg border border-orange-400 pointer-events-auto flex items-center gap-2 animate-bounce">
             <span>🎃</span>
             <span className="text-[10px] sm:text-xs font-black text-white uppercase tracking-wider">Halloween Event aktiv!</span>
           </div>
         )}
         {isWinterActive && (
-          <div className="bg-blue-500/90 backdrop-blur-md px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl shadow-lg border border-blue-400 pointer-events-auto flex items-center gap-2 animate-bounce">
+          <div className="bg-blue-500/90 backdrop-blur-md px-3 py-1.5 sm:px-4 sm:py-2 rounded-full shadow-lg border border-blue-400 pointer-events-auto flex items-center gap-2 animate-bounce">
             <span>❄️</span>
             <span className="text-[10px] sm:text-xs font-black text-white uppercase tracking-wider">Winterwunder aktiv!</span>
           </div>
@@ -810,7 +810,7 @@ const hasNightOwl = myPins.some(p => {
               fetchAllProfiles();
               setIsLeaderboardOpen(true);
             }}
-            className="bg-yellow-50 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-yellow-200 text-yellow-700 hover:bg-yellow-100 transition flex items-center justify-center font-bold text-sm"
+            className="bg-yellow-50 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-full sm:rounded-full shadow-xl border border-yellow-200 text-yellow-700 hover:bg-yellow-100 transition flex items-center justify-center font-bold text-sm"
           >
             <Trophy size={20} className="sm:mr-1" />
             <span className="hidden sm:inline">Rangliste</span>
@@ -822,7 +822,7 @@ const hasNightOwl = myPins.some(p => {
                 fetchUnapprovedPins();
                 setIsAdminModalOpen(true);
               }}
-              className="bg-red-50 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-red-200 text-red-600 hover:bg-red-100 transition flex items-center justify-center font-bold text-sm animate-pulse"
+              className="bg-red-50 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-full sm:rounded-full shadow-xl border border-red-200 text-red-600 hover:bg-red-100 transition flex items-center justify-center font-bold text-sm animate-pulse"
             >
               <Shield size={20} className="sm:mr-1" />
               <span className="hidden sm:inline">Admin</span>
@@ -830,12 +830,12 @@ const hasNightOwl = myPins.some(p => {
           )}
 
           {session ? (
-            <button onClick={() => setIsAuthModalOpen(true)} className="bg-white/95 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-gray-700 hover:bg-gray-50 transition flex items-center justify-center font-bold text-sm">
+            <button onClick={() => setIsAuthModalOpen(true)} className="bg-white/95 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-full sm:rounded-full shadow-xl border border-gray-100 text-gray-700 hover:bg-gray-50 transition flex items-center justify-center font-bold text-sm">
               <User size={20} className="sm:mr-1 text-blue-600" />
               <span className="hidden sm:inline">Profil</span>
             </button>
           ) : (
-            <button onClick={() => setIsAuthModalOpen(true)} className="bg-white/95 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition flex items-center justify-center font-bold text-sm">
+            <button onClick={() => setIsAuthModalOpen(true)} className="bg-white/95 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-full sm:rounded-full shadow-xl border border-gray-100 text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition flex items-center justify-center font-bold text-sm">
               <LogIn size={20} className="sm:mr-1" />
               <span className="hidden sm:inline">Login</span>
             </button>
@@ -843,7 +843,7 @@ const hasNightOwl = myPins.some(p => {
 
           <Link 
             to="/about"
-            className="bg-white/95 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-gray-700 hover:bg-gray-50 transition flex items-center justify-center font-bold text-sm"
+            className="bg-white/95 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-full sm:rounded-full shadow-xl border border-gray-100 text-gray-700 hover:bg-gray-50 transition flex items-center justify-center font-bold text-sm"
           >
             <Info size={20} className="sm:mr-1" />
             <span className="hidden sm:inline">Story</span>
@@ -851,72 +851,72 @@ const hasNightOwl = myPins.some(p => {
           
           <button 
             onClick={() => setShowLayerMenu(!showLayerMenu)}
-            className="bg-white/95 backdrop-blur-md p-3 sm:p-3.5 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-gray-700 hover:bg-gray-50 transition"
+            className="bg-white/95 backdrop-blur-md p-3 sm:p-3.5 rounded-full sm:rounded-full shadow-xl border border-gray-100 text-gray-700 hover:bg-gray-50 transition"
           >
             <Layers size={20} className="sm:w-6 sm:h-6" />
           </button>
         </div>
 
         {showLayerMenu && (
-          <div className="bg-white/95 backdrop-blur-md p-4 rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-100 flex flex-col gap-4 w-56 animate-in slide-in-from-top-4 origin-top-right">
+          <div className="bg-white/95 backdrop-blur-md p-4 rounded-full sm:rounded-3xl shadow-2xl border border-gray-100 flex flex-col gap-4 w-56 animate-in slide-in-from-top-4 origin-top-right">
             <div>
               <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Karten-Stil</p>
               <div className="flex flex-col gap-1">
-                <button onClick={() => setMapStyle('street')} className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition ${mapStyle === 'street' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Standard</button>
-                <button onClick={() => setMapStyle('satellite')} className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition ${mapStyle === 'satellite' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Satellit</button>
+                <button onClick={() => setMapStyle('street')} className={`text-left px-3 py-2 rounded-full text-sm font-bold transition ${mapStyle === 'street' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Standard</button>
+                <button onClick={() => setMapStyle('satellite')} className={`text-left px-3 py-2 rounded-full text-sm font-bold transition ${mapStyle === 'satellite' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Satellit</button>
                 
                 <button 
                   onClick={() => canUseDark ? setMapStyle('dark') : alert("Du benötigst das Abzeichen 'Der erste Schritt'!")} 
-                  className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition flex justify-between items-center ${mapStyle === 'dark' ? 'bg-blue-100 text-blue-700' : canUseDark ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
+                  className={`text-left px-3 py-2 rounded-full text-sm font-bold transition flex justify-between items-center ${mapStyle === 'dark' ? 'bg-blue-100 text-blue-700' : canUseDark ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
                 >
                   Dark Mode {!canUseDark && <Lock size={14} className="text-gray-400" />}
                 </button>
                 
                 <button 
                   onClick={() => canUseVintage ? setMapStyle('vintage') : alert("Du benötigst das Abzeichen 'Entdecker' (5 Sticker)!")} 
-                  className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition flex justify-between items-center ${mapStyle === 'vintage' ? 'bg-blue-100 text-blue-700' : canUseVintage ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
+                  className={`text-left px-3 py-2 rounded-full text-sm font-bold transition flex justify-between items-center ${mapStyle === 'vintage' ? 'bg-blue-100 text-blue-700' : canUseVintage ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
                 >
                   Explorer (Vintage) {!canUseVintage && <Lock size={14} className="text-gray-400" />}
                 </button>
 
                 <button 
                   onClick={() => canUseSunrise ? setMapStyle('sunrise') : alert("Du benötigst das Abzeichen 'Frühaufsteher' (5-8 Uhr)!")} 
-                  className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition flex justify-between items-center ${mapStyle === 'sunrise' ? 'bg-orange-100 text-orange-700' : canUseSunrise ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
+                  className={`text-left px-3 py-2 rounded-full text-sm font-bold transition flex justify-between items-center ${mapStyle === 'sunrise' ? 'bg-orange-100 text-orange-700' : canUseSunrise ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
                 >
                   Sunrise (Morgen) {!canUseSunrise && <Lock size={14} className="text-gray-400" />}
                 </button>
 
                 <button 
                   onClick={() => canUseSpooky ? setMapStyle('neon') : alert("Du benötigst das Abzeichen 'Süßes oder Saures' (Halloween-Event)!")} 
-                  className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition flex justify-between items-center ${mapStyle === 'neon' ? 'bg-purple-100 text-purple-700' : canUseSpooky ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
+                  className={`text-left px-3 py-2 rounded-full text-sm font-bold transition flex justify-between items-center ${mapStyle === 'neon' ? 'bg-purple-100 text-purple-700' : canUseSpooky ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
                 >
                   Spooky (Halloween) {!canUseSpooky && <Lock size={14} className="text-gray-400" />}
                 </button>
 
                 <button 
                   onClick={() => canUseSnow ? setMapStyle('snow') : alert("Du benötigst das Abzeichen 'Winterwunder' (Dezember-Event)!")} 
-                  className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition flex justify-between items-center ${mapStyle === 'snow' ? 'bg-blue-100 text-blue-700' : canUseSnow ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
+                  className={`text-left px-3 py-2 rounded-full text-sm font-bold transition flex justify-between items-center ${mapStyle === 'snow' ? 'bg-blue-100 text-blue-700' : canUseSnow ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
                 >
                   Winter (Schnee) {!canUseSnow && <Lock size={14} className="text-gray-400" />}
                 </button>
 
                 <button 
                   onClick={() => canUseAurora ? setMapStyle('aurora') : alert("Du benötigst das Abzeichen 'Polarforscher'!")} 
-                  className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition flex justify-between items-center ${mapStyle === 'aurora' ? 'bg-teal-100 text-teal-700' : canUseAurora ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
+                  className={`text-left px-3 py-2 rounded-full text-sm font-bold transition flex justify-between items-center ${mapStyle === 'aurora' ? 'bg-teal-100 text-teal-700' : canUseAurora ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
                 >
                   Polarlichter {!canUseAurora && <Lock size={14} className="text-gray-400" />}
                 </button>
 
                 <button 
                   onClick={() => canUseCyberpunk ? setMapStyle('cyberpunk') : alert("Du benötigst das Abzeichen 'Urban Legend'!")} 
-                  className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition flex justify-between items-center ${mapStyle === 'cyberpunk' ? 'bg-pink-100 text-pink-700' : canUseCyberpunk ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
+                  className={`text-left px-3 py-2 rounded-full text-sm font-bold transition flex justify-between items-center ${mapStyle === 'cyberpunk' ? 'bg-pink-100 text-pink-700' : canUseCyberpunk ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
                 >
                   Cyberpunk (Neon) {!canUseCyberpunk && <Lock size={14} className="text-gray-400" />}
                 </button>
 
                 <button 
                   onClick={() => canUse8Bit ? setMapStyle('8bit') : alert("Du benötigst das Abzeichen 'Pixel Pioneer' (10 Sticker)!")} 
-                  className={`text-left px-3 py-2 rounded-xl text-sm font-bold transition flex justify-between items-center ${mapStyle === '8bit' ? 'bg-green-100 text-green-800' : canUse8Bit ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
+                  className={`text-left px-3 py-2 rounded-full text-sm font-bold transition flex justify-between items-center ${mapStyle === '8bit' ? 'bg-green-100 text-green-800' : canUse8Bit ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
                 >
                   8-Bit Retro 👾 {!canUse8Bit && <Lock size={14} className="text-gray-400" />}
                 </button>
@@ -925,7 +925,7 @@ const hasNightOwl = myPins.some(p => {
             <div className="h-px bg-gray-200 w-full"></div>
             <div>
               <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Ansicht</p>
-              <label className="flex items-center justify-between cursor-pointer px-3 py-2 hover:bg-gray-100 rounded-xl transition">
+              <label className="flex items-center justify-between cursor-pointer px-3 py-2 hover:bg-gray-100 rounded-full transition">
                 <span className="text-sm font-bold text-gray-600">Heatmap zeigen</span>
                 <input type="checkbox" className="hidden" checked={showHeatmap} onChange={(e) => setShowHeatmap(e.target.checked)} />
                 <div className={`w-8 h-4 rounded-full transition relative ${showHeatmap ? 'bg-blue-500' : 'bg-gray-300'}`}>
@@ -940,11 +940,11 @@ const hasNightOwl = myPins.some(p => {
           <div className="flex gap-2 self-end pointer-events-auto">
             <button 
               onClick={() => setDevMode(!devMode)}
-              className={`mt-1 sm:mt-2 px-4 py-2 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-xs sm:text-sm font-bold transition ${devMode ? 'bg-purple-600 text-white' : 'bg-white/95 backdrop-blur-md text-gray-400 hover:text-gray-700 hover:bg-gray-50'}`}
+              className={`mt-1 sm:mt-2 px-4 py-2 sm:px-5 sm:py-3 rounded-full sm:rounded-full shadow-xl border border-gray-100 text-xs sm:text-sm font-bold transition ${devMode ? 'bg-purple-600 text-white' : 'bg-white/95 backdrop-blur-md text-gray-400 hover:text-gray-700 hover:bg-gray-50'}`}
             >
               DevMode {devMode ? 'ON' : 'OFF'}
             </button>
-            <Link to="/admin" className="mt-1 sm:mt-2 bg-white/95 backdrop-blur-md px-4 py-2 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-xs sm:text-sm font-bold text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition">
+            <Link to="/admin" className="mt-1 sm:mt-2 bg-white/95 backdrop-blur-md px-4 py-2 sm:px-5 sm:py-3 rounded-full sm:rounded-full shadow-xl border border-gray-100 text-xs sm:text-sm font-bold text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition">
               Admin
             </Link>
           </div>
@@ -1102,14 +1102,14 @@ const hasNightOwl = myPins.some(p => {
           <button 
             onClick={handleRoulette} 
             title="Zufälliger Sticker"
-            className="bg-white/95 backdrop-blur-md p-3 sm:p-3.5 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition pointer-events-auto flex items-center justify-center hover:scale-110 active:scale-95"
+            className="bg-white/95 backdrop-blur-md p-3 sm:p-3.5 rounded-full sm:rounded-full shadow-xl border border-gray-100 text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition pointer-events-auto flex items-center justify-center hover:scale-110 active:scale-95"
           >
             <Dices size={24} />
           </button>
           <button 
             onClick={handleRadar} 
             title="Radar (Nächster Sticker)"
-            className="bg-white/95 backdrop-blur-md p-3 sm:p-3.5 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition pointer-events-auto flex items-center justify-center hover:scale-110 active:scale-95"
+            className="bg-white/95 backdrop-blur-md p-3 sm:p-3.5 rounded-full sm:rounded-full shadow-xl border border-gray-100 text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition pointer-events-auto flex items-center justify-center hover:scale-110 active:scale-95"
           >
             <Compass size={24} />
           </button>
@@ -1117,7 +1117,7 @@ const hasNightOwl = myPins.some(p => {
       )}
 
       {!draftPin ? (
-        <button onClick={handleStartNewPin} className="absolute bottom-6 right-4 sm:bottom-8 sm:right-8 z-[1000] bg-blue-600 text-white px-5 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl shadow-xl hover:bg-blue-700 hover:scale-105 hover:-translate-y-1 transition-all font-bold text-base sm:text-lg pointer-events-auto flex items-center gap-2">
+        <button onClick={handleStartNewPin} className="absolute bottom-6 right-4 sm:bottom-8 sm:right-8 z-[1000] bg-blue-600 text-white px-5 py-3 sm:px-6 sm:py-4 rounded-full sm:rounded-full shadow-xl hover:bg-blue-700 hover:scale-105 hover:-translate-y-1 transition-all font-bold text-base sm:text-lg pointer-events-auto flex items-center gap-2">
           <MapPin size={22} className="sm:w-6 sm:h-6" /> Sticker setzen
         </button>
       ) : !isModalOpen && (
@@ -1127,8 +1127,8 @@ const hasNightOwl = myPins.some(p => {
             <p className="text-sm text-gray-600">Verschiebe den Pin auf der Karte an die exakte Stelle.</p>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <button onClick={() => setDraftPin(null)} className="flex-1 sm:flex-none px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">Abbrechen</button>
-            <button onClick={handleConfirmPosition} className="flex-1 sm:flex-none px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 flex items-center justify-center gap-2 shadow-md">
+            <button onClick={() => setDraftPin(null)} className="flex-1 sm:flex-none px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-full hover:bg-gray-200">Abbrechen</button>
+            <button onClick={handleConfirmPosition} className="flex-1 sm:flex-none px-6 py-3 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 flex items-center justify-center gap-2 shadow-md">
               <Check size={20}/> Bestätigen
             </button>
           </div>
@@ -1192,7 +1192,7 @@ const hasNightOwl = myPins.some(p => {
           
           {radarState === 'found' && nearestData && (
             <div className="flex flex-col items-center text-center">
-               <div className="bg-blue-100 p-3 rounded-2xl mb-3">
+               <div className="bg-blue-100 p-3 rounded-full mb-3">
                  <Navigation2 size={32} className="text-blue-600" />
                </div>
                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black mb-1">Nächster Sticker in</p>
@@ -1207,7 +1207,7 @@ const hasNightOwl = myPins.some(p => {
                    setTargetPinId(nearestData.pin.id.toString());
                    map.flyTo([nearestData.pin.lat, nearestData.pin.lng], 16, { animate: true, duration: 2.5 });
                  }}
-                 className="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition shadow-md flex items-center justify-center gap-2"
+                 className="w-full bg-blue-600 text-white font-bold py-3.5 rounded-full hover:bg-blue-700 transition shadow-md flex items-center justify-center gap-2"
                >
                  Hinfliegen <Navigation2 size={18} />
                </button>
@@ -1225,7 +1225,7 @@ const hasNightOwl = myPins.some(p => {
             
             <h2 className="text-2xl font-extrabold mb-1 text-gray-900">Sticker eintragen</h2>
             
-            <div className="mb-4 bg-gray-50 p-3 rounded-xl border border-gray-100">
+            <div className="mb-4 bg-gray-50 p-3 rounded-full border border-gray-100">
               <div className="flex justify-between items-start mb-2">
                 {isFetchingLocation ? (
                   <p className="text-xs text-blue-600">Standort wird ermittelt...</p>
@@ -1279,7 +1279,7 @@ const hasNightOwl = myPins.some(p => {
             </div>
 
             {exifNotice && (
-              <div className="mb-4 bg-green-50 border border-green-200 text-green-800 text-xs p-3 rounded-xl flex items-start gap-2">
+              <div className="mb-4 bg-green-50 border border-green-200 text-green-800 text-xs p-3 rounded-full flex items-start gap-2">
                 <Info size={16} className="mt-0.5 shrink-0" />
                 <p>{exifNotice}</p>
               </div>
@@ -1287,7 +1287,7 @@ const hasNightOwl = myPins.some(p => {
 
             <div className="space-y-4">
               {!selectedImage ? (
-                <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-blue-200 bg-blue-50/50 rounded-2xl cursor-pointer hover:bg-blue-50 transition">
+                <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-blue-200 bg-blue-50/50 rounded-full cursor-pointer hover:bg-blue-50 transition">
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <div className="bg-white p-3 rounded-full shadow-sm mb-2">
                       <Upload className="text-blue-600" size={24} />
@@ -1297,7 +1297,7 @@ const hasNightOwl = myPins.some(p => {
                   <input type="file" accept="image/*" className="hidden" onChange={handleImageSelection} />
                 </label>
               ) : (
-                <div className="relative rounded-2xl overflow-hidden border border-gray-200 shadow-inner">
+                <div className="relative rounded-full overflow-hidden border border-gray-200 shadow-inner">
                   <img src={selectedImage} alt="Vorschau" className="w-full h-36 object-cover" />
                 </div>
               )}
@@ -1308,7 +1308,7 @@ const hasNightOwl = myPins.some(p => {
                 maxLength={60}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full border border-gray-300 p-3 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               />
 
               <div className="flex flex-col gap-2 pt-2">
@@ -1316,7 +1316,7 @@ const hasNightOwl = myPins.some(p => {
                 <button 
                   disabled={!compressedFile || isCompressing || isUploading}
                   onClick={handleUpload}
-                  className="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-blue-700 transition shadow-md"
+                  className="w-full bg-blue-600 text-white font-bold py-3.5 rounded-full disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-blue-700 transition shadow-md"
                 >
                   {isUploading ? 'Wird hochgeladen...' : 'Sticker hochladen'}
                 </button>
@@ -1340,7 +1340,7 @@ const hasNightOwl = myPins.some(p => {
             
             <button 
               onClick={() => supabase.auth.signInWithOAuth({ provider: 'google' })}
-              className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-200 text-gray-800 font-bold py-3 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition mb-3"
+              className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-200 text-gray-800 font-bold py-3 rounded-full hover:bg-gray-50 hover:border-gray-300 transition mb-3"
             >
               <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
               Weiter mit Google
@@ -1367,11 +1367,11 @@ const hasNightOwl = myPins.some(p => {
                     value={tempNickname} 
                     onChange={e => setTempNickname(e.target.value)} 
                     placeholder="Wähle einen Nicknamen..."
-                    className="w-full px-4 py-2 border-2 border-blue-100 rounded-xl focus:outline-none focus:border-blue-500 font-bold text-center"
+                    className="w-full px-4 py-2 border-2 border-blue-100 rounded-full focus:outline-none focus:border-blue-500 font-bold text-center"
                     maxLength={20}
                   />
                   <div className="flex gap-2">
-                    <button onClick={() => setIsEditingNickname(false)} className="flex-1 bg-gray-100 text-gray-600 font-bold py-2 rounded-xl text-sm">Abbrechen</button>
+                    <button onClick={() => setIsEditingNickname(false)} className="flex-1 bg-gray-100 text-gray-600 font-bold py-2 rounded-full text-sm">Abbrechen</button>
                     <button 
                       onClick={async () => {
                         if (tempNickname.trim().length < 3) return alert("Nickname zu kurz!");
@@ -1383,7 +1383,7 @@ const hasNightOwl = myPins.some(p => {
                           alert("Dieser Name ist wahrscheinlich schon vergeben!");
                         }
                       }} 
-                      className="flex-1 bg-blue-600 text-white font-bold py-2 rounded-xl text-sm"
+                      className="flex-1 bg-blue-600 text-white font-bold py-2 rounded-full text-sm"
                     >
                       Speichern
                     </button>
@@ -1403,7 +1403,7 @@ const hasNightOwl = myPins.some(p => {
             </div>
 
             {/* Stats */}
-            <div className="bg-blue-50 rounded-2xl p-4 mb-4">
+            <div className="bg-blue-50 rounded-full p-4 mb-4">
               <p className="text-sm text-blue-800 font-bold mb-1">Deine Statistik</p>
               <p className="text-3xl font-black text-blue-600">
                 {myPins.length}
@@ -1413,15 +1413,15 @@ const hasNightOwl = myPins.some(p => {
 
             {/* Avatar & Rahmen Sektion (Vorübergehend deaktiviert) */}
             {FEATURE_AVATARS && (
-              <div className="bg-gray-50 rounded-2xl p-5 mb-4 border border-gray-100 text-left">
+              <div className="bg-gray-50 rounded-full p-5 mb-4 border border-gray-100 text-left">
                 <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
                   <User className="text-purple-500" size={16} /> Mein Avatar
                 </h3>
                 
                 <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
                   <div className="flex-shrink-0 flex flex-col items-center">
-                    <div className={`avatar-frame frame-${editFrame} relative w-20 h-20 text-4xl shadow-md bg-white rounded-2xl`}>
-                      <div className="w-full h-full overflow-hidden rounded-2xl flex items-center justify-center">
+                    <div className={`avatar-frame frame-${editFrame} relative w-20 h-20 text-4xl shadow-md bg-white rounded-full`}>
+                      <div className="w-full h-full overflow-hidden rounded-full flex items-center justify-center">
                         {editAvatar === 'default' ? '🦊' : 
                          editAvatar === 'ghost' ? '👻' : 
                          editAvatar === 'bat' ? '🦇' : 
@@ -1477,15 +1477,15 @@ const hasNightOwl = myPins.some(p => {
             )}
 
             {/* Badges / Achievements */}
-            <div className="bg-gray-50 rounded-2xl p-4 mb-6 text-left">
+            <div className="bg-gray-50 rounded-full p-4 mb-6 text-left">
               <p className="text-sm text-gray-800 font-bold mb-3 flex items-center justify-between">
                 Trophäen-Schrank
                 {devMode && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full uppercase">DevMode: Alles frei</span>}
               </p>
               
               <div className="flex flex-col gap-3">
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${canUseDark ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${canUseDark ? 'ring-2 ring-indigo-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${canUseDark ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${canUseDark ? 'ring-2 ring-indigo-400 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/night_owl.jpg" alt="Nachteule" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -1498,8 +1498,8 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
                 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${canUseVintage ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${canUseVintage ? 'ring-2 ring-amber-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${canUseVintage ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${canUseVintage ? 'ring-2 ring-amber-400 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/local_hero.jpg" alt="Lokalmatador" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -1512,8 +1512,8 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${canUseSunrise ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${canUseSunrise ? 'ring-2 ring-orange-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${canUseSunrise ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${canUseSunrise ? 'ring-2 ring-orange-400 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/early_bird.jpg" alt="Frühaufsteher" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -1526,8 +1526,8 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${canUseSpooky ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${canUseSpooky ? 'ring-2 ring-purple-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${canUseSpooky ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${canUseSpooky ? 'ring-2 ring-purple-400 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/halloween.jpg" alt="Süßes oder Saures" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -1540,8 +1540,8 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${canUseSnow ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${canUseSnow ? 'ring-2 ring-blue-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${canUseSnow ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${canUseSnow ? 'ring-2 ring-blue-400 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/winter.jpg" alt="Winterwunder" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -1554,8 +1554,8 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${canUseAurora ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${canUseAurora ? 'ring-2 ring-teal-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${canUseAurora ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${canUseAurora ? 'ring-2 ring-teal-400 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/polar.jpg" alt="Polarforscher" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -1568,8 +1568,8 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${canUseCyberpunk ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${canUseCyberpunk ? 'ring-2 ring-pink-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${canUseCyberpunk ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${canUseCyberpunk ? 'ring-2 ring-pink-400 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/urban.jpg" alt="Urban Legend" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -1584,8 +1584,8 @@ const hasNightOwl = myPins.some(p => {
 
                 
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${(devMode || hasPi) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${(devMode || hasPi) ? 'ring-2 ring-yellow-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasPi) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${(devMode || hasPi) ? 'ring-2 ring-yellow-400 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/badge_pi.jpg" alt="PI" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -1598,8 +1598,8 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${(devMode || hasMay4) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${(devMode || hasMay4) ? 'ring-2 ring-green-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasMay4) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${(devMode || hasMay4) ? 'ring-2 ring-green-400 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/badge_may4.jpg" alt="May the 4th" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -1612,8 +1612,8 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${(devMode || hasLove) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${(devMode || hasLove) ? 'ring-2 ring-red-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasLove) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${(devMode || hasLove) ? 'ring-2 ring-red-400 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/badge_love.jpg" alt="True Love" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -1626,8 +1626,8 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${(devMode || hasSilvester) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${(devMode || hasSilvester) ? 'ring-2 ring-blue-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasSilvester) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${(devMode || hasSilvester) ? 'ring-2 ring-blue-400 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/badge_silvester.jpg" alt="Silvester" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -1640,8 +1640,8 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${(devMode || hasNz) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${(devMode || hasNz) ? 'ring-2 ring-yellow-500 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasNz) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${(devMode || hasNz) ? 'ring-2 ring-yellow-500 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/badge_nz.jpg" alt="Neuseeland" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -1654,8 +1654,8 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${(devMode || hasUshuaia) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${(devMode || hasUshuaia) ? 'ring-2 ring-teal-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasUshuaia) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${(devMode || hasUshuaia) ? 'ring-2 ring-teal-400 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/badge_ushuaia.jpg" alt="Auge des Sturms" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -1668,8 +1668,8 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${(devMode || hasYinYang) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${(devMode || hasYinYang) ? 'ring-2 ring-gray-800 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasYinYang) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${(devMode || hasYinYang) ? 'ring-2 ring-gray-800 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/badge_yinyang.jpg" alt="Yin & Yang" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -1682,8 +1682,8 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${(devMode || hasGipfeli) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${(devMode || hasGipfeli) ? 'ring-2 ring-orange-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasGipfeli) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${(devMode || hasGipfeli) ? 'ring-2 ring-orange-400 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/badge_gipfeli.jpg" alt="Gipfeli" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -1696,8 +1696,8 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${(devMode || hasVivaldi) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${(devMode || hasVivaldi) ? 'ring-2 ring-pink-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasVivaldi) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${(devMode || hasVivaldi) ? 'ring-2 ring-pink-400 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/badge_vivaldi.jpg" alt="4 Jahreszeiten" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -1710,8 +1710,8 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${(devMode || hasTier5) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-yellow-700 flex items-center justify-center text-3xl ${(devMode || hasTier5) ? 'ring-2 ring-yellow-800 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasTier5) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 bg-yellow-700 flex items-center justify-center text-3xl ${(devMode || hasTier5) ? 'ring-2 ring-yellow-800 shadow-md' : 'border-2 border-gray-300'}`}>
                     🥉
                   </div>
                   <div>
@@ -1724,8 +1724,8 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${(devMode || hasTier10) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-gray-300 flex items-center justify-center text-3xl ${(devMode || hasTier10) ? 'ring-2 ring-gray-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasTier10) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 bg-gray-300 flex items-center justify-center text-3xl ${(devMode || hasTier10) ? 'ring-2 ring-gray-400 shadow-md' : 'border-2 border-gray-300'}`}>
                     🥈
                   </div>
                   <div>
@@ -1738,8 +1738,8 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${(devMode || hasTier50) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-yellow-400 flex items-center justify-center text-3xl ${(devMode || hasTier50) ? 'ring-2 ring-yellow-500 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${(devMode || hasTier50) ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 bg-yellow-400 flex items-center justify-center text-3xl ${(devMode || hasTier50) ? 'ring-2 ring-yellow-500 shadow-md' : 'border-2 border-gray-300'}`}>
                     🥇
                   </div>
                   <div>
@@ -1751,8 +1751,8 @@ const hasNightOwl = myPins.some(p => {
                     </p>
                   </div>
                 </div>
-<div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${devMode || hasWorldTraveler ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${devMode || hasWorldTraveler ? 'ring-2 ring-emerald-400 shadow-md' : 'border-2 border-gray-300'}`}>
+<div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${devMode || hasWorldTraveler ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${devMode || hasWorldTraveler ? 'ring-2 ring-emerald-400 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/world_traveler.jpg" alt="Weltenbummler" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -1765,8 +1765,8 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${hasMarathon ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${hasMarathon ? 'ring-2 ring-orange-500 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${hasMarathon ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${hasMarathon ? 'ring-2 ring-orange-500 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/streak.jpg" alt="Feuer & Flamme" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -1779,8 +1779,8 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${hasPioneer ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${hasPioneer ? 'ring-2 ring-yellow-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${hasPioneer ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${hasPioneer ? 'ring-2 ring-yellow-400 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/badge_pioneer.jpg" alt="Pionier" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -1793,8 +1793,8 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${hasRetroGamer ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${hasRetroGamer ? 'ring-2 ring-green-500 shadow-md' : 'border-2 border-gray-300'}`}>
+                <div className={`flex items-center gap-4 p-3 rounded-full transition shadow-sm ${hasRetroGamer ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-full overflow-hidden shrink-0 ${hasRetroGamer ? 'ring-2 ring-green-500 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/retro.jpg" alt="Pixel Pioneer" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -1810,7 +1810,7 @@ const hasNightOwl = myPins.some(p => {
             </div>
 
             {/* Toggle My Pins */}
-            <label className="flex items-center justify-between bg-gray-50 p-4 rounded-xl cursor-pointer hover:bg-gray-100 transition mb-6">
+            <label className="flex items-center justify-between bg-gray-50 p-4 rounded-full cursor-pointer hover:bg-gray-100 transition mb-6">
               <span className="font-bold text-gray-700 text-sm">Nur meine Sticker zeigen</span>
               <div className={`w-12 h-6 rounded-full transition relative ${showOnlyMyPins ? 'bg-blue-600' : 'bg-gray-300'}`}>
                 <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${showOnlyMyPins ? 'left-7' : 'left-1'}`}></div>
@@ -1826,7 +1826,7 @@ const hasNightOwl = myPins.some(p => {
                 supabase.auth.signOut();
                 setIsAuthModalOpen(false);
               }}
-              className="w-full bg-white border-2 border-red-100 text-red-500 font-bold py-3 rounded-xl hover:bg-red-50 transition"
+              className="w-full bg-white border-2 border-red-100 text-red-500 font-bold py-3 rounded-full hover:bg-red-50 transition"
             >
               Abmelden
             </button>
@@ -1876,7 +1876,7 @@ const hasNightOwl = myPins.some(p => {
                 <Trophy className="text-yellow-500" size={32} /> Rangliste
               </h2>
 
-              <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
+              <div className="flex bg-gray-100 rounded-full p-1 mb-6">
                 <button onClick={() => setLeaderboardTab('weekly')} className={`flex-1 text-sm font-bold py-2 rounded-lg transition ${leaderboardTab === 'weekly' ? 'bg-white shadow-sm text-yellow-600' : 'text-gray-500'}`}>Wöchentlich</button>
                 <button onClick={() => setLeaderboardTab('monthly')} className={`flex-1 text-sm font-bold py-2 rounded-lg transition ${leaderboardTab === 'monthly' ? 'bg-white shadow-sm text-yellow-600' : 'text-gray-500'}`}>Monatlich</button>
                 <button onClick={() => setLeaderboardTab('alltime')} className={`flex-1 text-sm font-bold py-2 rounded-lg transition ${leaderboardTab === 'alltime' ? 'bg-white shadow-sm text-yellow-600' : 'text-gray-500'}`}>All-Time</button>
@@ -1904,7 +1904,7 @@ const hasNightOwl = myPins.some(p => {
                     else avatarContent = '🦊';
 
                     return (
-                      <div key={u.userId} className={`flex items-center justify-between p-3 rounded-2xl border ${i === 0 ? 'bg-yellow-50 border-yellow-200' : i === 1 ? 'bg-gray-50 border-gray-200' : i === 2 ? 'bg-orange-50 border-orange-200' : 'bg-white border-gray-100 shadow-sm'}`}>
+                      <div key={u.userId} className={`flex items-center justify-between p-3 rounded-full border ${i === 0 ? 'bg-yellow-50 border-yellow-200' : i === 1 ? 'bg-gray-50 border-gray-200' : i === 2 ? 'bg-orange-50 border-orange-200' : 'bg-white border-gray-100 shadow-sm'}`}>
                         <div className="flex items-center gap-3">
                           <span className="text-xl w-6 text-center">
                             {i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-sm font-black text-gray-400">{i + 1}.</span>}
@@ -1954,7 +1954,7 @@ const hasNightOwl = myPins.some(p => {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {unapprovedPins.map(pin => (
-                    <div key={pin.id} className="bg-gray-50 rounded-2xl overflow-hidden border border-gray-200 flex flex-col">
+                    <div key={pin.id} className="bg-gray-50 rounded-full overflow-hidden border border-gray-200 flex flex-col">
                       <img src={pin.image_url} alt="Sticker" className="w-full h-48 object-cover bg-gray-200" />
                       <div className="p-4 flex-1 flex flex-col">
                         <p className="text-sm font-bold text-gray-800 mb-1 flex items-center gap-1">
@@ -1963,10 +1963,10 @@ const hasNightOwl = myPins.some(p => {
                         <p className="text-xs text-gray-500 italic mb-4 flex-1">"{pin.message || 'Keine Nachricht'}"</p>
                         
                         <div className="flex gap-2 mt-auto">
-                          <button onClick={() => handleApprovePin(pin.id)} className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded-xl flex justify-center items-center gap-1 transition">
+                          <button onClick={() => handleApprovePin(pin.id)} className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded-full flex justify-center items-center gap-1 transition">
                             <Check size={16} /> Freigeben
                           </button>
-                          <button onClick={() => handleRejectPin(pin.id, pin.image_url)} className="bg-red-100 hover:bg-red-200 text-red-600 font-bold p-2 rounded-xl transition">
+                          <button onClick={() => handleRejectPin(pin.id, pin.image_url)} className="bg-red-100 hover:bg-red-200 text-red-600 font-bold p-2 rounded-full transition">
                             <Trash2 size={20} />
                           </button>
                         </div>
