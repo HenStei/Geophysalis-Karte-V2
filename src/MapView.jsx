@@ -232,6 +232,7 @@ export default function MapView() {
 
   // Admin
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [devMode, setDevMode] = useState(false);
   const [unapprovedPins, setUnapprovedPins] = useState([]);
 
   // Leaderboard
@@ -255,6 +256,27 @@ export default function MapView() {
 
   // Achievements Logic
   const myPins = session ? pins.filter(p => p.user_id === session.user.id) : [];
+
+  const getUnlockDate = (badgeName) => {
+    if (!myPins || myPins.length === 0) return null;
+    const sorted = [...myPins].sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+    
+    let matching = [];
+    if (badgeName === 'firstStep') return new Date(sorted[0].created_at).toLocaleDateString('de-DE');
+    if (badgeName === 'localHero') return sorted.length >= 5 ? new Date(sorted[4].created_at).toLocaleDateString('de-DE') : null;
+    if (badgeName === 'retroGamer') return sorted.length >= 10 ? new Date(sorted[9].created_at).toLocaleDateString('de-DE') : null;
+    if (badgeName === 'pioneer') matching = sorted.filter(p => new Date(p.created_at) < new Date('2026-11-01'));
+    if (badgeName === 'polar') matching = sorted.filter(p => Math.abs(p.lat) >= 60);
+    if (badgeName === 'urban') matching = sorted.filter(p => p.location_name && /berlin|new york|london|tokyo|paris|sydney|los angeles/i.test(p.location_name));
+    if (badgeName === 'nightOwl') matching = sorted.filter(p => { const h = new Date(p.created_at).getHours(); return h >= 22 || h <= 4; });
+    if (badgeName === 'earlyBird') matching = sorted.filter(p => { const h = new Date(p.created_at).getHours(); return h >= 5 && h <= 8; });
+    if (badgeName === 'halloween') matching = sorted.filter(p => { const m = new Date(p.created_at).getMonth(); const d = new Date(p.created_at).getDate(); return (m === 9 && d >= 25) || (m === 10 && d <= 5); });
+    if (badgeName === 'winter') matching = sorted.filter(p => new Date(p.created_at).getMonth() === 11);
+    
+    if (matching.length > 0) return new Date(matching[0].created_at).toLocaleDateString('de-DE');
+    return null;
+  };
+
   const isAdmin = profile?.is_admin === true;
 
   const today = new Date();
@@ -323,14 +345,14 @@ export default function MapView() {
   );
   const hasWorldTraveler = uniqueCountries.size >= 3;
 
-  const canUseDark = isAdmin || hasNightOwl;
-  const canUseVintage = isAdmin || hasLocalHero;
-  const canUseSunrise = isAdmin || hasEarlyBird;
-  const canUseSpooky = isAdmin || hasHalloween;
-  const canUseSnow = isAdmin || hasWinter;
-  const canUseAurora = isAdmin || hasPolarExplorer;
-  const canUseCyberpunk = isAdmin || hasUrbanLegend;
-  const canUse8Bit = isAdmin || hasRetroGamer;
+  const canUseDark = devMode || hasNightOwl;
+  const canUseVintage = devMode || hasLocalHero;
+  const canUseSunrise = devMode || hasEarlyBird;
+  const canUseSpooky = devMode || hasHalloween;
+  const canUseSnow = devMode || hasWinter;
+  const canUseAurora = devMode || hasPolarExplorer;
+  const canUseCyberpunk = devMode || hasUrbanLegend;
+  const canUse8Bit = devMode || hasRetroGamer;
 
   // Helper: Prüft ob Sticker in den letzten 7 Tagen gesetzt wurde
   const isNew = (dateString) => {
@@ -860,9 +882,17 @@ export default function MapView() {
         )}
         
         {profile?.is_admin && !draftPin && (
-          <Link to="/admin" className="mt-1 sm:mt-2 bg-white/95 backdrop-blur-md px-4 py-2 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-xs sm:text-sm font-bold text-gray-400 hover:text-gray-700 hover:bg-gray-50 pointer-events-auto transition self-end">
-            Admin
-          </Link>
+          <div className="flex gap-2 self-end pointer-events-auto">
+            <button 
+              onClick={() => setDevMode(!devMode)}
+              className={`mt-1 sm:mt-2 px-4 py-2 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-xs sm:text-sm font-bold transition ${devMode ? 'bg-purple-600 text-white' : 'bg-white/95 backdrop-blur-md text-gray-400 hover:text-gray-700 hover:bg-gray-50'}`}
+            >
+              DevMode {devMode ? 'ON' : 'OFF'}
+            </button>
+            <Link to="/admin" className="mt-1 sm:mt-2 bg-white/95 backdrop-blur-md px-4 py-2 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-xs sm:text-sm font-bold text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition">
+              Admin
+            </Link>
+          </div>
         )}
       </div>
       
@@ -1373,9 +1403,9 @@ export default function MapView() {
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Rahmen wählen</p>
                       <div className="flex flex-wrap gap-2">
                         <button onClick={() => setEditFrame('none')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'none' ? 'bg-gray-800 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>Keiner</button>
-                        {(isAdmin || hasUrbanLegend) && <button onClick={() => setEditFrame('neon')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'neon' ? 'bg-purple-600 text-white shadow-md shadow-purple-500/30' : 'bg-white border border-purple-200 text-purple-600 hover:bg-purple-50'}`}>Neon</button>}
-                        {(isAdmin || hasPolarExplorer || hasWinter) && <button onClick={() => setEditFrame('frost')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'frost' ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/30' : 'bg-white border border-cyan-200 text-cyan-600 hover:bg-cyan-50'}`}>Frost</button>}
-                        {(isAdmin || hasMarathon) && <button onClick={() => setEditFrame('fire')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'fire' ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'bg-white border border-orange-200 text-orange-600 hover:bg-orange-50'}`}>Feuer</button>}
+                        {(devMode || hasUrbanLegend) && <button onClick={() => setEditFrame('neon')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'neon' ? 'bg-purple-600 text-white shadow-md shadow-purple-500/30' : 'bg-white border border-purple-200 text-purple-600 hover:bg-purple-50'}`}>Neon</button>}
+                        {(devMode || hasPolarExplorer || hasWinter) && <button onClick={() => setEditFrame('frost')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'frost' ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/30' : 'bg-white border border-cyan-200 text-cyan-600 hover:bg-cyan-50'}`}>Frost</button>}
+                        {(devMode || hasMarathon) && <button onClick={() => setEditFrame('fire')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'fire' ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'bg-white border border-orange-200 text-orange-600 hover:bg-orange-50'}`}>Feuer</button>}
                       </div>
                     </div>
 
@@ -1394,7 +1424,7 @@ export default function MapView() {
             <div className="bg-gray-50 rounded-2xl p-4 mb-6 text-left">
               <p className="text-sm text-gray-800 font-bold mb-3 flex items-center justify-between">
                 Trophäen-Schrank
-                {isAdmin && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full uppercase">Admin: Alles frei</span>}
+                {devMode && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full uppercase">DevMode: Alles frei</span>}
               </p>
               
               <div className="flex flex-col gap-3">
@@ -1407,7 +1437,7 @@ export default function MapView() {
                       {canUseDark ? 'Nachteule ✅' : '??? (Nachteule)'}
                     </p>
                     <p className="text-xs text-gray-500 font-medium">
-                      {canUseDark ? 'Nachts (22-4 Uhr) geklebt. Schaltet Dark Mode frei.' : 'Ein Geheimnis, das im Schutz der Dunkelheit ruht...'}
+                      {canUseDark ? <>Nachts (22-4 Uhr) geklebt. Schaltet Dark Mode frei.<br/>{getUnlockDate('nightOwl') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('nightOwl')}</span>}</> : 'Ein Geheimnis, das im Schutz der Dunkelheit ruht...'}
                     </p>
                   </div>
                 </div>
@@ -1421,7 +1451,7 @@ export default function MapView() {
                       {canUseVintage ? 'Lokalmatador ✅' : '??? (Lokalmatador)'}
                     </p>
                     <p className="text-xs text-gray-500 font-medium">
-                      {canUseVintage ? '5 Sticker geklebt. Schaltet Explorer-Karte frei.' : 'Nur wer Ausdauer beweist, wird die alte Welt sehen...'}
+                      {canUseVintage ? <>5 Sticker geklebt. Schaltet Explorer-Karte frei.<br/>{getUnlockDate('localHero') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('localHero')}</span>}</> : 'Nur wer Ausdauer beweist, wird die alte Welt sehen...'}
                     </p>
                   </div>
                 </div>
@@ -1435,7 +1465,7 @@ export default function MapView() {
                       {canUseSunrise ? 'Frühaufsteher ✅' : '??? (Frühaufsteher)'}
                     </p>
                     <p className="text-xs text-gray-500 font-medium">
-                      {canUseSunrise ? 'Morgens (5-8 Uhr) geklebt. Schaltet Sunrise-Karte frei.' : 'Der frühe Vogel fängt den Wurm...'}
+                      {canUseSunrise ? <>Morgens (5-8 Uhr) geklebt. Schaltet Sunrise-Karte frei.<br/>{getUnlockDate('earlyBird') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('earlyBird')}</span>}</> : 'Der frühe Vogel fängt den Wurm...'}
                     </p>
                   </div>
                 </div>
@@ -1449,7 +1479,7 @@ export default function MapView() {
                       {canUseSpooky ? 'Süßes oder Saures ✅' : '??? (Zeitlich begrenzt)'}
                     </p>
                     <p className="text-xs text-gray-500 font-medium">
-                      {canUseSpooky ? 'Halloween Event. Schaltet Spooky-Karte frei.' : 'Ein Ereignis, das nur einmal im Jahr aus den Schatten tritt...'}
+                      {canUseSpooky ? <>Halloween Event. Schaltet Spooky-Karte frei.<br/>{getUnlockDate('halloween') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('halloween')}</span>}</> : 'Ein Ereignis, das nur einmal im Jahr aus den Schatten tritt...'}
                     </p>
                   </div>
                 </div>
@@ -1463,7 +1493,7 @@ export default function MapView() {
                       {canUseSnow ? 'Winterwunder ✅' : '??? (Zeitlich begrenzt)'}
                     </p>
                     <p className="text-xs text-gray-500 font-medium">
-                      {canUseSnow ? 'Weihnachts Event. Schaltet Snow-Karte frei.' : 'Wenn die Tage kürzer werden und die Welt erfrischt...'}
+                      {canUseSnow ? <>Weihnachts Event. Schaltet Snow-Karte frei.<br/>{getUnlockDate('winter') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('winter')}</span>}</> : 'Wenn die Tage kürzer werden und die Welt erfrischt...'}
                     </p>
                   </div>
                 </div>
@@ -1477,7 +1507,7 @@ export default function MapView() {
                       {canUseAurora ? 'Polarforscher ✅' : '??? (Polarforscher)'}
                     </p>
                     <p className="text-xs text-gray-500 font-medium">
-                      {canUseAurora ? 'Extrem weit im Norden oder Süden geklebt. Schaltet Aurora-Karte frei.' : 'Nur wer der extremen Kälte trotzt...'}
+                      {canUseAurora ? <>Extrem weit im Norden oder Süden geklebt. Schaltet Aurora-Karte frei.<br/>{getUnlockDate('polar') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('polar')}</span>}</> : 'Nur wer der extremen Kälte trotzt...'}
                     </p>
                   </div>
                 </div>
@@ -1491,21 +1521,21 @@ export default function MapView() {
                       {canUseCyberpunk ? 'Urban Legend ✅' : '??? (Großstadt)'}
                     </p>
                     <p className="text-xs text-gray-500 font-medium">
-                      {canUseCyberpunk ? 'In einer Weltmetropole geklebt. Schaltet Cyberpunk-Karte frei.' : 'Dort wo das Neonlicht niemals schläft...'}
+                      {canUseCyberpunk ? <>In einer Weltmetropole geklebt. Schaltet Cyberpunk-Karte frei.<br/>{getUnlockDate('urban') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('urban')}</span>}</> : 'Dort wo das Neonlicht niemals schläft...'}
                     </p>
                   </div>
                 </div>
 
-                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${isAdmin || hasWorldTraveler ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
-                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${isAdmin || hasWorldTraveler ? 'ring-2 ring-emerald-400 shadow-md' : 'border-2 border-gray-300'}`}>
-                    <img src="/badges/world_traveler.jpg" alt="Weltenbummler" className="w-full h-full object-cover" />
+                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${devMode || hasWorldTraveler ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${devMode || hasWorldTraveler ? 'ring-2 ring-emerald-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                    <div className="w-full h-full bg-emerald-100 flex items-center justify-center text-3xl">✈️</div>
                   </div>
                   <div>
                     <p className="text-sm font-black text-gray-800">
-                      {(isAdmin || hasWorldTraveler) ? 'Weltenbummler ✅' : '??? (Weltenbummler)'}
+                      {(devMode || hasWorldTraveler) ? 'Weltenbummler ✅' : '??? (Weltenbummler)'}
                     </p>
                     <p className="text-xs text-gray-500 font-medium">
-                      {(isAdmin || hasWorldTraveler) ? 'In mind. 3 Ländern geklebt. (WIP)' : 'Die Welt ist groß, bereise sie...'}
+                      {(devMode || hasWorldTraveler) ? <>In mind. 3 Ländern geklebt. (WIP)<br/>{getUnlockDate('worldTraveler') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('worldTraveler')}</span>}</> : 'Die Welt ist groß, bereise sie...'}
                     </p>
                   </div>
                 </div>
@@ -1519,7 +1549,7 @@ export default function MapView() {
                       {hasMarathon ? 'Feuer & Flamme ✅' : '??? (Marathon)'}
                     </p>
                     <p className="text-xs text-gray-500 font-medium">
-                      {hasMarathon ? 'An 3 aufeinanderfolgenden Tagen geklebt. Du brennst!' : 'Konstanz ist der Schlüssel zum wahren Feuer...'}
+                      {hasMarathon ? <>An 3 aufeinanderfolgenden Tagen geklebt. Du brennst!<br/>{getUnlockDate('marathon') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('marathon')}</span>}</> : 'Konstanz ist der Schlüssel zum wahren Feuer...'}
                     </p>
                   </div>
                 </div>
@@ -1533,7 +1563,7 @@ export default function MapView() {
                       {hasPioneer ? 'Pionier der ersten Stunde 🌟' : '??? (Gründungsmitglied)'}
                     </p>
                     <p className="text-xs text-gray-500 font-medium">
-                      {hasPioneer ? 'Du warst einer der Ersten! Danke für deine Unterstützung.' : 'Dieses Abzeichen ist nur für die allerersten Nutzer reserviert...'}
+                      {hasPioneer ? <>Du warst einer der Ersten! Danke für deine Unterstützung.<br/>{getUnlockDate('pioneer') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('pioneer')}</span>}</> : 'Dieses Abzeichen ist nur für die allerersten Nutzer reserviert...'}
                     </p>
                   </div>
                 </div>
@@ -1726,7 +1756,7 @@ export default function MapView() {
       )}
 
       {/* Footer (Lizenz & Impressum) */}
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md px-6 py-2 rounded-full shadow-lg border border-gray-200 z-[1000] flex items-center gap-4 text-[10px] sm:text-xs text-gray-500 whitespace-nowrap">
+      <div className="absolute bottom-24 sm:bottom-2 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md px-6 py-2 rounded-full shadow-lg border border-gray-200 z-[1000] flex items-center gap-4 text-[10px] sm:text-xs text-gray-500 whitespace-nowrap">
         <span>&copy; {new Date().getFullYear()} Geophysalis. Alle Rechte vorbehalten.</span>
         <button onClick={() => alert("Lizenz & Urheberrecht:\n\nAlle Inhalte, Bilder (inklusive Avatare und Abzeichen), Quellcodes, Texte und Designs dieser Anwendung sind geistiges Eigentum des Seiteninhabers (Admin).\nJegliche Vervielfältigung, Verbreitung oder Nutzung ohne ausdrückliche schriftliche Erlaubnis ist strengstens untersagt.\n\nEs gelten die gesetzlichen Bestimmungen des Urheberrechts.")} className="font-bold underline hover:text-gray-900 transition">
           Lizenz & Impressum
