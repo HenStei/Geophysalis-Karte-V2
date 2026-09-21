@@ -323,6 +323,8 @@ export default function MapView() {
   const hasRetroGamer = myPins.length >= 10;
   const hasPioneerGlobal = globalAchievements.some(g => g.achievement_id.startsWith('pioneer_') && g.user_id === session?.user?.id);
   const hasPioneer = devMode || hasPioneerGlobal;
+  const myPioneerEntry = globalAchievements.find(g => g.achievement_id.startsWith('pioneer_') && g.user_id === session?.user?.id);
+  const myPioneerRank = myPioneerEntry ? myPioneerEntry.achievement_id.split('_')[1] : null;
   
   const hasPolarExplorer = myPins.some(p => Math.abs(p.lat) >= 60);
   const hasUrbanLegend = myPins.some(p => {
@@ -439,9 +441,6 @@ export default function MapView() {
   const hasEuCenter = globalAchievements.some(g => g.achievement_id === 'eu_center' && g.user_id === session?.user?.id);
   const euOwner = globalAchievements.find(g => g.achievement_id === 'eu_center')?.user_id;
 
-  // Data extraction for UI
-  const myPioneerObj = globalAchievements.find(g => g.achievement_id.startsWith('pioneer_') && g.user_id === session?.user?.id);
-  const myPioneerRank = myPioneerObj ? myPioneerObj.achievement_id.split('_')[1] : null;
 
   const myGipfeliObj = globalAchievements.find(g => g.achievement_id.startsWith('gipfeli_') && g.user_id === session?.user?.id);
   const myGipfeliPeakId = myGipfeliObj ? myGipfeliObj.achievement_id.split('_')[1] : null;
@@ -1924,7 +1923,7 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                   <div>
                     <p className="text-sm font-black text-gray-800">
-                      {hasPioneer ? 'Pionier der ersten Stunde 🌟' : 'Pionier der ersten Stunde (Limit: 15)'}
+                      {hasPioneer ? `Pionier der ersten Stunde (No. ${myPioneerRank}/15) 🌟` : 'Pionier der ersten Stunde (Limit: 15)'}
                     </p>
                     <p className="text-xs text-gray-500 font-medium">
                       {hasPioneer ? <>Du gehörst zu den ersten 15 Nutzern weltweit! Danke für deine Unterstützung.<br/>{getUnlockDate('pioneer') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('pioneer')}</span>}</> : 'Streng limitiert auf die exakt ersten 15 Nutzer weltweit.'}
