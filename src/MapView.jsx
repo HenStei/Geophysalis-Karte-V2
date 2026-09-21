@@ -265,6 +265,8 @@ export default function MapView() {
   const [editFrame, setEditFrame] = useState('none');
   const [globalAchievements, setGlobalAchievements] = useState([]);
   const [globalsLoaded, setGlobalsLoaded] = useState(false);
+  const claimedInSessionRef = useRef(new Set());
+  const isClaimingRef = useRef(false);
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
 
   // Feature Toggles
