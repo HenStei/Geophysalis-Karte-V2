@@ -1420,18 +1420,20 @@ const hasNightOwl = myPins.some(p => {
                 
                 <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
                   <div className="flex-shrink-0 flex flex-col items-center">
-                    <div className={`avatar-frame frame-${editFrame} w-20 h-20 text-4xl shadow-md bg-white overflow-hidden`}>
-                      {editAvatar === 'default' ? '🦊' : 
-                       editAvatar === 'ghost' ? '👻' : 
-                       editAvatar === 'bat' ? '🦇' : 
-                       editAvatar === 'reindeer' ? '🦌' : 
-                       editAvatar === 'snowman' ? '⛄' : 
-                       editAvatar === 'fire' ? <img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /> : 
-                       editAvatar === 'cyberpunk' ? <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /> : 
-                       editAvatar === 'retro' ? <img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" /> : 
-                       editAvatar === 'pioneer' ? <img src="/badges/avatar_pioneer.jpg" className="w-full h-full object-cover" /> : 
-                       editAvatar === 'admin' ? <img src="/badges/avatar_admin.jpg" className="w-full h-full object-cover" /> : 
-                       editAvatar === 'polar' ? <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /> : '🦊'}
+                    <div className={`avatar-frame frame-${editFrame} relative w-20 h-20 text-4xl shadow-md bg-white rounded-2xl`}>
+                      <div className="w-full h-full overflow-hidden rounded-2xl flex items-center justify-center">
+                        {editAvatar === 'default' ? '🦊' : 
+                         editAvatar === 'ghost' ? '👻' : 
+                         editAvatar === 'bat' ? '🦇' : 
+                         editAvatar === 'reindeer' ? '🦌' : 
+                         editAvatar === 'snowman' ? '⛄' : 
+                         editAvatar === 'fire' ? <img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /> : 
+                         editAvatar === 'cyberpunk' ? <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /> : 
+                         editAvatar === 'retro' ? <img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" /> : 
+                         editAvatar === 'pioneer' ? <img src="/badges/avatar_pioneer.jpg" className="w-full h-full object-cover" /> : 
+                         editAvatar === 'admin' ? <img src="/badges/avatar_admin.jpg" className="w-full h-full object-cover" /> : 
+                         editAvatar === 'polar' ? <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /> : '🦊'}
+                      </div>
                     </div>
                   </div>
 

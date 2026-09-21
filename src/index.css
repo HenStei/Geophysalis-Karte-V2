@@ -296,13 +296,13 @@ body {
 
 
 /* Discord-Style Avatar Frames */
-.avatar-wrapper {
+.avatar-frame {
   position: relative;
   z-index: 10;
 }
 
 /* 🔥 Fire Frame */
-.avatar-wrapper.frame-fire::before {
+.avatar-frame.frame-fire::before {
   content: '';
   position: absolute;
   inset: -4px;
@@ -319,7 +319,7 @@ body {
 }
 
 /* 🌪️ Wind / Storm Frame (Pixel Art Vibe) */
-.avatar-wrapper.frame-wind::before {
+.avatar-frame.frame-wind::before {
   content: '';
   position: absolute;
   inset: -6px;
@@ -330,7 +330,7 @@ body {
   box-shadow: 0 0 12px #00ffff;
   z-index: -1;
 }
-.avatar-wrapper.frame-wind::after {
+.avatar-frame.frame-wind::after {
   content: '';
   position: absolute;
   inset: -12px;
