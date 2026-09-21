@@ -1559,7 +1559,7 @@ export default function MapView() {
                   </div>
                   <div>
                     <p className="text-sm font-black text-gray-800">
-                      {(devMode || hasMay4) ? 'May the 4th be with you ✅' : '??? (Sci-Fi Fan)'}
+                      {(devMode || hasMay4) ? 'May the force be with you ✅' : '??? (Sci-Fi Fan)'}
                     </p>
                     <p className="text-xs text-gray-500 font-medium">
                       {(devMode || hasMay4) ? <>Am 4. Mai geklebt. Schaltet einen galaktischen Meister frei!<br/>{getUnlockDate('may4') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('may4')}</span>}</> : 'Spüre die Macht an einem ganz bestimmten Tag im Mai...'}
@@ -1587,7 +1587,7 @@ export default function MapView() {
                   </div>
                   <div>
                     <p className="text-sm font-black text-gray-800">
-                      {(devMode || hasSilvester) ? 'Frohes Neues! ✅' : '??? (Feuerwerk)'}
+                      {(devMode || hasSilvester) ? 'Irgendwas mit Silvester? ✅' : '??? (Feuerwerk)'}
                     </p>
                     <p className="text-xs text-gray-500 font-medium">
                       {(devMode || hasSilvester) ? <>An Silvester oder Neujahr geklebt.<br/>{getUnlockDate('silvester') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('silvester')}</span>}</> : 'Lass es knallen zum Jahreswechsel!'}
