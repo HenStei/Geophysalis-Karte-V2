@@ -1490,15 +1490,21 @@ const hasNightOwl = myPins.some(p => {
 
       {/* Profile Modal */}
       {session && isAuthModalOpen && (
-        <div className="absolute inset-0 z-[3000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-6 sm:p-8 shadow-2xl relative text-center max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <button onClick={() => setIsAuthModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition">
+        <div className="absolute inset-0 z-[3000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) setIsAuthModalOpen(false); }}>
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl relative flex flex-col" style={{maxHeight:'92vh'}}>
+            <button onClick={() => setIsAuthModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition z-10">
               <X size={24} />
             </button>
-            
-            <div className="mb-6 mt-2">
-              <img src={session.user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${session.user.email}&background=random`} alt="Avatar" className="w-20 h-20 rounded-full mx-auto mb-4 border-4 border-blue-50 shadow-md" />
-              
+
+            {/* ── Fixed Header ── */}
+            <div className="p-5 pb-0 text-center shrink-0">
+              {/* Avatar */}
+              <div className="relative inline-block mb-2">
+                <img src={session.user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${session.user.email}&background=random`} alt="Avatar" className="w-18 h-18 w-[72px] h-[72px] rounded-full border-4 border-white shadow-lg" />
+                {hasPioneer && <span className="absolute -bottom-1 -right-1 bg-yellow-400 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow">No.{myPioneerRank}</span>}
+              </div>
+
+              {/* Nickname */}
               {isEditingNickname ? (
                 <div className="flex flex-col gap-2">
                   <input 
