@@ -170,9 +170,8 @@ body {
 }
 
 .frame-neon {
-  border: 4px solid;
-  border-image: url('/badges/texture_cyberpunk.jpg') 30 stretch;
-  box-shadow: 0 0 15px #ff00ff, inset 0 0 8px #00ffff;
+  border: 2px solid #ff00ff;
+  box-shadow: 0 0 10px #ff00ff, inset 0 0 8px #00ffff;
   background-color: #2e004f;
   color: white;
 }
@@ -184,16 +183,15 @@ body {
 }
 
 .frame-fire {
-  border: 4px solid;
-  border-image: url('/badges/texture_fire.jpg') 30 stretch;
+  border: 2px solid #ff8c00;
   box-shadow: 0 0 15px #ff4500, inset 0 0 10px #ffd700;
   background-color: #fff3e0;
   animation: pulse-fire 2s infinite alternate;
 }
 
 @keyframes pulse-fire {
-  0% { box-shadow: 0 0 15px #ff4500, inset 0 0 5px #ffd700; }
-  100% { box-shadow: 0 0 25px #ff0000, inset 0 0 15px #ff8c00; }
+  0% { box-shadow: 0 0 10px #ff4500, inset 0 0 5px #ffd700; }
+  100% { box-shadow: 0 0 20px #ff0000, inset 0 0 15px #ff8c00; }
 }
 
 /* Float & Fly Animations (for Emojis) */
