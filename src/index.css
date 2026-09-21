@@ -209,6 +209,19 @@ body {
   100% { transform: translateY(0px) rotate(0deg); }
 }
 
+/* Custom Basemap Filters (Fallback for broken APIs) */
+.map-dark {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
+
+.map-vintage {
+  filter: sepia(0.8) hue-rotate(-15deg) contrast(1.1) brightness(0.9);
+}
+
+.map-sunrise {
+  filter: sepia(0.4) hue-rotate(-30deg) saturate(1.4) brightness(1.1) contrast(1.1);
+}
+
 /* Cyberpunk City Filter */
 .map-cyberpunk {
   filter: invert(100%) hue-rotate(270deg) saturate(300%) contrast(150%);
