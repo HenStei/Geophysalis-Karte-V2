@@ -948,10 +948,10 @@ export default function MapView() {
         )}
         {mapStyle === '8bit' && (
           <TileLayer 
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}" 
-            attribution='Tiles &copy; Esri'
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png" 
+            attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
             className="map-8bit"
-            maxNativeZoom={7}
+            maxNativeZoom={9}
             maxZoom={18}
           />
         )}
