@@ -245,6 +245,7 @@ export default function MapView() {
   const [activeFrame, setActiveFrame] = useState('none');
   const [editFrame, setEditFrame] = useState('none');
   const [globalAchievements, setGlobalAchievements] = useState([]);
+  const [globalsLoaded, setGlobalsLoaded] = useState(false);
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
 
   // Feature Toggles
@@ -333,6 +334,7 @@ export default function MapView() {
     try {
       const { data } = await supabase.from('global_achievements').select('*');
       if (data) setGlobalAchievements(data);
+      setGlobalsLoaded(true);
     } catch(e) {}
   };
 
@@ -350,7 +352,7 @@ export default function MapView() {
   };
 
   useEffect(() => {
-    if (!session?.user?.id || myPins.length === 0 || globalAchievements.length === 0) return;
+    if (!session?.user?.id || myPins.length === 0 || !globalsLoaded) return;
     
     // Only run this check once every time myPins changes to avoid infinite loops
     const checkClaims = async () => {
@@ -1907,7 +1909,7 @@ const hasNightOwl = myPins.some(p => {
                   </div>
                   <div>
                     <p className="text-sm font-black text-gray-800">
-                      {hasPioneer ? 'Pionier der ersten Stunde 🌟' : '??? (Gründungsmitglied)'}
+                      {hasPioneer ? 'Pionier der ersten Stunde 🌟' : 'Pionier der ersten Stunde (Limit: 15)'}
                     </p>
                     <p className="text-xs text-gray-500 font-medium">
                       {hasPioneer ? <>Du gehörst zu den ersten 15 Nutzern weltweit! Danke für deine Unterstützung.<br/>{getUnlockDate('pioneer') && <span className="text-[9px] text-gray-400 mt-0.5 block">Freigeschaltet am {getUnlockDate('pioneer')}</span>}</> : 'Streng limitiert auf die exakt ersten 15 Nutzer weltweit.'}
