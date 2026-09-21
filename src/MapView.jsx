@@ -242,6 +242,7 @@ export default function MapView() {
 
   // Avatar State
   const [editAvatar, setEditAvatar] = useState('default');
+  const [activeFrame, setActiveFrame] = useState('none');
   const [editFrame, setEditFrame] = useState('none');
 
   // Feature Toggles
