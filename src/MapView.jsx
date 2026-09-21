@@ -864,10 +864,6 @@ export default function MapView() {
             Admin
           </Link>
         )}
-        <div className="mt-1 sm:mt-2 bg-white/95 backdrop-blur-md px-4 py-2 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-[10px] sm:text-xs text-gray-400 pointer-events-auto transition self-end text-right">
-          &copy; {new Date().getFullYear()} Geophysalis. Alle Rechte vorbehalten.<br/>
-          <button onClick={() => alert("Lizenz & Urheberrecht:\n\nAlle Inhalte, Bilder (inklusive Avatare und Abzeichen), Quellcodes, Texte und Designs dieser Anwendung sind geistiges Eigentum des Seiteninhabers (Admin).\nJegliche Vervielfältigung, Verbreitung oder Nutzung ohne ausdrückliche schriftliche Erlaubnis ist strengstens untersagt.\n\nEs gelten die gesetzlichen Bestimmungen des Urheberrechts.")} className="underline hover:text-gray-600">Lizenz & Impressum</button>
-        </div>
       </div>
       
       {mapStyle === 'snow' && (
@@ -1728,6 +1724,14 @@ export default function MapView() {
           </div>
         </div>
       )}
+
+      {/* Footer (Lizenz & Impressum) */}
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md px-6 py-2 rounded-full shadow-lg border border-gray-200 z-[1000] flex items-center gap-4 text-[10px] sm:text-xs text-gray-500 whitespace-nowrap">
+        <span>&copy; {new Date().getFullYear()} Geophysalis. Alle Rechte vorbehalten.</span>
+        <button onClick={() => alert("Lizenz & Urheberrecht:\n\nAlle Inhalte, Bilder (inklusive Avatare und Abzeichen), Quellcodes, Texte und Designs dieser Anwendung sind geistiges Eigentum des Seiteninhabers (Admin).\nJegliche Vervielfältigung, Verbreitung oder Nutzung ohne ausdrückliche schriftliche Erlaubnis ist strengstens untersagt.\n\nEs gelten die gesetzlichen Bestimmungen des Urheberrechts.")} className="font-bold underline hover:text-gray-900 transition">
+          Lizenz & Impressum
+        </button>
+      </div>
     </div>
   );
 }
