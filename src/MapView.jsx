@@ -218,6 +218,25 @@ const HalloweenAssets = () => {
   return assets.map(a => <Marker key={a.id} position={a.pos} icon={a.icon} interactive={false} />);
 };
 
+const PEAKS = [
+  { id: 'zugspitze', lat: 47.421, lng: 10.985, name: 'Zugspitze (Bayern)' },
+  { id: 'feldberg', lat: 47.873, lng: 8.004, name: 'Feldberg (BaWü)' },
+  { id: 'brocken', lat: 51.799, lng: 10.615, name: 'Brocken (Sachsen-Anhalt)' },
+  { id: 'fichtelberg', lat: 50.429, lng: 12.954, name: 'Fichtelberg (Sachsen)' },
+  { id: 'wasserkuppe', lat: 50.498, lng: 9.937, name: 'Wasserkuppe (Hessen)' },
+  { id: 'beerberg', lat: 50.658, lng: 9.746, name: 'Großer Beerberg (Thüringen)' },
+  { id: 'wurmberg', lat: 51.756, lng: 10.617, name: 'Wurmberg (Niedersachsen)' },
+  { id: 'langenberg', lat: 51.275, lng: 8.525, name: 'Langenberg (NRW)' },
+  { id: 'erbeskopf', lat: 49.730, lng: 7.089, name: 'Erbeskopf (RLP)' },
+  { id: 'dollberg', lat: 49.629, lng: 7.017, name: 'Dollberg (Saarland)' },
+  { id: 'mueggelberge', lat: 52.416, lng: 13.639, name: 'Müggelberge (Berlin)' },
+  { id: 'kutschenberg', lat: 51.423, lng: 13.722, name: 'Kutschenberg (Brandenburg)' },
+  { id: 'friedehorstpark', lat: 53.169, lng: 8.675, name: 'Friedehorstpark (Bremen)' },
+  { id: 'hasselbrack', lat: 53.431, lng: 9.865, name: 'Hasselbrack (Hamburg)' },
+  { id: 'helpterberge', lat: 53.483, lng: 13.606, name: 'Helpter Berge (MV)' },
+  { id: 'bungsberg', lat: 54.212, lng: 10.723, name: 'Bungsberg (SH)' }
+];
+
 export default function MapView() {
   const [map, setMap] = useState(null);
   const [pins, setPins] = useState([]);
@@ -372,24 +391,7 @@ export default function MapView() {
       }
 
       // 2. Gipfeli Peaks (Die 16 höchsten Punkte der Bundesländer)
-      const peaks = [
-        { id: 'zugspitze', lat: 47.421, lng: 10.985, name: 'Zugspitze (Bayern)' },
-        { id: 'feldberg', lat: 47.873, lng: 8.004, name: 'Feldberg (BaWü)' },
-        { id: 'brocken', lat: 51.799, lng: 10.615, name: 'Brocken (Sachsen-Anhalt)' },
-        { id: 'fichtelberg', lat: 50.429, lng: 12.954, name: 'Fichtelberg (Sachsen)' },
-        { id: 'wasserkuppe', lat: 50.498, lng: 9.937, name: 'Wasserkuppe (Hessen)' },
-        { id: 'beerberg', lat: 50.658, lng: 9.746, name: 'Großer Beerberg (Thüringen)' },
-        { id: 'wurmberg', lat: 51.756, lng: 10.617, name: 'Wurmberg (Niedersachsen)' },
-        { id: 'langenberg', lat: 51.275, lng: 8.525, name: 'Langenberg (NRW)' },
-        { id: 'erbeskopf', lat: 49.730, lng: 7.089, name: 'Erbeskopf (RLP)' },
-        { id: 'dollberg', lat: 49.629, lng: 7.017, name: 'Dollberg (Saarland)' },
-        { id: 'mueggelberge', lat: 52.416, lng: 13.639, name: 'Müggelberge (Berlin)' },
-        { id: 'kutschenberg', lat: 51.423, lng: 13.722, name: 'Kutschenberg (Brandenburg)' },
-        { id: 'friedehorstpark', lat: 53.169, lng: 8.675, name: 'Friedehorstpark (Bremen)' },
-        { id: 'hasselbrack', lat: 53.431, lng: 9.865, name: 'Hasselbrack (Hamburg)' },
-        { id: 'helpterberge', lat: 53.483, lng: 13.606, name: 'Helpter Berge (MV)' },
-        { id: 'bungsberg', lat: 54.212, lng: 10.723, name: 'Bungsberg (SH)' }
-      ];
+      const peaks = PEAKS;
 
       for (let peak of peaks) {
          if (!globalAchievements.some(g => g.achievement_id === `gipfeli_${peak.id}`)) {
@@ -432,6 +434,15 @@ export default function MapView() {
 
   const hasEuCenter = globalAchievements.some(g => g.achievement_id === 'eu_center' && g.user_id === session?.user?.id);
   const euOwner = globalAchievements.find(g => g.achievement_id === 'eu_center')?.user_id;
+
+  // Data extraction for UI
+  const myPioneerObj = globalAchievements.find(g => g.achievement_id.startsWith('pioneer_') && g.user_id === session?.user?.id);
+  const myPioneerRank = myPioneerObj ? myPioneerObj.achievement_id.split('_')[1] : null;
+
+  const myGipfeliObj = globalAchievements.find(g => g.achievement_id.startsWith('gipfeli_') && g.user_id === session?.user?.id);
+  const myGipfeliPeakId = myGipfeliObj ? myGipfeliObj.achievement_id.split('_')[1] : null;
+  const myGipfeliPeakName = myGipfeliPeakId ? PEAKS.find(p => p.id === myGipfeliPeakId)?.name : null;
+
 
 const isNearPeak = (lat, lng) => {
     const peaks = [
