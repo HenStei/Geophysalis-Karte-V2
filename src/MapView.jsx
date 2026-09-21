@@ -245,6 +245,7 @@ export default function MapView() {
   const [activeFrame, setActiveFrame] = useState('none');
   const [editFrame, setEditFrame] = useState('none');
   const [globalAchievements, setGlobalAchievements] = useState([]);
+  const [unlockedAchievements, setUnlockedAchievements] = useState([]);
 
   // Feature Toggles
   const FEATURE_AVATARS = true;
@@ -353,6 +354,7 @@ export default function MapView() {
     
     // Only run this check once every time myPins changes to avoid infinite loops
     const checkClaims = async () => {
+      let newUnlocks = [];
       let claimsMade = false;
       
       // 1. Mitte der EU (49.843, 9.902)
@@ -361,7 +363,7 @@ export default function MapView() {
          if (euPin) {
             const { error } = await supabase.from('global_achievements').insert({ achievement_id: 'eu_center', user_id: session.user.id });
             if (!error) { 
-              alert("🇪🇺 Wahnsinn! Du hast die geografische Mitte der EU als Allererster gefunden!"); 
+              newUnlocks.push({ title: "Mitte der EU", text: "Wahnsinn! Du hast die geografische Mitte der EU als Allererster gefunden! (Globales Limit: 1)", icon: '🇪🇺' });
               claimsMade = true; 
             }
          }
@@ -393,13 +395,12 @@ export default function MapView() {
             if (peakPin) {
                const { error } = await supabase.from('global_achievements').insert({ achievement_id: `gipfeli_${peak.id}`, user_id: session.user.id });
                if (!error) {
-                 alert(`🥐 Glückwunsch! Du hast das Gipfeli am ${peak.name} als Allererster gesichert!`);
+                 newUnlocks.push({ title: "Gipfeli Alpinist", text: `Glückwunsch! Du hast das Gipfeli am ${peak.name} als Allererster gesichert!`, icon: '🥐' });
                  claimsMade = true;
                }
             }
          }
       }
-
       
       // 3. Pionier der ersten Stunde (Max 15)
       if (!globalAchievements.some(g => g.achievement_id.startsWith('pioneer_') && g.user_id === session.user.id)) {
@@ -409,7 +410,7 @@ export default function MapView() {
               if (!pioneers.some(p => p.achievement_id === `pioneer_${i}`)) {
                  const { error } = await supabase.from('global_achievements').insert({ achievement_id: `pioneer_${i}`, user_id: session.user.id });
                  if (!error) {
-                   alert(`🌟 Willkommen im exklusiven Club! Du bist Pionier Nr. ${i} von 15!`);
+                   newUnlocks.push({ title: "Pionier der ersten Stunde", text: `Willkommen im exklusiven Club! Du bist Pionier Nr. ${i} von 15 weltweit!`, icon: '🌟' });
                    claimsMade = true;
                    break;
                  }
@@ -419,6 +420,9 @@ export default function MapView() {
       }
 
       if (claimsMade) fetchGlobals();
+      if (newUnlocks.length > 0) {
+        setUnlockedAchievements(prev => [...prev, ...newUnlocks]);
+      }
     };
 
     checkClaims();
