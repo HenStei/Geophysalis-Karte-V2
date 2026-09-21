@@ -266,6 +266,7 @@ export default function MapView() {
   const hasFirstStep = myPins.length >= 1;
   const hasLocalHero = myPins.length >= 5;
   const hasRetroGamer = myPins.length >= 10;
+  const hasPioneer = myPins.some(pin => new Date(pin.created_at) < new Date('2026-11-01'));
   
   const hasPolarExplorer = myPins.some(p => Math.abs(p.lat) >= 60);
   const hasUrbanLegend = myPins.some(p => {
@@ -863,6 +864,10 @@ export default function MapView() {
             Admin
           </Link>
         )}
+        <div className="mt-1 sm:mt-2 bg-white/95 backdrop-blur-md px-4 py-2 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 text-[10px] sm:text-xs text-gray-400 pointer-events-auto transition self-end text-right">
+          &copy; {new Date().getFullYear()} Geophysalis. Alle Rechte vorbehalten.<br/>
+          <button onClick={() => alert("Lizenz & Urheberrecht:\n\nAlle Inhalte, Bilder (inklusive Avatare und Abzeichen), Quellcodes, Texte und Designs dieser Anwendung sind geistiges Eigentum des Seiteninhabers (Admin).\nJegliche Vervielfältigung, Verbreitung oder Nutzung ohne ausdrückliche schriftliche Erlaubnis ist strengstens untersagt.\n\nEs gelten die gesetzlichen Bestimmungen des Urheberrechts.")} className="underline hover:text-gray-600">Lizenz & Impressum</button>
+        </div>
       </div>
       
       {mapStyle === 'snow' && (
@@ -1344,6 +1349,8 @@ export default function MapView() {
                        editAvatar === 'fire' ? <img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /> : 
                        editAvatar === 'cyberpunk' ? <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /> : 
                        editAvatar === 'retro' ? <img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" /> : 
+                       editAvatar === 'pioneer' ? <img src="/badges/avatar_pioneer.jpg" className="w-full h-full object-cover" /> : 
+                       editAvatar === 'admin' ? <img src="/badges/avatar_admin.jpg" className="w-full h-full object-cover" /> : 
                        editAvatar === 'polar' ? <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /> : '🦊'}
                     </div>
                   </div>
@@ -1361,6 +1368,8 @@ export default function MapView() {
                         {hasUrbanLegend && <button onClick={() => setEditAvatar('cyberpunk')} className={`w-10 h-10 rounded-lg flex items-center justify-center transition overflow-hidden ${editAvatar === 'cyberpunk' ? 'ring-2 ring-purple-500' : 'border border-gray-200 hover:opacity-80'}`}><img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /></button>}
                         {hasRetroGamer && <button onClick={() => setEditAvatar('retro')} className={`w-10 h-10 rounded-lg flex items-center justify-center transition overflow-hidden ${editAvatar === 'retro' ? 'ring-2 ring-purple-500' : 'border border-gray-200 hover:opacity-80'}`}><img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" /></button>}
                         {hasMarathon && <button onClick={() => setEditAvatar('fire')} className={`w-10 h-10 rounded-lg flex items-center justify-center transition overflow-hidden ${editAvatar === 'fire' ? 'ring-2 ring-purple-500' : 'border border-gray-200 hover:opacity-80'}`}><img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /></button>}
+                        {hasPioneer && <button onClick={() => setEditAvatar('pioneer')} className={`w-10 h-10 rounded-lg flex items-center justify-center transition overflow-hidden ${editAvatar === 'pioneer' ? 'ring-2 ring-purple-500' : 'border border-gray-200 hover:opacity-80'}`}><img src="/badges/avatar_pioneer.jpg" className="w-full h-full object-cover" /></button>}
+                        {isAdmin && <button onClick={() => setEditAvatar('admin')} className={`w-10 h-10 rounded-lg flex items-center justify-center transition overflow-hidden ${editAvatar === 'admin' ? 'ring-2 ring-purple-500' : 'border border-gray-200 hover:opacity-80 ring-2 ring-yellow-400'}`}><img src="/badges/avatar_admin.jpg" className="w-full h-full object-cover" /></button>}
                       </div>
                     </div>
 
@@ -1519,6 +1528,20 @@ export default function MapView() {
                   </div>
                 </div>
 
+                <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${hasPioneer ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
+                  <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${hasPioneer ? 'ring-2 ring-yellow-400 shadow-md' : 'border-2 border-gray-300'}`}>
+                    <img src="/badges/badge_pioneer.jpg" alt="Pionier" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-gray-800">
+                      {hasPioneer ? 'Pionier der ersten Stunde 🌟' : '??? (Gründungsmitglied)'}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {hasPioneer ? 'Du warst einer der Ersten! Danke für deine Unterstützung.' : 'Dieses Abzeichen ist nur für die allerersten Nutzer reserviert...'}
+                    </p>
+                  </div>
+                </div>
+
                 <div className={`flex items-center gap-4 p-3 rounded-2xl transition shadow-sm ${hasRetroGamer ? 'bg-white' : 'opacity-40 grayscale bg-gray-100'}`}>
                   <div className={`w-14 h-14 rounded-xl overflow-hidden shrink-0 ${hasRetroGamer ? 'ring-2 ring-green-500 shadow-md' : 'border-2 border-gray-300'}`}>
                     <img src="/badges/retro.jpg" alt="Pixel Pioneer" className="w-full h-full object-cover" />
@@ -1624,6 +1647,8 @@ export default function MapView() {
                     else if (avatar === 'fire') avatarContent = <img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" />;
                     else if (avatar === 'cyberpunk') avatarContent = <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" />;
                     else if (avatar === 'retro') avatarContent = <img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" />;
+                    else if (avatar === 'pioneer') avatarContent = <img src="/badges/avatar_pioneer.jpg" className="w-full h-full object-cover" />;
+                    else if (avatar === 'admin') avatarContent = <img src="/badges/avatar_admin.jpg" className="w-full h-full object-cover" />;
                     else if (avatar === 'polar') avatarContent = <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" />;
                     else avatarContent = '🦊';
 
