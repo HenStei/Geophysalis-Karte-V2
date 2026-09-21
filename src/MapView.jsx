@@ -1626,7 +1626,7 @@ const hasNightOwl = myPins.some(p => {
 
               {/* Tabs */}
               <div className="flex bg-gray-100 rounded-2xl p-1">
-                {[['profil','👤 Profil'],['abzeichen','🏆 Abzeichen'],['⚙️','⚙️ Einst.']].map(([tab, label]) => (
+                {[['profil','👤 Profil'],['abzeichen','🏆 Abzeichen'],['einstellungen','⚙️ Einst.']].map(([tab, label]) => (
                   <button key={tab} onClick={() => setProfileTab(tab)} className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${profileTab === tab ? 'bg-white shadow text-gray-900' : 'text-gray-400 hover:text-gray-700'}`}>{label}</button>
                 ))}
               </div>
