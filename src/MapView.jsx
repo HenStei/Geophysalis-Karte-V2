@@ -269,6 +269,8 @@ export default function MapView() {
   const [globalsLoaded, setGlobalsLoaded] = useState(false);
   const claimedInSessionRef = useRef(new Set());
   const isClaimingRef = useRef(false);
+  const shareCardRef = useRef(null);
+  const [isSharing, setIsSharing] = useState(false);
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
   const [profileTab, setProfileTab] = useState('profil');
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -1712,16 +1714,13 @@ const hasNightOwl = myPins.some(p => {
               {/* TAB: EINSTELLUNGEN */}
               {profileTab === 'einstellungen' && (
                 <div className="flex flex-col gap-3">
-                  <button onClick={() => {
-                    const text = `Ich habe ${myPins.length} Sticker in ${uniqueCountries.size} Ländern auf Geophysalis geklebt! 🌍📍 Versuch es auch und schalte Erfolge frei!`;
-                    if (navigator.share) {
-                      navigator.share({ title: 'Geophysalis', text: text, url: window.location.href }).catch(() => {});
-                    } else {
-                      navigator.clipboard.writeText(text + " " + window.location.href);
-                      alert('In die Zwischenablage kopiert!');
-                    }
-                  }} className="w-full bg-blue-50 text-blue-600 border-2 border-blue-100 font-bold py-3 rounded-2xl hover:bg-blue-100 transition flex items-center justify-center gap-2">
-                    <Share size={18} /> Profil Teilen
+<button 
+                    onClick={handleShareCard} 
+                    disabled={isSharing}
+                    className={`w-full border-2 font-bold py-3 rounded-2xl transition flex items-center justify-center gap-2 ${isSharing ? 'bg-gray-100 text-gray-400 border-gray-200 opacity-70' : 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100'}`}
+                  >
+                    {isSharing ? <Loader2 size={18} className="animate-spin" /> : <Share size={18} />}
+                    {isSharing ? 'Bild wird generiert...' : 'Profil-Karte erstellen & teilen'}
                   </button>
                   <p className="text-xs text-gray-400 text-center break-all">{session.user.email}</p>
                   <label className="flex items-center justify-between bg-gray-50 p-4 rounded-2xl cursor-pointer hover:bg-gray-100 transition">
