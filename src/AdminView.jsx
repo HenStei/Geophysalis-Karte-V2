@@ -9,6 +9,8 @@ export default function AdminView() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [pins, setPins] = useState([]);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [weekActivity, setWeekActivity] = useState([]);
   
   // Dashboard 2.0 Tabs: 'pending' or 'approved'
   const [activeTab, setActiveTab] = useState('pending');
@@ -16,12 +18,12 @@ export default function AdminView() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) fetchAllPins();
+      if (session) { fetchAllPins(); fetchStats(); }
     });
 
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) fetchAllPins();
+      if (session) { fetchAllPins(); fetchStats(); }
     });
 
     const realtimeSubscription = supabase
@@ -40,6 +42,30 @@ export default function AdminView() {
   const fetchAllPins = async () => {
     const { data, error } = await supabase.from('pins').select('*').order('created_at', { ascending: false });
     if (data) setPins(data);
+  };
+
+  const fetchStats = async () => {
+    const { count } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true });
+    if (count !== null) setTotalUsers(count);
+
+    const { data: activityData } = await supabase
+      .from('pins')
+      .select('created_at')
+      .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      days.push(d.toISOString().split('T')[0]);
+    }
+    const countsByDay = days.map(day => ({
+      day: day.slice(5),
+      count: (activityData || []).filter(p => p.created_at.startsWith(day)).length
+    }));
+    setWeekActivity(countsByDay);
   };
 
   const handleLogin = async (e) => {
@@ -97,6 +123,15 @@ export default function AdminView() {
   const approvedPins = pins.filter(p => p.approved);
   const displayPins = activeTab === 'pending' ? pendingPins : approvedPins;
 
+  const countryCount = {};
+  approvedPins.forEach(pin => {
+    if (!pin.location_name) return;
+    const parts = pin.location_name.split(',');
+    const country = parts[parts.length - 1].trim();
+    if (country) countryCount[country] = (countryCount[country] || 0) + 1;
+  });
+  const topCountries = Object.entries(countryCount).sort(([,a],[,b]) => b - a).slice(0, 5);
+
   return (
     <div className="min-h-[100dvh] bg-[#f3f4f6] p-4 sm:p-8 w-full">
       <div className="max-w-7xl mx-auto">
@@ -118,31 +153,71 @@ export default function AdminView() {
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <div onClick={() => setActiveTab('pending')} className={`cursor-pointer bg-white p-6 rounded-3xl border-2 transition-all shadow-sm ${activeTab === 'pending' ? 'border-blue-500 ring-4 ring-blue-50' : 'border-transparent hover:border-gray-200'}`}>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div onClick={() => setActiveTab('pending')} className={`cursor-pointer bg-white p-5 rounded-3xl border-2 transition-all shadow-sm ${activeTab === 'pending' ? 'border-blue-500 ring-4 ring-blue-50' : 'border-transparent hover:border-gray-200'}`}>
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Neue Anfragen</p>
-                <h3 className="text-4xl font-black text-gray-900">{pendingPins.length}</h3>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Ausstehend</p>
+                <h3 className="text-3xl font-black text-gray-900">{pendingPins.length}</h3>
               </div>
-              <div className="bg-yellow-100 p-3 rounded-2xl">
-                <Clock className="text-yellow-600" size={24} />
-              </div>
+              <div className="bg-yellow-100 p-2.5 rounded-2xl"><Clock className="text-yellow-600" size={20} /></div>
             </div>
           </div>
-          
-          <div onClick={() => setActiveTab('approved')} className={`cursor-pointer bg-white p-6 rounded-3xl border-2 transition-all shadow-sm ${activeTab === 'approved' ? 'border-blue-500 ring-4 ring-blue-50' : 'border-transparent hover:border-gray-200'}`}>
+          <div onClick={() => setActiveTab('approved')} className={`cursor-pointer bg-white p-5 rounded-3xl border-2 transition-all shadow-sm ${activeTab === 'approved' ? 'border-blue-500 ring-4 ring-blue-50' : 'border-transparent hover:border-gray-200'}`}>
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Freigegebene Sticker</p>
-                <h3 className="text-4xl font-black text-gray-900">{approvedPins.length}</h3>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Freigegeben</p>
+                <h3 className="text-3xl font-black text-gray-900">{approvedPins.length}</h3>
               </div>
-              <div className="bg-green-100 p-3 rounded-2xl">
-                <Globe className="text-green-600" size={24} />
+              <div className="bg-green-100 p-2.5 rounded-2xl"><Globe className="text-green-600" size={20} /></div>
+            </div>
+          </div>
+          <div className="bg-white p-5 rounded-3xl border-2 border-transparent shadow-sm">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Nutzer gesamt</p>
+                <h3 className="text-3xl font-black text-gray-900">{totalUsers}</h3>
               </div>
+              <div className="bg-purple-100 p-2.5 rounded-2xl"><CheckCircle className="text-purple-600" size={20} /></div>
+            </div>
+          </div>
+          <div className="bg-white p-5 rounded-3xl border-2 border-transparent shadow-sm">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Top Länder</p>
+                <div className="flex flex-col gap-0.5 mt-1">
+                  {topCountries.length === 0
+                    ? <p className="text-xs text-gray-400">–</p>
+                    : topCountries.map(([c, n]) => (
+                      <p key={c} className="text-xs font-bold text-gray-700"><span className="text-gray-400 font-normal">{n}×</span> {c}</p>
+                    ))
+                  }
+                </div>
+              </div>
+              <div className="bg-blue-100 p-2.5 rounded-2xl"><MapPin className="text-blue-600" size={20} /></div>
             </div>
           </div>
         </div>
+
+        {weekActivity.length > 0 && (
+          <div className="bg-white p-6 rounded-3xl shadow-sm mb-6">
+            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">📊 Aktivität – letzte 7 Tage</p>
+            <div className="flex items-end gap-2 h-20">
+              {weekActivity.map(({ day, count }) => {
+                const maxCount = Math.max(...weekActivity.map(d => d.count), 1);
+                const heightPct = count === 0 ? 4 : Math.round((count / maxCount) * 100);
+                return (
+                  <div key={day} className="flex-1 flex flex-col items-center gap-1">
+                    <span className="text-xs font-black text-gray-700">{count > 0 ? count : ''}</span>
+                    <div className="w-full rounded-t-lg bg-blue-500" style={{ height: `${heightPct}%` }} />
+                    <span className="text-[9px] text-gray-400 font-bold">{day}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
 
         {/* Grid Section */}
         <div className="mb-6">
