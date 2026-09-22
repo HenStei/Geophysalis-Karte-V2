@@ -1997,7 +1997,7 @@ const hasNightOwl = myPins.some(p => {
       )}
 
       {/* Footer (Lizenz & Impressum) */}
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md px-3 sm:px-6 py-1 sm:py-2 rounded-full shadow-lg border border-gray-200 z-[1000] flex items-center gap-2 sm:gap-4 text-[8px] sm:text-xs text-gray-500 whitespace-nowrap">
+      <div className="absolute bottom-1 sm:bottom-2 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md px-2 sm:px-6 py-0.5 sm:py-2 rounded-full shadow-lg border border-gray-200 z-[1000] flex items-center gap-1.5 sm:gap-4 text-[6px] sm:text-xs text-gray-400 sm:text-gray-500 whitespace-nowrap">
         <span>&copy; {new Date().getFullYear()} Geophysalis. Alle Rechte vorbehalten.</span>
         <button onClick={() => alert("Lizenz & Urheberrecht:\n\nAlle Inhalte, Bilder (inklusive Avatare und Abzeichen), Quellcodes, Texte und Designs dieser Anwendung sind geistiges Eigentum des Seiteninhabers (Admin).\nJegliche Vervielfältigung, Verbreitung oder Nutzung ohne ausdrückliche schriftliche Erlaubnis ist strengstens untersagt.\n\nEs gelten die gesetzlichen Bestimmungen des Urheberrechts.")} className="font-bold underline hover:text-gray-900 transition">
           Lizenz & Impressum
