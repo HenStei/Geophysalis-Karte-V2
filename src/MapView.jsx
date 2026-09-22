@@ -241,6 +241,43 @@ const PEAKS = [
 
 const sessionLocks = new Set();
 
+const GEO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
+
+function VisitedCountriesMap({ visitedCountries }) {
+  return (
+    <ComposableMap
+      projection="geoMercator"
+      projectionConfig={{ scale: 80, center: [10, 20] }}
+      style={{ width: '100%', height: '130px' }}
+    >
+      <Geographies geography={GEO_URL}>
+        {({ geographies }) =>
+          geographies.map(geo => {
+            const geoName = geo.properties.name;
+            const isVisited = [...visitedCountries].some(c =>
+              c && geoName && (
+                geoName.toLowerCase().includes(c.toLowerCase()) ||
+                c.toLowerCase().includes(geoName.toLowerCase())
+              )
+            );
+            return (
+              <Geography
+                key={geo.rsmKey}
+                geography={geo}
+                style={{
+                  default: { fill: isVisited ? '#f97316' : '#e5e7eb', stroke: '#fff', strokeWidth: 0.3, outline: 'none' },
+                  hover: { fill: isVisited ? '#ea580c' : '#d1d5db', outline: 'none' },
+                  pressed: { outline: 'none' },
+                }}
+              />
+            );
+          })
+        }
+      </Geographies>
+    </ComposableMap>
+  );
+}
+
 export default function MapView() {
   const [map, setMap] = useState(null);
   const [pins, setPins] = useState([]);
@@ -1640,6 +1677,21 @@ const hasNightOwl = myPins.some(p => {
                 </div>
               </div>
 
+
+              {session && uniqueCountries.size > 0 && (
+                <div className="mb-3">
+                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-2">🌍 Erkundet: {uniqueCountries.size} {uniqueCountries.size === 1 ? 'Land' : 'Länder'}</p>
+                  <div className="bg-gray-50 rounded-2xl overflow-hidden border border-gray-100">
+                    <VisitedCountriesMap visitedCountries={uniqueCountries} />
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {[...uniqueCountries].filter(Boolean).map(country => (
+                      <span key={country} className="text-[9px] bg-orange-100 text-orange-700 font-bold px-2 py-0.5 rounded-full">{country}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Tabs */}
               <div className="flex bg-gray-100 rounded-2xl p-1">
                 {[['profil','👤 Profil'],['abzeichen','🏆 Abzeichen'],['einstellungen','⚙️ Einst.']].map(([tab, label]) => (
@@ -1803,36 +1855,37 @@ const hasNightOwl = myPins.some(p => {
       
 
       {/* Onboarding Modal */}
-      {showOnboarding && (
-        <div className="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl animate-[fade-in_0.5s_ease-out]">
-            <div className="text-6xl mb-4">🌍</div>
-            <h2 className="text-2xl font-black text-gray-900 mb-2">Willkommen bei Geophysalis!</h2>
-            <div className="space-y-4 my-6 text-left">
-              <div className="flex gap-3 items-start">
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 font-black text-blue-600">1</div>
-                <p className="text-sm font-medium text-gray-600 mt-1">Klicke irgendwo auf die Karte, um einen Sticker zu setzen.</p>
+      {showOnboarding && (() => {
+        const steps = [
+          { icon: '🌍', title: 'Willkommen bei Geophysalis!', desc: 'Das globale Sticker-Abenteuer. Klebe deinen Sticker überall auf der Welt und verewige dich auf unserer Weltkarte.' },
+          { icon: '📍', title: 'Sticker setzen', desc: 'Tippe auf den blauen Sticker-setzen-Knopf, wähle einen Standort und lade ein Foto deines geklebten Stickers hoch!' },
+          { icon: '🏆', title: 'Achievements sammeln', desc: 'Schalte mit jedem Sticker epische 8-Bit-Abzeichen frei! Wirst du der erste Weltenbummler?' },
+          { icon: '✨', title: 'Bereit zum Erkunden!', desc: 'Die ersten 15 Nutzer erhalten das exklusive Pionier-Abzeichen. Also worauf wartest du noch?' },
+        ];
+        const [step, setStep] = React.useState(0);
+        const current = steps[step];
+        const isLast = step === steps.length - 1;
+        return (
+          <div className="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
+              <div className="text-6xl mb-4">{current.icon}</div>
+              <h2 className="text-2xl font-black text-gray-900 mb-3">{current.title}</h2>
+              <p className="text-sm text-gray-500 mb-8 leading-relaxed">{current.desc}</p>
+              <div className="flex justify-center gap-2 mb-6">
+                {steps.map((_, i) => (
+                  <div key={i} className={`h-2 rounded-full transition-all ${i === step ? 'w-6 bg-blue-600' : 'w-2 bg-gray-200'}`} />
+                ))}
               </div>
-              <div className="flex gap-3 items-start">
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 font-black text-blue-600">2</div>
-                <p className="text-sm font-medium text-gray-600 mt-1">Lade optional ein Foto deines Abenteuers hoch.</p>
-              </div>
-              <div className="flex gap-3 items-start">
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 font-black text-blue-600">3</div>
-                <p className="text-sm font-medium text-gray-600 mt-1">Sammle epische Abzeichen für deine Reisen!</p>
-              </div>
+              <button onClick={() => { if (isLast) { localStorage.setItem('geophysalis_onboarded', 'true'); setShowOnboarding(false); } else { setStep(s => s + 1); } }} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition">
+                {isLast ? 'Los geht\'s! 🚀' : 'Weiter →'}
+              </button>
+              {step > 0 && <button onClick={() => setStep(s => s - 1)} className="mt-2 text-xs text-gray-400 hover:text-gray-600 transition">← Zurück</button>}
             </div>
-            <button 
-              onClick={() => { localStorage.setItem('geophysalis_onboarded', 'true'); setShowOnboarding(false); }}
-              className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition transform hover:scale-105"
-            >
-              Los geht's!
-            </button>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
-      {/* Animated Achievement Popup */}
+      {/* Animated Achievement Popup */}      {/* Animated Achievement Popup */}
       {unlockedAchievements.length > 0 && (
         <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl animate-[bounce_1s_ease-in-out]">
