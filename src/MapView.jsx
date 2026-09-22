@@ -312,14 +312,18 @@ const COUNTRY_MAP = {
 function VisitedCountriesMap({ visitedCountries }) {
   return (
     <ComposableMap
-      projection="geoMercator"
-      projectionConfig={{ scale: 80, center: [10, 20] }}
-      style={{ width: '100%', height: '130px' }}
+      projection="geoEquirectangular"
+      width={800}
+      height={400}
+      projectionConfig={{ scale: 140, center: [0, 10] }}
+      style={{ width: '100%', height: 'auto', maxHeight: '180px' }}
     >
       <Geographies geography={GEO_URL}>
         {({ geographies }) =>
           geographies.map(geo => {
             const geoName = geo.properties?.name;
+            if (geoName === "Antarctica") return null;
+            
             const isVisited = [...visitedCountries].some(c => {
               if (!c || !geoName) return false;
               const cName = c.toLowerCase();
@@ -333,7 +337,7 @@ function VisitedCountriesMap({ visitedCountries }) {
                 geography={geo}
                 fill={isVisited ? '#f97316' : '#e5e7eb'}
                 stroke="#ffffff"
-                strokeWidth={0.3}
+                strokeWidth={0.5}
                 style={{
                   default: { outline: 'none' },
                   hover: { outline: 'none', fill: isVisited ? '#ea580c' : '#d1d5db' },
