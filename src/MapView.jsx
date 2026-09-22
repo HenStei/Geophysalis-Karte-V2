@@ -13,6 +13,7 @@ import { ErrorBoundary } from './ErrorBoundary';
 import { supabase } from './supabase';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.heat';
+import AchievementPopup from './components/AchievementPopup';
 
 // Fix für Leaflet-Marker-Icons als Fallback
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -938,8 +939,11 @@ const hasNightOwl = myPins.some(p => {
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
   const [exifNotice, setExifNotice] = useState("");
   const [draftAltitude, setDraftAltitude] = useState(null);
+  const [uploadStep, setUploadStep] = useState(null); // null | 'analyzing' | 'compressing' | 'uploading'
   
   const [userLocation, setUserLocation] = useState([50.1109, 8.6821]); 
+  const [liveUserPos, setLiveUserPos] = useState(null);
+  const watchIdRef = useRef(null);
 
   // Layer State
   const [mapStyle, setMapStyle] = useState('street'); 
@@ -963,6 +967,21 @@ const hasNightOwl = myPins.some(p => {
 
     return () => {
       supabase.removeChannel(realtimeSubscription);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        (pos) => setLiveUserPos([pos.coords.latitude, pos.coords.longitude]),
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 10000 }
+      );
+    }
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
     };
   }, []);
 
@@ -1118,13 +1137,13 @@ const hasNightOwl = myPins.some(p => {
     setSelectedImage(URL.createObjectURL(file));
     setIsCompressing(true);
     setExifNotice("");
+    setUploadStep('analyzing');
 
     // EXIF Parsing
     try {
       const exifData = await exifr.parse(file);
       if (exifData) {
         let noticeStr = "";
-        // GPS Extraction
         if (exifData.latitude && exifData.longitude) {
           setDraftPin([exifData.latitude, exifData.longitude]);
           setManualLat(exifData.latitude.toFixed(6));
@@ -1133,7 +1152,6 @@ const hasNightOwl = myPins.some(p => {
           if (map) map.flyTo([exifData.latitude, exifData.longitude], 15);
           noticeStr += "📍 Standort aus Foto übernommen. ";
         }
-        // Altitude Extraction
         if (exifData.GPSAltitude) {
           let alt = exifData.GPSAltitude;
           if (exifData.GPSAltitudeRef && Array.from(exifData.GPSAltitudeRef)[0] === 1) {
@@ -1148,6 +1166,7 @@ const hasNightOwl = myPins.some(p => {
       console.log("Keine EXIF Daten gefunden", err);
     }
 
+    setUploadStep('compressing');
     const options = { maxSizeMB: 0.3, maxWidthOrHeight: 1200, useWebWorker: true };
     try {
       const compressed = await imageCompression(file, options);
@@ -1156,12 +1175,14 @@ const hasNightOwl = myPins.some(p => {
       console.error(error);
     } finally {
       setIsCompressing(false);
+      setUploadStep(null);
     }
   };
 
   const handleUpload = async () => {
     if (!compressedFile || !draftPin) return;
     setIsUploading(true);
+    setUploadStep('uploading');
     
     try {
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
@@ -1201,6 +1222,7 @@ const hasNightOwl = myPins.some(p => {
       alert("Es gab einen Fehler beim Upload.");
     } finally {
       setIsUploading(false);
+      setUploadStep(null);
     }
   };
 
@@ -1213,6 +1235,15 @@ const hasNightOwl = myPins.some(p => {
 
   // Computed Pins based on toggle
   const displayPins = showOnlyMyPins && session ? pins.filter(p => p.user_id === session.user.id) : pins;
+
+  const nextMilestone = useMemo(() => {
+    if (!session) return null;
+    const cnt = myPins.length;
+    if (cnt < 5) return { label: `Noch ${5 - cnt} Pins bis Bronze Sammler 🥉`, progress: cnt / 5 };
+    if (cnt < 10) return { label: `Noch ${10 - cnt} Pins bis Silber Sammler 🥈`, progress: cnt / 10 };
+    if (cnt < 50) return { label: `Noch ${50 - cnt} Pins bis Gold Sammler 🥇`, progress: cnt / 50 };
+    return { label: 'Du rockst es! Erkunde die Welt weiter 🌍', progress: null };
+  }, [session, myPins]);
 
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden overscroll-none">
@@ -1540,6 +1571,19 @@ const hasNightOwl = myPins.some(p => {
             </Popup>
           </Marker>
         )}
+
+        {liveUserPos && (
+          <Marker
+            position={liveUserPos}
+            interactive={false}
+            icon={L.divIcon({
+              className: 'bg-transparent border-none',
+              html: `<div style="position:relative;width:24px;height:24px"><div style="position:absolute;inset:0;background:#3b82f6;border-radius:50%;opacity:0.3;animation:ping 1.5s cubic-bezier(0,0,0.2,1) infinite"></div><div style="position:absolute;inset:4px;background:#2563eb;border-radius:50%;border:2px solid white;box-shadow:0 0 6px rgba(37,99,235,0.6)"></div></div>`,
+              iconSize: [24, 24],
+              iconAnchor: [12, 12]
+            })}
+          />
+        )}
       </MapContainer>
 
       {/* Radar & Roulette Buttons */}
@@ -1559,6 +1603,22 @@ const hasNightOwl = myPins.some(p => {
           >
             <Compass size={24} />
           </button>
+        </div>
+      )}
+
+      {session && nextMilestone && !draftPin && !isModalOpen && (
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none">
+          <div className="bg-white/95 backdrop-blur-md px-4 py-2 rounded-full shadow-lg border border-gray-100 text-center min-w-[200px] max-w-[280px]">
+            <p className="text-[11px] font-bold text-gray-700 whitespace-nowrap">{nextMilestone.label}</p>
+            {nextMilestone.progress !== null && (
+              <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1.5">
+                <div
+                  className="bg-gradient-to-r from-yellow-400 to-orange-500 h-1.5 rounded-full transition-all"
+                  style={{ width: `${Math.min(100, nextMilestone.progress * 100)}%` }}
+                />
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -1758,7 +1818,29 @@ const hasNightOwl = myPins.some(p => {
               />
 
               <div className="flex flex-col gap-2 pt-2">
-                {isCompressing && <p className="text-sm text-blue-600 text-center font-medium animate-pulse">Bild wird vorbereitet...</p>}
+                {uploadStep && (
+                  <div className="w-full mb-2">
+                    <div className="flex items-center justify-between mb-1.5">
+                      {['analyzing','compressing','uploading'].map((step, i) => {
+                        const stepIdx = ['analyzing','compressing','uploading'].indexOf(uploadStep);
+                        const labels = ['🔍 Analysieren', '🗜️ Komprimieren', '☁️ Hochladen'];
+                        const done = i < stepIdx;
+                        const active = i === stepIdx;
+                        return (
+                          <div key={step} className={`flex-1 text-center text-[10px] font-bold transition-all ${
+                            done ? 'text-green-600' : active ? 'text-blue-600' : 'text-gray-300'
+                          }`}>{done ? '✅' : labels[i]}</div>
+                        );
+                      })}
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2">
+                      <div
+                        className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                        style={{ width: uploadStep === 'analyzing' ? '15%' : uploadStep === 'compressing' ? '55%' : '90%' }}
+                      />
+                    </div>
+                  </div>
+                )}
                 <button 
                   disabled={!compressedFile || isCompressing || isUploading}
                   onClick={handleUpload}
@@ -2065,23 +2147,11 @@ const hasNightOwl = myPins.some(p => {
       {/* Onboarding Modal */}
       {showOnboarding && <OnboardingModal onClose={() => { localStorage.setItem('geophysalis_onboarded', 'true'); setShowOnboarding(false); }} />}
 
-      {/* Animated Achievement Popup */}      {/* Animated Achievement Popup */}
-      {unlockedAchievements.length > 0 && (
-        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl animate-[bounce_1s_ease-in-out]">
-            <div className="text-6xl mb-4 drop-shadow-lg">{unlockedAchievements[0].icon}</div>
-            <h2 className="text-2xl font-black text-gray-900 mb-2">Meilenstein erreicht!</h2>
-            <h3 className="text-lg font-bold text-purple-600 mb-4">{unlockedAchievements[0].title}</h3>
-            <p className="text-gray-600 font-medium mb-8 leading-relaxed">{unlockedAchievements[0].text}</p>
-            <button 
-              onClick={() => setUnlockedAchievements(prev => prev.slice(1))}
-              className="w-full bg-purple-600 text-white font-bold py-3 rounded-xl hover:bg-purple-700 transition transform hover:scale-105"
-            >
-              Genial!
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Animated Achievement Popup */}
+      <AchievementPopup
+        unlockedAchievements={unlockedAchievements}
+        onDismiss={() => setUnlockedAchievements(prev => prev.slice(1))}
+      />
 
       {/* Leaderboard Modal */}
       {isLeaderboardOpen && (() => {
