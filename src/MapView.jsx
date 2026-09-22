@@ -512,40 +512,6 @@ export default function MapView() {
     return /berlin|new york|london|tokyo|paris|sydney|los angeles/i.test(p.location_name);
   });
   
-  // --- New Automated Badges ---
-  const hasTimeIsRelativ = (() => {
-    if (myPins.length < 2) return false;
-    const sorted = [...myPins].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-    for (let i = 0; i < sorted.length - 1; i++) {
-      const diffHrs = (new Date(sorted[i+1].created_at) - new Date(sorted[i].created_at)) / (1000 * 60 * 60);
-      if (diffHrs <= 24 && Math.abs(sorted[i].lng - sorted[i+1].lng) >= 15) return true;
-    }
-    return false;
-  })();
-
-  const EU_COUNTRIES = ['germany', 'deutschland', 'austria', 'österreich', 'france', 'frankreich', 'italy', 'italien', 'spain', 'spanien', 'poland', 'polen', 'sweden', 'schweden', 'netherlands', 'niederlande', 'belgium', 'belgien', 'czechia', 'tschechien', 'denmark', 'dänemark', 'finland', 'finnland', 'greece', 'griechenland', 'portugal', 'romania', 'rumänien', 'hungary', 'ungarn', 'slovakia', 'slowakei', 'ireland', 'irland', 'croatia', 'kroatien', 'bulgaria', 'bulgarien', 'lithuania', 'litauen', 'slovenia', 'slowenien', 'latvia', 'lettland', 'estonia', 'estland', 'cyprus', 'zypern', 'luxembourg', 'luxemburg', 'malta'];
-  const hasEU = uniqueCountries.size >= 5 && [...uniqueCountries].some(c => EU_COUNTRIES.includes(c.toLowerCase())); // Temporary simplified EU badge (visited 5+ countries and at least one is EU)
-
-  const hasDGG2027 = myPins.some(p => {
-    const d = new Date(p.created_at);
-    return d.getFullYear() === 2027 && p.lat > 50.7 && p.lat < 50.9 && p.lng > 5.9 && p.lng < 6.2; // Aachen Box
-  });
-
-  const hasGAP2027 = myPins.some(p => {
-    const d = new Date(p.created_at);
-    return d.getFullYear() === 2027 && p.lat > 50.8 && p.lat < 51.0 && p.lng > 13.2 && p.lng < 13.5; // Freiberg Box
-  });
-
-  // --- Manual Badges (from special_badge column) ---
-  const manualBadges = new Set(myPins.map(p => p.special_badge).filter(Boolean));
-  const hasAtlantis = manualBadges.has('atlantis');
-  const hasUnterTage = manualBadges.has('unter_tage');
-  const hasLostPlace = manualBadges.has('lost_place');
-  const hasAurora = manualBadges.has('aurora');
-  const hasSonnenfinsternis = manualBadges.has('sonnenfinsternis');
-  const hasCoop = manualBadges.has('coop');
-  const hasOG = manualBadges.has('og');
-
   // Streak Berechnung
   const hasMarathon = (() => {
     const dates = myPins.map(p => new Date(p.created_at).toISOString().split('T')[0]);
@@ -735,7 +701,40 @@ const hasNightOwl = myPins.some(p => {
     }).filter(Boolean)
   );
   const hasWorldTraveler = uniqueCountries.size >= 3;
-  // -- NEUE ACHIEVEMENTS --
+  
+  // --- New Automated Badges ---
+  const hasTimeIsRelativ = (() => {
+    if (myPins.length < 2) return false;
+    const sorted = [...myPins].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const diffHrs = (new Date(sorted[i+1].created_at) - new Date(sorted[i].created_at)) / (1000 * 60 * 60);
+      if (diffHrs <= 24 && Math.abs(sorted[i].lng - sorted[i+1].lng) >= 15) return true;
+    }
+    return false;
+  })();
+
+  const EU_COUNTRIES = ['germany', 'deutschland', 'austria', 'österreich', 'france', 'frankreich', 'italy', 'italien', 'spain', 'spanien', 'poland', 'polen', 'sweden', 'schweden', 'netherlands', 'niederlande', 'belgium', 'belgien', 'czechia', 'tschechien', 'denmark', 'dänemark', 'finland', 'finnland', 'greece', 'griechenland', 'portugal', 'romania', 'rumänien', 'hungary', 'ungarn', 'slovakia', 'slowakei', 'ireland', 'irland', 'croatia', 'kroatien', 'bulgaria', 'bulgarien', 'lithuania', 'litauen', 'slovenia', 'slowenien', 'latvia', 'lettland', 'estonia', 'estland', 'cyprus', 'zypern', 'luxembourg', 'luxemburg', 'malta'];
+  const hasEU = uniqueCountries.size >= 5 && [...uniqueCountries].some(c => EU_COUNTRIES.includes(c.toLowerCase())); 
+
+  const hasDGG2027 = myPins.some(p => {
+    const d = new Date(p.created_at);
+    return d.getFullYear() === 2027 && p.lat > 50.7 && p.lat < 50.9 && p.lng > 5.9 && p.lng < 6.2;
+  });
+
+  const hasGAP2027 = myPins.some(p => {
+    const d = new Date(p.created_at);
+    return d.getFullYear() === 2027 && p.lat > 50.8 && p.lat < 51.0 && p.lng > 13.2 && p.lng < 13.5;
+  });
+
+  // --- Manual Badges (from special_badge column) ---
+  const manualBadges = new Set(myPins.map(p => p.special_badge).filter(Boolean));
+  const hasAtlantis = manualBadges.has('atlantis');
+  const hasUnterTage = manualBadges.has('unter_tage');
+  const hasLostPlace = manualBadges.has('lost_place');
+  const hasAurora = manualBadges.has('aurora');
+  const hasSonnenfinsternis = manualBadges.has('sonnenfinsternis');
+  const hasCoop = manualBadges.has('coop');
+  const hasOG = manualBadges.has('og');
   // Globetrotter (6 Kontinente)
   const getContinent = (lat, lng) => {
     if (lat < -60) return 'Antarktika';
