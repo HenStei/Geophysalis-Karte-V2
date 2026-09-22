@@ -23,22 +23,31 @@ export default function InstallPrompt() {
     setIsIOS(isIOSDevice);
 
     if (isIOSDevice) {
-      // Show iOS prompt after 4 seconds to not overwhelm the user immediately
-      const timer = setTimeout(() => setShowPrompt(true), 4000);
+      const timer = setTimeout(() => setShowPrompt(true), 1500);
       return () => clearTimeout(timer);
     }
 
     // Android/Chrome Detection
+    let promptTriggered = false;
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
+      promptTriggered = true;
       setDeferredPrompt(e);
-      setTimeout(() => setShowPrompt(true), 4000);
+      setTimeout(() => setShowPrompt(true), 1500);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
+    // Fallback if beforeinstallprompt doesn't fire (e.g., manifest issues, desktop Chrome heuristics)
+    const fallbackTimer = setTimeout(() => {
+      if (!promptTriggered) {
+        setShowPrompt(true);
+      }
+    }, 3000);
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      clearTimeout(fallbackTimer);
     };
   }, [isDismissed]);
 
@@ -51,6 +60,8 @@ export default function InstallPrompt() {
         setIsDismissed(true);
       }
       setDeferredPrompt(null);
+    } else {
+      alert("Tippe oben in deinem Browser-Menü auf 'App installieren' oder 'Zum Startbildschirm hinzufügen', um die App herunterzuladen!");
     }
   };
 
@@ -71,7 +82,7 @@ export default function InstallPrompt() {
         {isIOS ? (
           <p className="text-xs text-gray-600 leading-tight">Tippe unten im Safari auf <Share size={14} className="inline mx-0.5 text-blue-500" /> und wähle <strong>Zum Home-Bildschirm</strong>.</p>
         ) : (
-          <p className="text-xs text-gray-600 leading-tight">Installiere die App für Vollbild und Schnellzugriff.</p>
+          <p className="text-xs text-gray-600 leading-tight">Installiere die App für Vollbild und Schnellzugriff auf deinem Gerät.</p>
         )}
       </div>
       <div className="flex flex-col gap-2 shrink-0">
