@@ -1588,7 +1588,7 @@ const hasNightOwl = myPins.some(p => {
 
       {/* Radar & Roulette Buttons */}
       {!draftPin && !isModalOpen && pins.length > 0 && (
-        <div className="absolute bottom-24 right-4 sm:bottom-28 sm:right-8 z-[1000] flex flex-col gap-3 pointer-events-none">
+        <div className="absolute bottom-32 right-4 sm:bottom-[150px] sm:right-8 z-[1000] flex flex-col gap-3 pointer-events-none">
           <button 
             onClick={handleRoulette} 
             title="Zufälliger Sticker"
