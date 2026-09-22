@@ -359,8 +359,24 @@ export default function MapView() {
   // Auth & Session
   const [session, setSession] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [profile, setProfile] = useState(null);
   const [isEditingNickname, setIsEditingNickname] = useState(false);
+
+  // Pre-Release Lockout
+  const RELEASE_DATE = new Date('2026-10-01T10:00:00Z'); // 12:00 Berlin time
+  const isPreRelease = new Date() < RELEASE_DATE;
+
+  useEffect(() => {
+    if (session && profile) {
+      if (isPreRelease && !profile.is_admin) {
+        alert('Die Website startet offiziell erst am 01.10.2026 um 12:00 Uhr! Bis dahin ist der Login nur für Administratoren freigeschaltet. Bitte habe noch etwas Geduld.');
+        supabase.auth.signOut();
+        setSession(null);
+        setProfile(null);
+      }
+    }
+  }, [session, profile, isPreRelease]);
   const [tempNickname, setTempNickname] = useState("");
   const [showOnlyMyPins, setShowOnlyMyPins] = useState(false);
 
@@ -1689,14 +1705,24 @@ const hasNightOwl = myPins.some(p => {
             <div className="text-center mb-6">
               <Sparkles size={40} className="text-blue-500 mx-auto mb-3" />
               <h2 className="text-2xl font-black text-gray-900 mb-2">Login</h2>
-              <p className="text-sm text-gray-600">Melde dich an, um in Zukunft Abzeichen zu sammeln und Styles freizuschalten.</p>
+              <p className="text-sm text-gray-600 mb-4">Melde dich an, um in Zukunft Abzeichen zu sammeln und Styles freizuschalten.</p>
+              
+              <div className="text-left bg-gray-50 p-3 rounded-xl border border-gray-200">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} className="mt-0.5 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 shrink-0" />
+                  <span className="text-[10px] text-gray-600 leading-tight">
+                    <strong>Nutzungsbedingungen & Haftungsausschluss:</strong> Ich bestätige, dass ich mich vor dem Anbringen von Stickern über die lokalen Gesetze informiere. Ich hafte vollumfänglich und allein für mein Handeln. Der Seitenbetreiber übernimmt keinerlei Haftung für Schäden, Ordnungswidrigkeiten oder Straftaten (insb. Sachbeschädigung). Das Verkleben ohne Zustimmung des Eigentümers ist illegal.
+                  </span>
+                </label>
+              </div>
             </div>
             
             <button 
               onClick={() => supabase.auth.signInWithOAuth({ provider: 'google' })}
-              className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-200 text-gray-800 font-bold py-3 rounded-full hover:bg-gray-50 hover:border-gray-300 transition mb-3"
+              disabled={!agreedToTerms}
+              className={`w-full flex items-center justify-center gap-3 bg-white border-2 font-bold py-3 rounded-full transition mb-3 ${agreedToTerms ? 'border-gray-200 text-gray-800 hover:bg-gray-50 hover:border-gray-300' : 'border-gray-100 text-gray-400 cursor-not-allowed opacity-50'}`}
             >
-              <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
+              <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className={`w-5 h-5 ${!agreedToTerms && 'grayscale opacity-50'}`} />
               Weiter mit Google
             </button>
           </div>
