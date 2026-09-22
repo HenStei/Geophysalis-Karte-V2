@@ -11,9 +11,21 @@ export default function AdminView() {
   const [pins, setPins] = useState([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [weekActivity, setWeekActivity] = useState([]);
+  const [selectedBadges, setSelectedBadges] = useState({});
   
   // Dashboard 2.0 Tabs: 'pending' or 'approved'
   const [activeTab, setActiveTab] = useState('pending');
+
+  const SPECIAL_BADGES = [
+    { id: '', label: 'Kein Special Badge' },
+    { id: 'atlantis', label: 'Atlantis (Unterwasser)' },
+    { id: 'unter_tage', label: 'Unter Tage (Höhle/Bergwerk)' },
+    { id: 'lost_place', label: 'Lost Place' },
+    { id: 'aurora', label: 'Aurora Borealis' },
+    { id: 'sonnenfinsternis', label: 'Sonnenfinsternis' },
+    { id: 'coop', label: 'Coop (Zusammen)' },
+    { id: 'og', label: 'OG (Alte Geophysalis)' }
+  ];
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -77,7 +89,8 @@ export default function AdminView() {
   };
 
   const approvePin = async (id) => {
-    const { error } = await supabase.from('pins').update({ approved: true }).eq('id', id);
+    const specialBadge = selectedBadges[id] || null;
+    const { error } = await supabase.from('pins').update({ approved: true, special_badge: specialBadge }).eq('id', id);
     if (!error) fetchAllPins();
   };
 
@@ -257,15 +270,28 @@ export default function AdminView() {
                   </p>
                 </div>
                 
-                <div className="mt-auto flex gap-2 pt-2 border-t border-gray-50">
+                <div className="mt-auto pt-2 border-t border-gray-50 flex flex-col gap-2">
                   {!pin.approved && (
-                    <button onClick={() => approvePin(pin.id)} className="flex-1 bg-green-500 text-white py-2.5 rounded-xl hover:bg-green-600 flex items-center justify-center gap-2 font-bold shadow-sm transition">
-                      <CheckCircle size={18} /> Freigeben
-                    </button>
+                    <select
+                      className="w-full bg-gray-50 border border-gray-200 text-gray-700 text-xs rounded-xl p-2.5 focus:ring-blue-500 focus:border-blue-500 font-bold outline-none"
+                      value={selectedBadges[pin.id] || ''}
+                      onChange={(e) => setSelectedBadges({...selectedBadges, [pin.id]: e.target.value})}
+                    >
+                      {SPECIAL_BADGES.map(b => (
+                        <option key={b.id} value={b.id}>{b.label}</option>
+                      ))}
+                    </select>
                   )}
-                  <button onClick={() => deletePin(pin.id, pin.image_url)} className="flex-1 bg-white text-red-500 py-2.5 rounded-xl hover:bg-red-50 hover:text-red-600 flex items-center justify-center gap-2 font-bold transition border border-gray-200">
-                    <Trash2 size={18} /> Löschen
-                  </button>
+                  <div className="flex gap-2">
+                    {!pin.approved && (
+                      <button onClick={() => approvePin(pin.id)} className="flex-1 bg-green-500 text-white py-2.5 rounded-xl hover:bg-green-600 flex items-center justify-center gap-2 font-bold shadow-sm transition">
+                        <CheckCircle size={18} /> Freigeben
+                      </button>
+                    )}
+                    <button onClick={() => deletePin(pin.id, pin.image_url)} className="flex-1 bg-white text-red-500 py-2.5 rounded-xl hover:bg-red-50 hover:text-red-600 flex items-center justify-center gap-2 font-bold transition border border-gray-200">
+                      <Trash2 size={18} /> Löschen
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

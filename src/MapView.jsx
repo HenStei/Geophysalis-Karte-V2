@@ -512,6 +512,40 @@ export default function MapView() {
     return /berlin|new york|london|tokyo|paris|sydney|los angeles/i.test(p.location_name);
   });
   
+  // --- New Automated Badges ---
+  const hasTimeIsRelativ = (() => {
+    if (myPins.length < 2) return false;
+    const sorted = [...myPins].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const diffHrs = (new Date(sorted[i+1].created_at) - new Date(sorted[i].created_at)) / (1000 * 60 * 60);
+      if (diffHrs <= 24 && Math.abs(sorted[i].lng - sorted[i+1].lng) >= 15) return true;
+    }
+    return false;
+  })();
+
+  const EU_COUNTRIES = ['germany', 'deutschland', 'austria', 'österreich', 'france', 'frankreich', 'italy', 'italien', 'spain', 'spanien', 'poland', 'polen', 'sweden', 'schweden', 'netherlands', 'niederlande', 'belgium', 'belgien', 'czechia', 'tschechien', 'denmark', 'dänemark', 'finland', 'finnland', 'greece', 'griechenland', 'portugal', 'romania', 'rumänien', 'hungary', 'ungarn', 'slovakia', 'slowakei', 'ireland', 'irland', 'croatia', 'kroatien', 'bulgaria', 'bulgarien', 'lithuania', 'litauen', 'slovenia', 'slowenien', 'latvia', 'lettland', 'estonia', 'estland', 'cyprus', 'zypern', 'luxembourg', 'luxemburg', 'malta'];
+  const hasEU = uniqueCountries.size >= 5 && [...uniqueCountries].some(c => EU_COUNTRIES.includes(c.toLowerCase())); // Temporary simplified EU badge (visited 5+ countries and at least one is EU)
+
+  const hasDGG2027 = myPins.some(p => {
+    const d = new Date(p.created_at);
+    return d.getFullYear() === 2027 && p.lat > 50.7 && p.lat < 50.9 && p.lng > 5.9 && p.lng < 6.2; // Aachen Box
+  });
+
+  const hasGAP2027 = myPins.some(p => {
+    const d = new Date(p.created_at);
+    return d.getFullYear() === 2027 && p.lat > 50.8 && p.lat < 51.0 && p.lng > 13.2 && p.lng < 13.5; // Freiberg Box
+  });
+
+  // --- Manual Badges (from special_badge column) ---
+  const manualBadges = new Set(myPins.map(p => p.special_badge).filter(Boolean));
+  const hasAtlantis = manualBadges.has('atlantis');
+  const hasUnterTage = manualBadges.has('unter_tage');
+  const hasLostPlace = manualBadges.has('lost_place');
+  const hasAurora = manualBadges.has('aurora');
+  const hasSonnenfinsternis = manualBadges.has('sonnenfinsternis');
+  const hasCoop = manualBadges.has('coop');
+  const hasOG = manualBadges.has('og');
+
   // Streak Berechnung
   const hasMarathon = (() => {
     const dates = myPins.map(p => new Date(p.created_at).toISOString().split('T')[0]);
@@ -1901,6 +1935,20 @@ const hasNightOwl = myPins.some(p => {
                       { has: devMode || hasNz, img: '/badges/badge_nz.jpg', title: 'One Geophysalis to rule them all ✅', titleL: '??? (Neuseeland)', desc: 'In Neuseeland (Mittelerde) geklebt.', descL: 'Wirf den Ring ins Feuer...', date: getUnlockDate('nz') },
                       { has: devMode || hasUshuaia, img: '/badges/badge_ushuaia.jpg', title: 'Im Auge des Sturms ✅', titleL: '??? (Feuerland)', desc: 'Am Südzipfel von Argentinien geklebt.', descL: 'Das Ende der Welt im tiefen Süden...', date: getUnlockDate('ushuaia') },
                     ]},
+                    { label: 'Legendäre Entdeckungen', color: 'ring-orange-400', items: [
+                      { has: devMode || hasTimeIsRelativ, icon: '⏳', bg: 'bg-orange-800', title: 'Time is relativ', titleL: '??? (Time is relativ)', desc: 'Zwei Sticker innerhalb 24h in versch. Zeitzonen (>15° Längengrad-Diff).', descL: 'Beweise, dass Zeit relativ ist (24h, 2 Zeitzonen)...', date: null },
+                      { has: devMode || hasEU, icon: '🇪🇺', bg: 'bg-blue-800', title: 'EU Explorer', titleL: '??? (Europa)', desc: 'Mindestens 5 Länder besucht und eins davon in der EU.', descL: 'Bereise unseren Kontinent...', date: null },
+                      { has: devMode || hasUnterTage, img: '/badges/badge_unter_tage.jpg', title: 'Unter Tage ⛏️', titleL: '??? (Unter Tage)', desc: 'Tief in einer Höhle oder im Bergwerk.', descL: 'Beweisfoto aus der absoluten Dunkelheit...', date: null },
+                      { has: devMode || hasAtlantis, img: '/badges/badge_atlantis.jpg', title: 'Atlantis 🌊', titleL: '??? (Atlantis)', desc: 'Ein Sticker komplett unter Wasser.', descL: 'Beweisfoto tief unter der Wasseroberfläche...', date: null },
+                      { has: devMode || hasAurora, img: '/badges/badge_aurora.jpg', title: 'Aurora Borealis 🌌', titleL: '??? (Aurora Borealis)', desc: 'Geklebt unter echten Polarlichtern.', descL: 'Beweisfoto mit dem Tanz der Nordlichter...', date: null },
+                      { has: devMode || hasLostPlace, icon: '🏚️', bg: 'bg-gray-800', title: 'Lost Place', titleL: '??? (Lost Place)', desc: 'Geklebt an einem verlassenen Ort.', descL: 'Beweisfoto von einem vergessenen Ort...', date: null },
+                      { has: devMode || hasSonnenfinsternis, icon: '🌒', bg: 'bg-yellow-900', title: 'Sonnenfinsternis', titleL: '??? (Sonnenfinsternis)', desc: 'Geklebt während einer Sonnenfinsternis.', descL: 'Beweisfoto während die Sonne verschwindet...', date: null },
+                      { has: devMode || hasCoop, icon: '🤝', bg: 'bg-emerald-800', title: 'Coop', titleL: '??? (Coop)', desc: 'Zusammen mit einem anderen Nutzer geklebt.', descL: 'Beweisfoto: Geteilte Freude ist doppelte Freude...', date: null },
+                      { has: devMode || hasOG, icon: '📜', bg: 'bg-stone-800', title: 'OG Geophysalis', titleL: '??? (OG)', desc: 'Einen originalen, alten Sticker geklebt.', descL: 'Beweisfoto: Ein Relikt aus vergangenen Zeiten...', date: null },
+                      { has: devMode || hasDGG2027, icon: '⚒️', bg: 'bg-red-800', title: 'DGG 2027', titleL: '??? (DGG 2027)', desc: 'Während der DGG 2027 in Aachen geklebt.', descL: 'Sei 2027 am richtigen Ort...', date: null },
+                      { has: devMode || hasGAP2027, icon: '⚒️', bg: 'bg-purple-800', title: 'GAP 2027', titleL: '??? (GAP 2027)', desc: 'Während des GAP 2027 in Freiberg geklebt.', descL: 'Sei 2027 am richtigen Ort...', date: null },
+                      { has: devMode || false, img: '/badges/badge_steinbock.jpg', title: 'Steinbock ⛰️', titleL: '??? (Alpin)', desc: 'Sticker auf über 3000m Höhe.', descL: 'Erklimme majestätische Höhen (>3000m)...', date: null },
+                    ]}
                   ].map(section => (
                     <div key={section.label}>
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">{section.label}</p>
