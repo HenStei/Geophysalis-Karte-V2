@@ -5,6 +5,7 @@ import imageCompression from 'browser-image-compression';
 import { X, Upload, MapPin, Check, Info, LocateFixed, Layers, Share2, Dices, Compass, Navigation2, User, LogIn, Mail, Sparkles, Shield, CheckCircle, Trash2, Lock, Moon, Award, Globe, Footprints, Trophy , Share, Loader2 } from 'lucide-react';
 import * as htmlToImage from 'html-to-image';
 import confetti from 'canvas-confetti';
+import exifr from 'exifr';
 import { Link } from 'react-router-dom';
 import L from 'leaflet';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
@@ -726,6 +727,10 @@ const hasNightOwl = myPins.some(p => {
     return d.getFullYear() === 2027 && p.lat > 50.8 && p.lat < 51.0 && p.lng > 13.2 && p.lng < 13.5;
   });
 
+  const hasBerggams = myPins.some(p => p.altitude >= 2000);
+  const hasSteinbock = myPins.some(p => p.altitude >= 3000);
+  const hasLuft = myPins.some(p => p.altitude >= 7000);
+
   // --- Manual Badges (from special_badge column) ---
   const manualBadges = new Set(myPins.map(p => p.special_badge).filter(Boolean));
   const hasAtlantis = manualBadges.has('atlantis');
@@ -931,6 +936,7 @@ const hasNightOwl = myPins.some(p => {
   const [locationName, setLocationName] = useState("");
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
   const [exifNotice, setExifNotice] = useState("");
+  const [draftAltitude, setDraftAltitude] = useState(null);
   
   const [userLocation, setUserLocation] = useState([50.1109, 8.6821]); 
 
@@ -1112,6 +1118,35 @@ const hasNightOwl = myPins.some(p => {
     setIsCompressing(true);
     setExifNotice("");
 
+    // EXIF Parsing
+    try {
+      const exifData = await exifr.parse(file);
+      if (exifData) {
+        let noticeStr = "";
+        // GPS Extraction
+        if (exifData.latitude && exifData.longitude) {
+          setDraftPin([exifData.latitude, exifData.longitude]);
+          setManualLat(exifData.latitude.toFixed(6));
+          setManualLng(exifData.longitude.toFixed(6));
+          fetchLocationName(exifData.latitude, exifData.longitude);
+          if (map) map.flyTo([exifData.latitude, exifData.longitude], 15);
+          noticeStr += "📍 Standort aus Foto übernommen. ";
+        }
+        // Altitude Extraction
+        if (exifData.GPSAltitude) {
+          let alt = exifData.GPSAltitude;
+          if (exifData.GPSAltitudeRef && Array.from(exifData.GPSAltitudeRef)[0] === 1) {
+            alt = -alt;
+          }
+          setDraftAltitude(Math.round(alt));
+          noticeStr += `⛰️ Höhe: ${Math.round(alt)}m.`;
+        }
+        if (noticeStr) setExifNotice(noticeStr);
+      }
+    } catch (err) {
+      console.log("Keine EXIF Daten gefunden", err);
+    }
+
     const options = { maxSizeMB: 0.3, maxWidthOrHeight: 1200, useWebWorker: true };
     try {
       const compressed = await imageCompression(file, options);
@@ -1134,14 +1169,20 @@ const hasNightOwl = myPins.some(p => {
 
       const { data: { publicUrl } } = supabase.storage.from('stickers').getPublicUrl(fileName);
 
-      const { error: dbError } = await supabase.from('pins').insert({
+      const insertData = {
         lat: draftPin[0],
         lng: draftPin[1],
         image_url: publicUrl,
         message: message || null,
         location_name: locationName || null,
         user_id: session ? session.user.id : null
-      });
+      };
+      
+      if (draftAltitude !== null) {
+        insertData.altitude = draftAltitude;
+      }
+
+      const { error: dbError } = await supabase.from('pins').insert(insertData);
       if (dbError) throw dbError;
 
       alert("Danke! Dein Sticker wurde hochgeladen und wird bald vom Admin freigegeben.");
@@ -1150,6 +1191,7 @@ const hasNightOwl = myPins.some(p => {
       setSelectedImage(null);
       setCompressedFile(null);
       setDraftPin(null);
+      setDraftAltitude(null);
       setMessage("");
       setLocationName("");
       setExifNotice("");
@@ -1946,7 +1988,9 @@ const hasNightOwl = myPins.some(p => {
                       { has: devMode || hasOG, icon: '📜', bg: 'bg-stone-800', title: 'OG Geophysalis', titleL: '??? (OG)', desc: 'Einen originalen, alten Sticker geklebt.', descL: 'Beweisfoto: Ein Relikt aus vergangenen Zeiten...', date: null },
                       { has: devMode || hasDGG2027, icon: '⚒️', bg: 'bg-red-800', title: 'DGG 2027', titleL: '??? (DGG 2027)', desc: 'Während der DGG 2027 in Aachen geklebt.', descL: 'Sei 2027 am richtigen Ort...', date: null },
                       { has: devMode || hasGAP2027, icon: '⚒️', bg: 'bg-purple-800', title: 'GAP 2027', titleL: '??? (GAP 2027)', desc: 'Während des GAP 2027 in Freiberg geklebt.', descL: 'Sei 2027 am richtigen Ort...', date: null },
-                      { has: devMode || false, img: '/badges/badge_steinbock.jpg', title: 'Steinbock ⛰️', titleL: '??? (Alpin)', desc: 'Sticker auf über 3000m Höhe.', descL: 'Erklimme majestätische Höhen (>3000m)...', date: null },
+                      { has: devMode || hasBerggams, icon: '🐐', bg: 'bg-stone-600', title: 'Berggams', titleL: '??? (Berggams)', desc: 'Sticker auf über 2000m Höhe.', descL: 'Erklimme Höhen über 2000m...', date: null },
+                      { has: devMode || hasSteinbock, img: '/badges/badge_steinbock.jpg', title: 'Steinbock ⛰️', titleL: '??? (Alpin)', desc: 'Sticker auf über 3000m Höhe.', descL: 'Erklimme majestätische Höhen (>3000m)...', date: null },
+                      { has: devMode || hasLuft, icon: '✈️', bg: 'bg-sky-800', title: 'Luft Luft Luft', titleL: '??? (Himmel)', desc: 'Sticker auf über 7000m Höhe.', descL: 'Greife nach den Sternen (>7000m)...', date: null },
                     ]}
                   ].map(section => (
                     <div key={section.label}>
