@@ -573,7 +573,7 @@ export default function MapView() {
          if (euPin) {
             const { error } = await supabase.from('global_achievements').insert({ achievement_id: 'eu_center', user_id: session.user.id });
             if (!error) { 
-              newUnlocks.push({ title: "Mitte der EU", text: "Wahnsinn! Du hast die geografische Mitte der EU als Allererster gefunden! (Globales Limit: 1)", icon: '🇪🇺' });
+              newUnlocks.push({ title: "Mitte der EU", text: "Wahnsinn! Du hast die geografische Mitte der EU als Allererster gefunden! (Globales Limit: 1)", img: '/badges/badge_eu.png' });
               claimsMade = true; 
             }
          }
@@ -2025,7 +2025,7 @@ const hasNightOwl = myPins.some(p => {
 
                   {[
                     { label: 'Exklusiv & Limitiert', color: 'ring-blue-400', items: [
-                      { has: devMode || hasEuCenter, icon: '🇪🇺', bg: 'bg-blue-800', title: 'Mitte der EU', titleL: '??? (Limit: 1 Weltweit)', desc: 'Du warst der Erste in der Mitte der EU!', descL: euOwner ? 'Bereits von jemand anderem ergattert!' : 'Klebe als allererster Nutzer in die Mitte der EU.', date: getUnlockDate('eu_center') },
+                      { has: devMode || hasEuCenter, img: '/badges/badge_eu.png', bg: 'bg-blue-800', title: 'Mitte der EU', titleL: '??? (Limit: 1 Weltweit)', desc: 'Du warst der Erste in der Mitte der EU!', descL: euOwner ? 'Bereits von jemand anderem ergattert!' : 'Klebe als allererster Nutzer in die Mitte der EU.', date: getUnlockDate('eu_center') },
                       { has: devMode || hasGipfeli, img: '/badges/badge_gipfeli.jpg', title: 'Gipfeli', titleL: '??? (Gipfeli)', desc: `Gipfeli erkraxelt!${myGipfeliPeakName ? ' 🏔️ ' + myGipfeliPeakName : ''}`, descL: 'Klebe als Erster auf den Gipfel eines Bundeslandes.', date: getUnlockDate('gipfeli') },
                       { has: hasPioneer, img: '/badges/badge_pioneer.jpg', title: `Pionier der ersten Stunde (No. ${myPioneerRank}/15) 🚀`, titleL: 'Pionier der ersten Stunde (Limit: 15)', desc: 'Du gehörst zu den ersten 15 Nutzern weltweit!', descL: 'Streng limitiert auf die exakt ersten 15 Nutzer.', date: getUnlockDate('pioneer') },
                     ]},
@@ -2061,7 +2061,7 @@ const hasNightOwl = myPins.some(p => {
                     ]},
                     { label: 'Legendäre Entdeckungen', color: 'ring-orange-400', items: [
                       { has: devMode || hasTimeIsRelativ, img: '/badges/badge_time.jpg', title: 'Time is relativ', titleL: '??? (Einstein)', desc: 'Zwei Sticker innerhalb 24h in versch. Zeitzonen (>15° Längengrad-Diff).', descL: 'Beweise, dass Zeit relativ ist. Manche reisen schneller als die Sonne...', date: null },
-                      { has: devMode || hasEU, icon: '🇪🇺', bg: 'bg-blue-800', title: 'EU Explorer', titleL: '??? (Europa)', desc: 'Mindestens 5 Länder besucht und eins davon in der EU.', descL: 'Bereise unseren Kontinent...', date: null },
+                      { has: devMode || hasEU, img: '/badges/badge_eu.png', bg: 'bg-blue-800', title: 'EU Explorer', titleL: '??? (Europa)', desc: 'Mindestens 5 Länder besucht und eins davon in der EU.', descL: 'Bereise unseren Kontinent...', date: null },
                       { has: devMode || hasUnterTage, img: '/badges/badge_unter_tage.jpg', title: 'Unter Tage ⛏️', titleL: '??? (Unter Tage)', desc: 'Tief in einer Höhle oder im Bergwerk.', descL: 'Beweisfoto aus der absoluten Dunkelheit...', date: null },
                       { has: devMode || hasAtlantis, img: '/badges/badge_atlantis.jpg', title: 'Atlantis 🌊', titleL: '??? (Atlantis)', desc: 'Ein Sticker komplett unter Wasser.', descL: 'Beweisfoto tief unter der Wasseroberfläche...', date: null },
                       { has: devMode || hasAurora, img: '/badges/badge_aurora.jpg', title: 'Aurora Borealis 🌌', titleL: '??? (Aurora Borealis)', desc: 'Geklebt unter echten Polarlichtern.', descL: 'Beweisfoto mit dem Tanz der Nordlichter...', date: null },
