@@ -8,6 +8,7 @@ import confetti from 'canvas-confetti';
 import { Link } from 'react-router-dom';
 import L from 'leaflet';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
+import { ErrorBoundary } from './ErrorBoundary';
 import { supabase } from './supabase';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.heat';
@@ -1721,7 +1722,9 @@ const hasNightOwl = myPins.some(p => {
                 <div className="mb-3">
                   <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-2">🌍 Erkundet: {uniqueCountries.size} {uniqueCountries.size === 1 ? 'Land' : 'Länder'}</p>
                   <div className="bg-gray-50 rounded-2xl overflow-hidden border border-gray-100">
-                    <VisitedCountriesMap visitedCountries={uniqueCountries} />
+                    <ErrorBoundary>
+                      <VisitedCountriesMap visitedCountries={uniqueCountries} />
+                    </ErrorBoundary>
                   </div>
                   <div className="flex flex-wrap gap-1 mt-2">
                     {[...uniqueCountries].filter(Boolean).map(country => (
