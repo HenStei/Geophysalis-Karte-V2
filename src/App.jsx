@@ -46,7 +46,7 @@ function App() {
             <div className="mb-8 relative">
               <div className="absolute inset-0 bg-yellow-400 blur-2xl opacity-20 animate-pulse rounded-full"></div>
               <img 
-                src="/favicon.png" 
+                src="/old-physalis.png" 
                 alt="Physalis" 
                 className="w-32 h-32 mx-auto drop-shadow-[0_0_15px_rgba(250,204,21,0.6)] animate-bounce" 
                 style={{ animationDuration: '2s' }} 
