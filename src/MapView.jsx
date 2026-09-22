@@ -7,6 +7,7 @@ import * as htmlToImage from 'html-to-image';
 import confetti from 'canvas-confetti';
 import { Link } from 'react-router-dom';
 import L from 'leaflet';
+import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 import { supabase } from './supabase';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.heat';
