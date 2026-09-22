@@ -1606,26 +1606,26 @@ const hasNightOwl = myPins.some(p => {
         </div>
       )}
 
-      {session && nextMilestone && !draftPin && !isModalOpen && (
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none">
-          <div className="bg-white/95 backdrop-blur-md px-4 py-2 rounded-full shadow-lg border border-gray-100 text-center min-w-[200px] max-w-[280px]">
-            <p className="text-[11px] font-bold text-gray-700 whitespace-nowrap">{nextMilestone.label}</p>
-            {nextMilestone.progress !== null && (
-              <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1.5">
-                <div
-                  className="bg-gradient-to-r from-yellow-400 to-orange-500 h-1.5 rounded-full transition-all"
-                  style={{ width: `${Math.min(100, nextMilestone.progress * 100)}%` }}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {!draftPin ? (
-        <button onClick={handleStartNewPin} className="absolute bottom-6 right-4 sm:bottom-8 sm:right-8 z-[1000] bg-blue-600 text-white px-5 py-3 sm:px-6 sm:py-4 rounded-full sm:rounded-full shadow-xl hover:bg-blue-700 hover:scale-105 hover:-translate-y-1 transition-all font-bold text-base sm:text-lg pointer-events-auto flex items-center gap-2">
-          <MapPin size={22} className="sm:w-6 sm:h-6" /> Sticker setzen
-        </button>
+        <div className="absolute bottom-6 right-4 sm:bottom-8 sm:right-8 z-[1000] flex flex-col items-end gap-1 pointer-events-auto">
+          {session && nextMilestone && (
+            <div className="bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md border border-gray-100 text-right max-w-[220px]">
+              <p className="text-[10px] font-bold text-gray-600 leading-tight">{nextMilestone.label}</p>
+              {nextMilestone.progress !== null && (
+                <div className="w-full bg-gray-100 rounded-full h-1 mt-1">
+                  <div
+                    className="bg-gradient-to-r from-yellow-400 to-orange-500 h-1 rounded-full transition-all"
+                    style={{ width: `${Math.min(100, nextMilestone.progress * 100)}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+          <button onClick={handleStartNewPin} className="bg-blue-600 text-white px-5 py-3 sm:px-6 sm:py-4 rounded-full sm:rounded-full shadow-xl hover:bg-blue-700 hover:scale-105 hover:-translate-y-1 transition-all font-bold text-base sm:text-lg flex items-center gap-2">
+            <MapPin size={22} className="sm:w-6 sm:h-6" /> Sticker setzen
+          </button>
+        </div>
       ) : !isModalOpen && (
         <div className="absolute bottom-6 left-4 right-4 z-[1000] bg-white/95 backdrop-blur-md p-4 rounded-3xl shadow-2xl border border-blue-100 flex flex-col sm:flex-row items-center justify-between gap-4 pointer-events-auto animate-in slide-in-from-bottom-10">
           <div className="flex-1">
