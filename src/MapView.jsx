@@ -2060,20 +2060,24 @@ const hasNightOwl = myPins.some(p => {
                       { has: devMode || hasUshuaia, img: '/badges/badge_ushuaia.jpg', title: 'Im Auge des Sturms ✅', titleL: '??? (Feuerland)', desc: 'Am Südzipfel von Argentinien geklebt.', descL: 'Das Ende der Welt im tiefen Süden...', date: getUnlockDate('ushuaia') },
                     ]},
                     { label: 'Legendäre Entdeckungen', color: 'ring-orange-400', items: [
-                      { has: devMode || hasTimeIsRelativ, img: '/badges/badge_time.jpg', title: 'Time is relativ', titleL: '??? (Einstein)', desc: 'Zwei Sticker innerhalb 24h in versch. Zeitzonen (>15° Längengrad-Diff).', descL: 'Beweise, dass Zeit relativ ist. Manche reisen schneller als die Sonne...', date: null },
+                      { has: devMode || hasTimeIsRelativ, icon: '⏳', title: 'Time is relativ', titleL: '??? (Einstein)', desc: 'Zwei Sticker innerhalb 24h in versch. Zeitzonen (>15° Längengrad-Diff).', descL: 'Beweise, dass Zeit relativ ist. Manche reisen schneller als die Sonne...', date: null },
                       { has: devMode || hasEU, img: '/badges/badge_eu.png', bg: 'bg-blue-800', title: 'EU Explorer', titleL: '??? (Europa)', desc: 'Mindestens 5 Länder besucht und eins davon in der EU.', descL: 'Bereise unseren Kontinent...', date: null },
                       { has: devMode || hasUnterTage, img: '/badges/badge_unter_tage.jpg', title: 'Unter Tage ⛏️', titleL: '??? (Unter Tage)', desc: 'Tief in einer Höhle oder im Bergwerk.', descL: 'Beweisfoto aus der absoluten Dunkelheit...', date: null },
                       { has: devMode || hasAtlantis, img: '/badges/badge_atlantis.jpg', title: 'Atlantis 🌊', titleL: '??? (Atlantis)', desc: 'Ein Sticker komplett unter Wasser.', descL: 'Beweisfoto tief unter der Wasseroberfläche...', date: null },
                       { has: devMode || hasAurora, img: '/badges/badge_aurora.jpg', title: 'Aurora Borealis 🌌', titleL: '??? (Aurora Borealis)', desc: 'Geklebt unter echten Polarlichtern.', descL: 'Beweisfoto mit dem Tanz der Nordlichter...', date: null },
-                      { has: devMode || hasLostPlace, img: '/badges/badge_lost_place.jpg', title: 'Lost Place 🏚️', titleL: '??? (Lost Place)', desc: 'Geklebt an einem verlassenen Ort.', descL: 'Beweisfoto von einem vergessenen Ort...', date: null },
-                      { has: devMode || hasSonnenfinsternis, img: '/badges/badge_eclipse.jpg', title: 'Sonnenfinsternis 🌒', titleL: '??? (Sonnenfinsternis)', desc: 'Geklebt während einer Sonnenfinsternis.', descL: 'Beweisfoto während die Sonne verschwindet...', date: null },
+                      { has: devMode || hasLostPlace, icon: '🏚️', title: 'Lost Place 🏚️', titleL: '??? (Lost Place)', desc: 'Geklebt an einem verlassenen Ort.', descL: 'Beweisfoto von einem vergessenen Ort...', date: null },
+                      { has: devMode || hasSonnenfinsternis, icon: '🌑', title: 'Sonnenfinsternis 🌑', titleL: '??? (Sonnenfinsternis)', desc: 'Geklebt während einer Sonnenfinsternis.', descL: 'Beweisfoto während die Sonne verschwindet...', date: null },
                       { has: devMode || hasCoop, icon: '🤝', bg: 'bg-emerald-800', title: 'Coop', titleL: '??? (Coop)', desc: 'Zusammen mit einem anderen Nutzer geklebt.', descL: 'Beweisfoto: Geteilte Freude ist doppelte Freude...', date: null },
                       { has: devMode || hasOG, icon: '📜', bg: 'bg-stone-800', title: 'OG Geophysalis', titleL: '??? (OG)', desc: 'Einen originalen, alten Sticker geklebt.', descL: 'Beweisfoto: Ein Relikt aus vergangenen Zeiten...', date: null },
                       { has: devMode || hasDGG2027, icon: '⚒️', bg: 'bg-red-800', title: 'DGG 2027', titleL: '??? (DGG 2027)', desc: 'Während der DGG 2027 in Aachen geklebt.', descL: 'Sei 2027 am richtigen Ort...', date: null },
                       { has: devMode || hasGAP2027, icon: '⚒️', bg: 'bg-purple-800', title: 'GAP 2027', titleL: '??? (GAP 2027)', desc: 'Während des GAP 2027 in Freiberg geklebt.', descL: 'Sei 2027 am richtigen Ort...', date: null },
-                      { has: devMode || hasBerggams, img: '/badges/badge_berggams.jpg', title: 'Berggams 🐐', titleL: '??? (Berggams)', desc: 'Sticker auf über 2000m Höhe.', descL: 'Erklimme Höhen über 2000m...', date: null },
-                      { has: devMode || hasSteinbock, img: '/badges/badge_steinbock.jpg', title: 'Steinbock ⛰️', titleL: '??? (Alpin)', desc: 'Sticker auf über 3000m Höhe.', descL: 'Erklimme majestätische Höhen (>3000m)...', date: null },
-                      { has: devMode || hasLuft, img: '/badges/badge_luft.jpg', title: 'Luft Luft Luft ✈️', titleL: '??? (Himmel)', desc: 'Sticker auf über 7000m Höhe.', descL: 'Greife nach den Sternen (>7000m)...', date: null },
+                    ]},
+                    { label: 'Höhen & Tiefen', color: 'ring-blue-300', items: [
+                      { has: devMode || hasMariana, icon: '🐙', title: 'Marianengraben', titleL: '??? (Tiefsee)', desc: 'Am tiefsten Punkt der Erde.', descL: 'Reise zum tiefsten Punkt der Ozeane...', date: null },
+                      { has: devMode || hasSteinbock, img: '/badges/badge_steinbock.jpg', title: 'Steinbock 🧗', titleL: '??? (Steinbock)', desc: 'Sticker auf über 3000m Höhe.', descL: 'Erklimme Höhen über 3000m...', date: null },
+                      { has: devMode || hasBerggams, icon: '🐐', title: 'Berggams 🐐', titleL: '??? (Berggams)', desc: 'Sticker auf über 2000m Höhe.', descL: 'Erklimme Höhen über 2000m...', date: null },
+                      { has: devMode || hasAlpinist, img: '/badges/badge_gipfeli.jpg', title: 'Alpinist 🏔️', titleL: '??? (Alpinist)', desc: 'Sticker auf über 1000m Höhe.', descL: 'Erklimme Höhen über 1000m...', date: null },
+                      { has: devMode || hasLuft, icon: '🎈', title: 'Luft Luft Luft 🎈', titleL: '??? (Himmel)', desc: 'Sticker auf über 7000m Höhe.', descL: 'Greife nach den Sternen (>7000m)...', date: null },
                     ]}
                   ].map(section => {
                     const isOpen = openAccordion === section.label;

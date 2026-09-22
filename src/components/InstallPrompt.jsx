@@ -15,7 +15,10 @@ export default function InstallPrompt() {
     const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     setIsStandalone(isStandaloneMode);
 
-    if (isStandaloneMode) return;
+    // Desktop Check (don't show on large screens where PWA is less common)
+    const isDesktop = window.innerWidth > 768;
+
+    if (isStandaloneMode || isDesktop) return;
 
     // iOS Detection
     const userAgent = window.navigator.userAgent.toLowerCase();
@@ -61,7 +64,8 @@ export default function InstallPrompt() {
       }
       setDeferredPrompt(null);
     } else {
-      alert("Tippe oben in deinem Browser-Menü auf 'App installieren' oder 'Zum Startbildschirm hinzufügen', um die App herunterzuladen!");
+      // Fallback instruction if the event didn't trigger
+      alert("Tippe oben im Browser-Menü (drei Punkte) auf 'App installieren' oder 'Zum Startbildschirm hinzufügen'!");
     }
   };
 
