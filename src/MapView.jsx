@@ -1608,9 +1608,9 @@ const hasNightOwl = myPins.some(p => {
 
 
       {!draftPin ? (
-        <div className="absolute bottom-6 right-4 sm:bottom-8 sm:right-8 z-[1000] flex flex-col items-end gap-1 pointer-events-auto">
+        <div className="absolute bottom-6 right-4 sm:bottom-8 sm:right-8 z-[1000] flex flex-col items-center gap-1.5 pointer-events-auto">
           {session && nextMilestone && (
-            <div className="bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md border border-gray-100 text-right max-w-[220px]">
+            <div className="bg-white/95 backdrop-blur-md px-4 py-1.5 rounded-full shadow-md border border-gray-100 text-center w-full max-w-[220px]">
               <p className="text-[10px] font-bold text-gray-600 leading-tight">{nextMilestone.label}</p>
               {nextMilestone.progress !== null && (
                 <div className="w-full bg-gray-100 rounded-full h-1 mt-1">
@@ -1622,7 +1622,7 @@ const hasNightOwl = myPins.some(p => {
               )}
             </div>
           )}
-          <button onClick={handleStartNewPin} className="bg-blue-600 text-white px-5 py-3 sm:px-6 sm:py-4 rounded-full sm:rounded-full shadow-xl hover:bg-blue-700 hover:scale-105 hover:-translate-y-1 transition-all font-bold text-base sm:text-lg flex items-center gap-2">
+          <button onClick={handleStartNewPin} className="bg-blue-600 text-white px-5 py-3 sm:px-6 sm:py-4 w-full rounded-full sm:rounded-full shadow-xl hover:bg-blue-700 hover:scale-105 hover:-translate-y-1 transition-all font-bold text-base sm:text-lg flex items-center justify-center gap-2">
             <MapPin size={22} className="sm:w-6 sm:h-6" /> Sticker setzen
           </button>
         </div>
