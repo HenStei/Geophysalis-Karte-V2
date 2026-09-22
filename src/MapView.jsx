@@ -1101,7 +1101,7 @@ const hasNightOwl = myPins.some(p => {
         </div>
 
         {showLayerMenu && (
-          <div className="bg-white/95 backdrop-blur-md p-4 rounded-full sm:rounded-3xl shadow-2xl border border-gray-100 flex flex-col gap-4 w-56 animate-in slide-in-from-top-4 origin-top-right">
+          <div className="bg-white/95 backdrop-blur-md p-4 rounded-3xl shadow-2xl border border-gray-100 flex flex-col gap-4 w-56 animate-in slide-in-from-top-4 origin-top-right">
             <div>
               <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Karten-Stil</p>
               <div className="flex flex-col gap-1">
@@ -1997,7 +1997,7 @@ const hasNightOwl = myPins.some(p => {
       )}
 
       {/* Footer (Lizenz & Impressum) */}
-      <div className="absolute bottom-24 sm:bottom-2 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md px-6 py-2 rounded-full shadow-lg border border-gray-200 z-[1000] flex items-center gap-4 text-[10px] sm:text-xs text-gray-500 whitespace-nowrap">
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md px-3 sm:px-6 py-1 sm:py-2 rounded-full shadow-lg border border-gray-200 z-[1000] flex items-center gap-2 sm:gap-4 text-[8px] sm:text-xs text-gray-500 whitespace-nowrap">
         <span>&copy; {new Date().getFullYear()} Geophysalis. Alle Rechte vorbehalten.</span>
         <button onClick={() => alert("Lizenz & Urheberrecht:\n\nAlle Inhalte, Bilder (inklusive Avatare und Abzeichen), Quellcodes, Texte und Designs dieser Anwendung sind geistiges Eigentum des Seiteninhabers (Admin).\nJegliche Vervielfältigung, Verbreitung oder Nutzung ohne ausdrückliche schriftliche Erlaubnis ist strengstens untersagt.\n\nEs gelten die gesetzlichen Bestimmungen des Urheberrechts.")} className="font-bold underline hover:text-gray-900 transition">
           Lizenz & Impressum
