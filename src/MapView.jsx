@@ -283,6 +283,32 @@ function OnboardingModal({ onClose }) {
   );
 }
 
+const COUNTRY_MAP = {
+  'deutschland': 'germany',
+  'österreich': 'austria',
+  'schweiz': 'switzerland',
+  'italien': 'italy',
+  'tschechien': 'czechia',
+  'spanien': 'spain',
+  'frankreich': 'france',
+  'niederlande': 'netherlands',
+  'belgien': 'belgium',
+  'polen': 'poland',
+  'dänemark': 'denmark',
+  'schweden': 'sweden',
+  'norwegen': 'norway',
+  'finnland': 'finland',
+  'griechenland': 'greece',
+  'türkei': 'turkey',
+  'kroatien': 'croatia',
+  'portugal': 'portugal',
+  'vereinigte staaten': 'united states',
+  'großbritannien': 'united kingdom',
+  'england': 'united kingdom',
+  'ägypten': 'egypt',
+  'marokko': 'morocco'
+};
+
 function VisitedCountriesMap({ visitedCountries }) {
   return (
     <ComposableMap
@@ -293,21 +319,25 @@ function VisitedCountriesMap({ visitedCountries }) {
       <Geographies geography={GEO_URL}>
         {({ geographies }) =>
           geographies.map(geo => {
-            const geoName = geo.properties.name;
-            const isVisited = [...visitedCountries].some(c =>
-              c && geoName && (
-                geoName.toLowerCase().includes(c.toLowerCase()) ||
-                c.toLowerCase().includes(geoName.toLowerCase())
-              )
-            );
+            const geoName = geo.properties?.name;
+            const isVisited = [...visitedCountries].some(c => {
+              if (!c || !geoName) return false;
+              const cName = c.toLowerCase();
+              const gName = geoName.toLowerCase();
+              const mapped = COUNTRY_MAP[cName] || cName;
+              return gName.includes(mapped) || mapped.includes(gName);
+            });
             return (
               <Geography
                 key={geo.rsmKey}
                 geography={geo}
+                fill={isVisited ? '#f97316' : '#e5e7eb'}
+                stroke="#ffffff"
+                strokeWidth={0.3}
                 style={{
-                  default: { fill: isVisited ? '#f97316' : '#e5e7eb', stroke: '#fff', strokeWidth: 0.3, outline: 'none' },
-                  hover: { fill: isVisited ? '#ea580c' : '#d1d5db', outline: 'none' },
-                  pressed: { outline: 'none' },
+                  default: { outline: 'none' },
+                  hover: { outline: 'none', fill: isVisited ? '#ea580c' : '#d1d5db' },
+                  pressed: { outline: 'none' }
                 }}
               />
             );
