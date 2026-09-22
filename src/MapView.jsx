@@ -444,6 +444,7 @@ export default function MapView() {
 
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
   const [profileTab, setProfileTab] = useState('profil');
+  const [openAccordion, setOpenAccordion] = useState('Exklusiv & Limitiert');
   const [showOnboarding, setShowOnboarding] = useState(false);
   
   useEffect(() => {
@@ -1977,40 +1978,54 @@ const hasNightOwl = myPins.some(p => {
                       { has: devMode || hasUshuaia, img: '/badges/badge_ushuaia.jpg', title: 'Im Auge des Sturms ✅', titleL: '??? (Feuerland)', desc: 'Am Südzipfel von Argentinien geklebt.', descL: 'Das Ende der Welt im tiefen Süden...', date: getUnlockDate('ushuaia') },
                     ]},
                     { label: 'Legendäre Entdeckungen', color: 'ring-orange-400', items: [
-                      { has: devMode || hasTimeIsRelativ, icon: '⏳', bg: 'bg-orange-800', title: 'Time is relativ', titleL: '??? (Einstein)', desc: 'Zwei Sticker innerhalb 24h in versch. Zeitzonen (>15° Längengrad-Diff).', descL: 'Beweise, dass Zeit relativ ist. Manche reisen schneller als die Sonne...', date: null },
+                      { has: devMode || hasTimeIsRelativ, img: '/badges/badge_time.jpg', title: 'Time is relativ', titleL: '??? (Einstein)', desc: 'Zwei Sticker innerhalb 24h in versch. Zeitzonen (>15° Längengrad-Diff).', descL: 'Beweise, dass Zeit relativ ist. Manche reisen schneller als die Sonne...', date: null },
                       { has: devMode || hasEU, icon: '🇪🇺', bg: 'bg-blue-800', title: 'EU Explorer', titleL: '??? (Europa)', desc: 'Mindestens 5 Länder besucht und eins davon in der EU.', descL: 'Bereise unseren Kontinent...', date: null },
                       { has: devMode || hasUnterTage, img: '/badges/badge_unter_tage.jpg', title: 'Unter Tage ⛏️', titleL: '??? (Unter Tage)', desc: 'Tief in einer Höhle oder im Bergwerk.', descL: 'Beweisfoto aus der absoluten Dunkelheit...', date: null },
                       { has: devMode || hasAtlantis, img: '/badges/badge_atlantis.jpg', title: 'Atlantis 🌊', titleL: '??? (Atlantis)', desc: 'Ein Sticker komplett unter Wasser.', descL: 'Beweisfoto tief unter der Wasseroberfläche...', date: null },
                       { has: devMode || hasAurora, img: '/badges/badge_aurora.jpg', title: 'Aurora Borealis 🌌', titleL: '??? (Aurora Borealis)', desc: 'Geklebt unter echten Polarlichtern.', descL: 'Beweisfoto mit dem Tanz der Nordlichter...', date: null },
-                      { has: devMode || hasLostPlace, icon: '🏚️', bg: 'bg-gray-800', title: 'Lost Place', titleL: '??? (Lost Place)', desc: 'Geklebt an einem verlassenen Ort.', descL: 'Beweisfoto von einem vergessenen Ort...', date: null },
-                      { has: devMode || hasSonnenfinsternis, icon: '🌒', bg: 'bg-yellow-900', title: 'Sonnenfinsternis', titleL: '??? (Sonnenfinsternis)', desc: 'Geklebt während einer Sonnenfinsternis.', descL: 'Beweisfoto während die Sonne verschwindet...', date: null },
+                      { has: devMode || hasLostPlace, img: '/badges/badge_lost_place.jpg', title: 'Lost Place 🏚️', titleL: '??? (Lost Place)', desc: 'Geklebt an einem verlassenen Ort.', descL: 'Beweisfoto von einem vergessenen Ort...', date: null },
+                      { has: devMode || hasSonnenfinsternis, img: '/badges/badge_eclipse.jpg', title: 'Sonnenfinsternis 🌒', titleL: '??? (Sonnenfinsternis)', desc: 'Geklebt während einer Sonnenfinsternis.', descL: 'Beweisfoto während die Sonne verschwindet...', date: null },
                       { has: devMode || hasCoop, icon: '🤝', bg: 'bg-emerald-800', title: 'Coop', titleL: '??? (Coop)', desc: 'Zusammen mit einem anderen Nutzer geklebt.', descL: 'Beweisfoto: Geteilte Freude ist doppelte Freude...', date: null },
                       { has: devMode || hasOG, icon: '📜', bg: 'bg-stone-800', title: 'OG Geophysalis', titleL: '??? (OG)', desc: 'Einen originalen, alten Sticker geklebt.', descL: 'Beweisfoto: Ein Relikt aus vergangenen Zeiten...', date: null },
                       { has: devMode || hasDGG2027, icon: '⚒️', bg: 'bg-red-800', title: 'DGG 2027', titleL: '??? (DGG 2027)', desc: 'Während der DGG 2027 in Aachen geklebt.', descL: 'Sei 2027 am richtigen Ort...', date: null },
                       { has: devMode || hasGAP2027, icon: '⚒️', bg: 'bg-purple-800', title: 'GAP 2027', titleL: '??? (GAP 2027)', desc: 'Während des GAP 2027 in Freiberg geklebt.', descL: 'Sei 2027 am richtigen Ort...', date: null },
-                      { has: devMode || hasBerggams, icon: '🐐', bg: 'bg-stone-600', title: 'Berggams', titleL: '??? (Berggams)', desc: 'Sticker auf über 2000m Höhe.', descL: 'Erklimme Höhen über 2000m...', date: null },
+                      { has: devMode || hasBerggams, img: '/badges/badge_berggams.jpg', title: 'Berggams 🐐', titleL: '??? (Berggams)', desc: 'Sticker auf über 2000m Höhe.', descL: 'Erklimme Höhen über 2000m...', date: null },
                       { has: devMode || hasSteinbock, img: '/badges/badge_steinbock.jpg', title: 'Steinbock ⛰️', titleL: '??? (Alpin)', desc: 'Sticker auf über 3000m Höhe.', descL: 'Erklimme majestätische Höhen (>3000m)...', date: null },
-                      { has: devMode || hasLuft, icon: '✈️', bg: 'bg-sky-800', title: 'Luft Luft Luft', titleL: '??? (Himmel)', desc: 'Sticker auf über 7000m Höhe.', descL: 'Greife nach den Sternen (>7000m)...', date: null },
+                      { has: devMode || hasLuft, img: '/badges/badge_luft.jpg', title: 'Luft Luft Luft ✈️', titleL: '??? (Himmel)', desc: 'Sticker auf über 7000m Höhe.', descL: 'Greife nach den Sternen (>7000m)...', date: null },
                     ]}
-                  ].map(section => (
-                    <div key={section.label}>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">{section.label}</p>
-                      <div className="flex flex-col gap-2">
-                        {section.items.map((b, i) => (
-                          <div key={i} className={`flex items-center gap-3 p-3 rounded-xl transition ${b.has ? 'bg-white border border-gray-100 shadow-sm' : 'opacity-40 grayscale bg-gray-50'}`}>
-                            <div className={`w-12 h-12 rounded-xl overflow-hidden shrink-0 flex items-center justify-center text-2xl ${b.has ? section.color + ' ring-2 shadow' : 'border-2 border-gray-300'} ${b.bg || ''}`}>
-                              {b.img ? <img src={b.img} className="w-full h-full object-cover" /> : b.icon}
+                  ].map(section => {
+                    const isOpen = openAccordion === section.label;
+                    const unlockedCount = section.items.filter(b => b.has).length;
+                    return (
+                    <div key={section.label} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+                      <button 
+                        onClick={() => setOpenAccordion(isOpen ? null : section.label)}
+                        className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition"
+                      >
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-black text-gray-700 uppercase tracking-wider">{section.label}</p>
+                          <span className="text-[10px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-bold">{unlockedCount}/{section.items.length}</span>
+                        </div>
+                        <span className="text-gray-400">{isOpen ? '▲' : '▼'}</span>
+                      </button>
+                      {isOpen && (
+                        <div className="p-3 flex flex-col gap-2">
+                          {section.items.map((b, i) => (
+                            <div key={i} className={`flex items-center gap-3 p-3 rounded-xl transition ${b.has ? 'bg-white border border-gray-100 shadow-sm' : 'opacity-40 grayscale bg-gray-50'}`}>
+                              <div className={`w-12 h-12 rounded-xl overflow-hidden shrink-0 flex items-center justify-center text-2xl ${b.has ? section.color + ' ring-2 shadow' : 'border-2 border-gray-300'} ${b.bg || ''}`}>
+                                {b.img ? <img src={b.img} className="w-full h-full object-cover" /> : b.icon}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-black text-gray-800 leading-tight truncate">{b.has ? b.title : b.titleL}</p>
+                                <p className="text-xs text-gray-500 line-clamp-2">{b.has ? b.desc : b.descL}</p>
+                                {b.has && b.date && <span className="text-[9px] text-gray-400">Freigeschaltet am {b.date}</span>}
+                              </div>
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-black text-gray-800 leading-tight truncate">{b.has ? b.title : b.titleL}</p>
-                              <p className="text-xs text-gray-500 line-clamp-2">{b.has ? b.desc : b.descL}</p>
-                              {b.has && b.date && <span className="text-[9px] text-gray-400">Freigeschaltet am {b.date}</span>}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  ))}
+                  )})}
                 </div>
               )}
 
