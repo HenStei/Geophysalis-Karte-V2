@@ -74,8 +74,8 @@ export default function InstallPrompt() {
 
   return (
     <div className="fixed bottom-4 left-4 right-4 z-[9999] bg-white rounded-3xl shadow-2xl border border-gray-100 p-4 flex gap-4 items-center animate-in slide-in-from-bottom-10 pointer-events-auto max-w-md mx-auto">
-      <div className="bg-gradient-to-tr from-blue-600 to-purple-600 rounded-2xl p-3 shrink-0 shadow-lg">
-        <Download className="text-white" size={28} />
+      <div className="bg-gray-50 rounded-2xl p-2 shrink-0 shadow-inner border border-gray-100">
+        <img src="/favicon.png" alt="Geophysalis Logo" className="w-10 h-10 object-contain drop-shadow-sm" />
       </div>
       <div className="flex-1">
         <h3 className="font-black text-gray-900 text-sm mb-1">Geophysalis App</h3>
