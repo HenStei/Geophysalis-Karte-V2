@@ -742,6 +742,12 @@ const hasNightOwl = myPins.some(p => {
   const hasSonnenfinsternis = manualBadges.has('sonnenfinsternis');
   const hasCoop = manualBadges.has('coop');
   const hasOG = manualBadges.has('og');
+  const hasMariana = manualBadges.has('mariana');
+  const hasAlpinist = myPins.some(p => p.altitude >= 1000);
+  const hasSafari = manualBadges.has('safari');
+  const hasPenguin = manualBadges.has('penguin');
+  const hasBermuda = manualBadges.has('bermuda');
+  const hasArea51 = manualBadges.has('area51');
   // Globetrotter (6 Kontinente)
   const getContinent = (lat, lng) => {
     if (lat < -60) return 'Antarktika';
