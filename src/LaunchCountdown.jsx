@@ -40,17 +40,19 @@ export default function LaunchCountdown({ timeRemainingSeconds, onComplete }) {
       return () => clearTimeout(failsafe);
     }
 
-    // Bouncing Physalis Logic
-    const count = 20;
+    // Bouncing Physalis Logic - Optimized for Mobile
+    const isMobile = window.innerWidth < 768;
+    const count = isMobile ? 8 : 20; // Reduce DOM elements on phones to prevent lag
+    
     const items = Array.from({ length: count }).map(() => ({
       x: Math.random() * (window.innerWidth - 64),
       y: Math.random() * (window.innerHeight - 64),
-      vx: (Math.random() > 0.5 ? 1 : -1) * (2 + Math.random() * 4),
-      vy: (Math.random() > 0.5 ? 1 : -1) * (2 + Math.random() * 4),
+      vx: (Math.random() > 0.5 ? 1 : -1) * (1.5 + Math.random() * 3),
+      vy: (Math.random() > 0.5 ? 1 : -1) * (1.5 + Math.random() * 3),
       el: null,
       size: 48 + Math.random() * 32,
       rot: 0,
-      rotSpeed: (Math.random() - 0.5) * 4
+      rotSpeed: (Math.random() - 0.5) * 3
     }));
     itemsRef.current = items;
 
@@ -64,7 +66,8 @@ export default function LaunchCountdown({ timeRemainingSeconds, onComplete }) {
         if (item.y <= 0 || item.y >= window.innerHeight - item.size) item.vy *= -1;
 
         if (item.el) {
-          item.el.style.transform = `translate(${item.x}px, ${item.y}px) rotate(${item.rot}deg)`;
+          // Use translate3d to force hardware acceleration (GPU) and prevent lag
+          item.el.style.transform = `translate3d(${item.x}px, ${item.y}px, 0) rotate(${item.rot}deg)`;
         }
       });
       animRef.current = requestAnimationFrame(update);
@@ -134,7 +137,7 @@ export default function LaunchCountdown({ timeRemainingSeconds, onComplete }) {
              <div className="w-3 h-3 bg-red-500 rounded-full animate-ping" style={{ animationDelay: '0.2s' }}></div>
              <div className="w-3 h-3 bg-red-500 rounded-full animate-ping" style={{ animationDelay: '0.4s' }}></div>
           </div>
-          <p className="text-sm text-gray-500 mt-8 tracking-[0.2em] uppercase animate-pulse">
+          <p className="text-sm text-gray-500 mt-8 tracking-[0.2em] uppercase animate-pulse text-center px-4">
             Bereit für Eintritt in die Atmosphäre
           </p>
         </div>
