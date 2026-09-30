@@ -6,6 +6,7 @@ export default function LaunchCountdown({ onComplete }) {
   const containerRef = useRef(null);
   const itemsRef = useRef([]);
   const animRef = useRef(null);
+  const videoRef = useRef(null);
 
   useEffect(() => {
     if (isZooming) return;
@@ -15,10 +16,6 @@ export default function LaunchCountdown({ onComplete }) {
         if (prev <= 1) {
           clearInterval(timer);
           setIsZooming(true);
-          // 4.5 seconds epic cutscene
-          setTimeout(() => {
-            onComplete();
-          }, 4500);
           return 0;
         }
         return prev - 1;
@@ -30,6 +27,10 @@ export default function LaunchCountdown({ onComplete }) {
   useEffect(() => {
     if (isZooming) {
       cancelAnimationFrame(animRef.current);
+      // Ensure video plays
+      if (videoRef.current) {
+        videoRef.current.play().catch(e => console.log("Autoplay prevented:", e));
+      }
       return;
     }
 
@@ -69,46 +70,7 @@ export default function LaunchCountdown({ onComplete }) {
   return (
     <div ref={containerRef} className="fixed inset-0 bg-black overflow-hidden z-[99999] font-mono">
       
-      {/* Injecting CSS Keyframes directly for the cinematic hard-cut sequence */}
       <style>{`
-        /* Slow continuous zoom for each scene to make them dynamic */
-        @keyframes subtle-zoom {
-          0% { transform: scale(1); }
-          100% { transform: scale(1.1); }
-        }
-        
-        /* Visibility toggles for the hard cuts */
-        @keyframes show-scene1 {
-          0%, 25.99% { opacity: 1; }
-          26%, 100% { opacity: 0; }
-        }
-        @keyframes show-scene2 {
-          0%, 25.99% { opacity: 0; }
-          26%, 51.99% { opacity: 1; }
-          52%, 100% { opacity: 0; }
-        }
-        @keyframes show-scene3 {
-          0%, 51.99% { opacity: 0; }
-          52%, 77.99% { opacity: 1; }
-          78%, 100% { opacity: 0; }
-        }
-        @keyframes show-scene4 {
-          0%, 77.99% { opacity: 0; }
-          78%, 100% { opacity: 1; }
-        }
-
-        /* Flash effects between cuts */
-        @keyframes cut-flash {
-          0%, 24% { opacity: 0; }
-          25%, 27% { opacity: 1; }
-          28%, 50% { opacity: 0; }
-          51%, 53% { opacity: 1; }
-          54%, 76% { opacity: 0; }
-          77%, 79% { opacity: 1; }
-          80%, 93% { opacity: 0; }
-          95%, 100% { opacity: 1; } /* Final flash into map */
-        }
-        
         /* Last 10 seconds warning pulse */
         @keyframes timer-alert {
           0%, 100% { color: white; text-shadow: 0 0 30px rgba(255,255,255,0.4); transform: scale(1); }
@@ -116,57 +78,17 @@ export default function LaunchCountdown({ onComplete }) {
         }
       `}</style>
 
+      {/* Video Overlay triggered at 0 */}
       {isZooming && (
-        <div className="absolute inset-0 bg-black overflow-hidden flex items-center justify-center">
-          
-          {/* Scene 1: Far Earth */}
-          <div 
-            className="absolute inset-0 bg-cover bg-center origin-center"
-            style={{ 
-              backgroundImage: 'url(/scene1.png)',
-              animation: 'show-scene1 4.5s forwards, subtle-zoom 1.2s linear forwards'
-            }}
+        <div className="absolute inset-0 bg-black overflow-hidden flex items-center justify-center z-50">
+          <video
+            ref={videoRef}
+            src="/launch_intro.mp4"
+            className="w-full h-full object-cover"
+            autoPlay
+            playsInline
+            onEnded={() => onComplete()}
           />
-
-          {/* Scene 2: Medium Earth (Europe) */}
-          <div 
-            className="absolute inset-0 bg-cover bg-center origin-center"
-            style={{ 
-              backgroundImage: 'url(/scene2.png)',
-              opacity: 0,
-              animation: 'show-scene2 4.5s forwards, subtle-zoom 1.2s linear 1.2s forwards'
-            }}
-          />
-
-          {/* Scene 3: Low Orbit (Germany CRT) */}
-          <div 
-            className="absolute inset-0 bg-cover bg-center origin-center"
-            style={{ 
-              backgroundImage: 'url(/scene3.jpg)',
-              opacity: 0,
-              animation: 'show-scene3 4.5s forwards, subtle-zoom 1.2s linear 2.4s forwards'
-            }}
-          />
-
-          {/* Scene 4: Aerial Landscape / Clouds */}
-          <div 
-            className="absolute inset-0 bg-cover bg-center origin-center"
-            style={{ 
-              backgroundImage: 'url(/scene4.jpg)',
-              opacity: 0,
-              animation: 'show-scene4 4.5s forwards, subtle-zoom 1.5s linear 3.5s forwards'
-            }}
-          />
-
-          {/* Layer 5: White Flash Transitions */}
-          <div 
-            className="absolute inset-0 bg-white mix-blend-screen"
-            style={{ 
-              opacity: 0,
-              animation: 'cut-flash 4.5s forwards'
-            }}
-          />
-
         </div>
       )}
 
