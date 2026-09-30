@@ -1,24 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 export default function LaunchCountdown({ onComplete }) {
-  const [timeLeft, setTimeLeft] = useState(60); // 60 seconds test
+  const [timeLeft, setTimeLeft] = useState(60);
   const [isZooming, setIsZooming] = useState(false);
   const containerRef = useRef(null);
   const itemsRef = useRef([]);
   const animRef = useRef(null);
 
   useEffect(() => {
-    if (isZooming) return; // Stop timer if zooming
+    if (isZooming) return;
 
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(timer);
           setIsZooming(true);
-          // Start the zoom animation, wait 3 seconds, then complete
+          // 4.5 seconds of epic cinematic zoom
           setTimeout(() => {
             onComplete();
-          }, 3500);
+          }, 4500);
           return 0;
         }
         return prev - 1;
@@ -33,7 +33,6 @@ export default function LaunchCountdown({ onComplete }) {
       return;
     }
 
-    // Generate 20 bouncing Physalis
     const count = 20;
     const items = Array.from({ length: count }).map(() => ({
       x: Math.random() * (window.innerWidth - 64),
@@ -41,7 +40,7 @@ export default function LaunchCountdown({ onComplete }) {
       vx: (Math.random() > 0.5 ? 1 : -1) * (2 + Math.random() * 4),
       vy: (Math.random() > 0.5 ? 1 : -1) * (2 + Math.random() * 4),
       el: null,
-      size: 48 + Math.random() * 32, // random sizes between 48 and 80
+      size: 48 + Math.random() * 32,
       rot: 0,
       rotSpeed: (Math.random() - 0.5) * 4
     }));
@@ -67,42 +66,74 @@ export default function LaunchCountdown({ onComplete }) {
     return () => cancelAnimationFrame(animRef.current);
   }, [isZooming]);
 
-  // --- Zoom Animation Logic ---
-  const [zoomScale, setZoomScale] = useState(1);
-  const [zoomOpacity, setZoomOpacity] = useState(1);
-  
-  useEffect(() => {
-    if (isZooming) {
-      // Small delay to allow the DOM to render the earth at scale(1) before transitioning
-      const t = setTimeout(() => {
-        setZoomScale(150);
-        setZoomOpacity(0);
-      }, 50);
-      return () => clearTimeout(t);
-    }
-  }, [isZooming]);
-  
-  // ...
-
   return (
     <div ref={containerRef} className="fixed inset-0 bg-black overflow-hidden z-[99999] font-mono">
       
-      {/* Zoom Animation Overlay */}
+      {/* Injecting CSS Keyframes directly for the cinematic sequence */}
+      <style>{`
+        @keyframes anim-warp {
+          0% { transform: scale(1); opacity: 0; }
+          10% { opacity: 0.8; }
+          100% { transform: scale(4); opacity: 1; }
+        }
+        @keyframes anim-earth {
+          0% { transform: scale(0.5); opacity: 1; }
+          40% { transform: scale(3); opacity: 1; }
+          80% { transform: scale(25); opacity: 0.8; }
+          100% { transform: scale(60); opacity: 0; }
+        }
+        @keyframes anim-clouds {
+          0% { transform: scale(1) translateY(-20%); opacity: 0; }
+          60% { transform: scale(1.5) translateY(0%); opacity: 0; }
+          75% { transform: scale(3) translateY(10%); opacity: 0.9; }
+          100% { transform: scale(6) translateY(30%); opacity: 0; }
+        }
+        @keyframes anim-flash {
+          0%, 85% { opacity: 0; }
+          95%, 100% { opacity: 1; }
+        }
+      `}</style>
+
       {isZooming && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black z-50">
+        <div className="absolute inset-0 bg-black overflow-hidden flex items-center justify-center">
+          
+          {/* Layer 1: Warp Speed Starfield */}
           <div 
-            className="w-64 h-64 rounded-full flex items-center justify-center transition-all duration-[3000ms] ease-in-out origin-center"
-            style={{
-              transform: `scale(${zoomScale})`,
-              opacity: zoomOpacity,
-              backgroundImage: 'url(/pixel_earth.jpg)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              imageRendering: 'pixelated'
+            className="absolute inset-0 bg-cover bg-center origin-center"
+            style={{ 
+              backgroundImage: 'url(/anim_warp.jpg)',
+              animation: 'anim-warp 4.5s ease-in forwards'
             }}
-          ></div>
-          {/* A white flash effect at the end of the zoom */}
-          <div className="absolute inset-0 bg-white animate-[ping_3s_ease-in-out_forwards] mix-blend-overlay"></div>
+          />
+
+          {/* Layer 2: The Earth (Zooming into Europe/Germany) 
+              Transform origin is slightly offset to zoom into Central Europe rather than the exact equator */}
+          <div 
+            className="absolute w-[600px] h-[600px] rounded-full bg-contain bg-no-repeat bg-center mix-blend-screen"
+            style={{ 
+              backgroundImage: 'url(/anim_earth.png)',
+              transformOrigin: '53% 32%', 
+              animation: 'anim-earth 4.5s cubic-bezier(0.5, 0, 0.9, 0.5) forwards'
+            }}
+          />
+
+          {/* Layer 3: Passing through the clouds */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center origin-bottom"
+            style={{ 
+              backgroundImage: 'url(/anim_clouds.png)',
+              animation: 'anim-clouds 4.5s ease-in forwards'
+            }}
+          />
+
+          {/* Layer 4: Final White Flash Transition */}
+          <div 
+            className="absolute inset-0 bg-white"
+            style={{ 
+              animation: 'anim-flash 4.5s ease-in forwards'
+            }}
+          />
+
         </div>
       )}
 
@@ -112,7 +143,7 @@ export default function LaunchCountdown({ onComplete }) {
           key={i}
           ref={el => item.el = el}
           src="/badges/physalis_sprite.jpg"
-          className="absolute top-0 left-0 mix-blend-screen opacity-90 object-contain will-change-transform transition-opacity duration-1000"
+          className="absolute top-0 left-0 mix-blend-screen opacity-90 object-contain will-change-transform"
           style={{ width: `${item.size}px`, height: `${item.size}px` }}
           alt=""
         />
