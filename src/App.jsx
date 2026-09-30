@@ -60,12 +60,11 @@ function App() {
           <video src="/loop_bg.mp4" autoPlay loop playsInline muted className="absolute inset-0 w-full h-full object-cover opacity-60" />
           
           <div className="relative z-10 flex flex-col items-center">
-             <img src="/old-physalis.png" className="w-32 h-32 mb-8 animate-bounce mix-blend-screen" style={{ animationDuration: '3s' }} alt="Logo" />
-             <h1 className="text-5xl md:text-6xl text-yellow-400 font-black tracking-widest uppercase drop-shadow-[0_0_15px_rgba(250,204,21,0.8)] text-center px-4 mb-4">
+             <h1 className="text-5xl md:text-6xl text-yellow-400 font-black tracking-widest uppercase drop-shadow-[0_0_15px_rgba(250,204,21,0.8)] text-center px-4 mb-4 mt-8">
                Geophysalis
              </h1>
              <p className="text-lg md:text-xl text-gray-300 mt-2 tracking-[0.3em] uppercase mb-12 opacity-80">
-               Bereit für den Launch
+               Launch in
              </p>
              
              {/* Live Timer */}
