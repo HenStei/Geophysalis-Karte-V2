@@ -17,11 +17,15 @@ function App() {
       localStorage.setItem('geophysalis_dev_bypass', 'true');
       // Clean up the URL so the secret parameter isn't visible in the address bar anymore
       window.history.replaceState({}, document.title, window.location.pathname);
+      // Update state directly if they just hit the URL so they don't have to refresh
+      setIsLaunched(true);
     }
   }, []);
 
+  const hasBypass = localStorage.getItem('geophysalis_dev_bypass') === 'true';
+
   const [isLaunched, setIsLaunched] = useState(
-    sessionStorage.getItem('launchTestDone') === 'true'
+    hasBypass || sessionStorage.getItem('launchTestDone') === 'true'
   );
 
   const handleLaunchComplete = () => {
@@ -30,7 +34,6 @@ function App() {
   };
 
   // Check if we should block access
-  const hasBypass = localStorage.getItem('geophysalis_dev_bypass') === 'true';
   const isPreRelease = new Date() < RELEASE_DATE && !hasBypass;
 
   if (isPreRelease) {
