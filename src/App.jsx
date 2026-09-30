@@ -25,11 +25,11 @@ function App() {
   const hasBypass = localStorage.getItem('geophysalis_dev_bypass') === 'true';
 
   const [isLaunched, setIsLaunched] = useState(
-    hasBypass || sessionStorage.getItem('launchTestDone') === 'true'
+    hasBypass || localStorage.getItem('launchTestDone') === 'true'
   );
 
   const handleLaunchComplete = () => {
-    sessionStorage.setItem('launchTestDone', 'true');
+    localStorage.setItem('launchTestDone', 'true');
     setIsLaunched(true);
   };
 

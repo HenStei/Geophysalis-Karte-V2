@@ -61,7 +61,7 @@ export default function LaunchCountdown({ onComplete }) {
         <img
           key={i}
           ref={el => item.el = el}
-          src="/badges/physalis_sprite.jpg"
+          src="/old-physalis.png"
           className="absolute top-0 left-0 mix-blend-screen opacity-90 object-contain will-change-transform"
           style={{ width: `${item.size}px`, height: `${item.size}px` }}
           alt=""
