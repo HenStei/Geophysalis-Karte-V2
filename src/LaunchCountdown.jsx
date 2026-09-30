@@ -15,7 +15,7 @@ export default function LaunchCountdown({ onComplete }) {
         if (prev <= 1) {
           clearInterval(timer);
           setIsZooming(true);
-          // 4.5 seconds of epic cinematic zoom
+          // 4.5 seconds epic cutscene
           setTimeout(() => {
             onComplete();
           }, 4500);
@@ -69,68 +69,95 @@ export default function LaunchCountdown({ onComplete }) {
   return (
     <div ref={containerRef} className="fixed inset-0 bg-black overflow-hidden z-[99999] font-mono">
       
-      {/* Injecting CSS Keyframes directly for the cinematic sequence */}
+      {/* Injecting CSS Keyframes directly for the cinematic hard-cut sequence */}
       <style>{`
-        @keyframes anim-warp {
-          0% { transform: scale(1); opacity: 0; }
-          10% { opacity: 0.8; }
-          100% { transform: scale(4); opacity: 1; }
+        /* Slow continuous zoom for each scene to make them dynamic */
+        @keyframes subtle-zoom {
+          0% { transform: scale(1); }
+          100% { transform: scale(1.1); }
         }
-        @keyframes anim-earth {
-          0% { transform: scale(0.5); opacity: 1; }
-          40% { transform: scale(3); opacity: 1; }
-          80% { transform: scale(25); opacity: 0.8; }
-          100% { transform: scale(60); opacity: 0; }
+        
+        /* Visibility toggles for the hard cuts */
+        @keyframes show-scene1 {
+          0%, 25.99% { opacity: 1; }
+          26%, 100% { opacity: 0; }
         }
-        @keyframes anim-clouds {
-          0% { transform: scale(1) translateY(-20%); opacity: 0; }
-          60% { transform: scale(1.5) translateY(0%); opacity: 0; }
-          75% { transform: scale(3) translateY(10%); opacity: 0.9; }
-          100% { transform: scale(6) translateY(30%); opacity: 0; }
+        @keyframes show-scene2 {
+          0%, 25.99% { opacity: 0; }
+          26%, 51.99% { opacity: 1; }
+          52%, 100% { opacity: 0; }
         }
-        @keyframes anim-flash {
-          0%, 85% { opacity: 0; }
-          95%, 100% { opacity: 1; }
+        @keyframes show-scene3 {
+          0%, 51.99% { opacity: 0; }
+          52%, 77.99% { opacity: 1; }
+          78%, 100% { opacity: 0; }
+        }
+        @keyframes show-scene4 {
+          0%, 77.99% { opacity: 0; }
+          78%, 100% { opacity: 1; }
+        }
+
+        /* Flash effects between cuts */
+        @keyframes cut-flash {
+          0%, 24% { opacity: 0; }
+          25%, 27% { opacity: 1; }
+          28%, 50% { opacity: 0; }
+          51%, 53% { opacity: 1; }
+          54%, 76% { opacity: 0; }
+          77%, 79% { opacity: 1; }
+          80%, 93% { opacity: 0; }
+          95%, 100% { opacity: 1; } /* Final flash into map */
         }
       `}</style>
 
       {isZooming && (
         <div className="absolute inset-0 bg-black overflow-hidden flex items-center justify-center">
           
-          {/* Layer 1: Warp Speed Starfield */}
+          {/* Scene 1: Far Earth */}
           <div 
             className="absolute inset-0 bg-cover bg-center origin-center"
             style={{ 
-              backgroundImage: 'url(/anim_warp.jpg)',
-              animation: 'anim-warp 4.5s ease-in forwards'
+              backgroundImage: 'url(/scene1.png)',
+              animation: 'show-scene1 4.5s forwards, subtle-zoom 1.2s linear forwards'
             }}
           />
 
-          {/* Layer 2: The Earth (Zooming into Europe/Germany) 
-              Transform origin is slightly offset to zoom into Central Europe rather than the exact equator */}
+          {/* Scene 2: Medium Earth (Europe) */}
           <div 
-            className="absolute w-[600px] h-[600px] rounded-full bg-contain bg-no-repeat bg-center mix-blend-screen"
+            className="absolute inset-0 bg-cover bg-center origin-center"
             style={{ 
-              backgroundImage: 'url(/anim_earth.png)',
-              transformOrigin: '53% 32%', 
-              animation: 'anim-earth 4.5s cubic-bezier(0.5, 0, 0.9, 0.5) forwards'
+              backgroundImage: 'url(/scene2.png)',
+              opacity: 0,
+              animation: 'show-scene2 4.5s forwards, subtle-zoom 1.2s linear 1.2s forwards'
             }}
           />
 
-          {/* Layer 3: Passing through the clouds */}
+          {/* Scene 3: Low Orbit (Germany CRT) */}
           <div 
-            className="absolute inset-0 bg-cover bg-center origin-bottom"
+            className="absolute inset-0 bg-cover bg-center origin-center"
             style={{ 
-              backgroundImage: 'url(/anim_clouds.png)',
-              animation: 'anim-clouds 4.5s ease-in forwards'
+              backgroundImage: 'url(/scene3.jpg)',
+              opacity: 0,
+              animation: 'show-scene3 4.5s forwards, subtle-zoom 1.2s linear 2.4s forwards'
             }}
           />
 
-          {/* Layer 4: Final White Flash Transition */}
+          {/* Scene 4: Aerial Landscape / Clouds */}
           <div 
-            className="absolute inset-0 bg-white"
+            className="absolute inset-0 bg-cover bg-center origin-center"
             style={{ 
-              animation: 'anim-flash 4.5s ease-in forwards'
+              backgroundImage: 'url(/scene4.jpg)',
+              opacity: 0,
+              animation: 'show-scene4 4.5s forwards, subtle-zoom 1.5s linear 3.5s forwards'
+            }}
+          />
+
+          {/* Layer 5: White Flash Transitions */}
+          <div 
+            className="absolute inset-0 bg-white mix-blend-screen"
+            style={{ 
+              opacity: 0,
+              animation: 'cut-flash 4.5s forwards'
             }}
           />
 
