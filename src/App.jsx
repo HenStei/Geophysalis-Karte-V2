@@ -8,8 +8,8 @@ import InstallPrompt from './components/InstallPrompt';
 
 function App() {
   // --- Pre-Release Under Construction Logic ---
-  // TEST MODE: Set to a past date so the countdown triggers naturally for testing
-  const RELEASE_DATE = new Date('2026-09-01T10:00:00Z'); // Temporarily in the past
+  // Officially 01.10.2026 12:00 Berlin time
+  const RELEASE_DATE = new Date('2026-10-01T10:00:00Z');
 
   // Secret bypass check: e.g. geophysalis.com/?dev=admin
   useEffect(() => {
@@ -37,53 +37,64 @@ function App() {
     setIsLaunched(true);
   };
 
-  // Check if we should block access
-  const isPreRelease = new Date() < RELEASE_DATE && !hasBypass;
+  const [now, setNow] = useState(new Date());
 
-  if (isPreRelease) {
-    return (
-      <>
-        <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-4 font-mono text-center relative overflow-hidden">
-          {/* Ambient Background Glow */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-[100vw] h-[100vw] sm:w-[40vw] sm:h-[40vw] bg-purple-600/20 rounded-full blur-[120px] animate-pulse"></div>
-          </div>
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
-          <div className="z-10 bg-black/60 backdrop-blur-xl p-8 sm:p-12 rounded-3xl border border-gray-800 shadow-[0_0_50px_rgba(0,0,0,0.5)] max-w-md w-full">
-            <div className="mb-8 relative">
-              <div className="absolute inset-0 bg-yellow-400 blur-2xl opacity-20 animate-pulse rounded-full"></div>
-              <img 
-                src="/old-physalis.png" 
-                alt="Physalis" 
-                className="w-32 h-32 mx-auto drop-shadow-[0_0_15px_rgba(250,204,21,0.6)] animate-bounce" 
-                style={{ animationDuration: '2s' }} 
-              />
-            </div>
-            
-            <h1 className="text-3xl sm:text-4xl font-black text-white mb-4 tracking-wider uppercase">
-              Under<br/><span className="text-yellow-400">Construction</span>
-            </h1>
-            
-            <p className="text-gray-400 mb-8 leading-relaxed text-sm sm:text-base">
-              Die Geophysalis wächst noch! 🌱<br/>
-              Wir bereiten gerade alles für den großen Launch vor.
-            </p>
-            
-            <div className="inline-block bg-gray-900/80 px-6 py-4 rounded-2xl border border-gray-700 shadow-inner">
-              <p className="text-[10px] text-gray-500 uppercase tracking-[0.2em] mb-1">Offizieller Start</p>
-              <p className="text-xl font-black text-white tracking-wide">01.10.2026 <span className="text-purple-400 opacity-80">— 12:00</span></p>
-            </div>
-          </div>
-        </div>
-        <InstallPrompt />
-      </>
-    );
-  }
+  const timeRemainingMs = RELEASE_DATE.getTime() - now.getTime();
+  const timeRemainingSeconds = Math.max(0, Math.floor(timeRemainingMs / 1000));
 
   if (!isLaunched) {
+    // Phase 1: More than 30 minutes left (1800 seconds) -> Show Loop BG
+    if (timeRemainingSeconds > 1800 && !hasBypass) {
+      const hours = Math.floor(timeRemainingSeconds / 3600);
+      const minutes = Math.floor((timeRemainingSeconds % 3600) / 60);
+      const seconds = timeRemainingSeconds % 60;
+      
+      return (
+        <div className="fixed inset-0 bg-black flex flex-col items-center justify-center font-mono z-[100000]">
+          {/* Looping Veo Video Background */}
+          <video src="/loop_bg.mp4" autoPlay loop playsInline muted className="absolute inset-0 w-full h-full object-cover opacity-60" />
+          
+          <div className="relative z-10 flex flex-col items-center">
+             <img src="/old-physalis.png" className="w-32 h-32 mb-8 animate-bounce mix-blend-screen" style={{ animationDuration: '3s' }} alt="Logo" />
+             <h1 className="text-4xl text-yellow-400 font-black tracking-widest uppercase drop-shadow-[0_0_15px_rgba(250,204,21,0.8)] text-center px-4">
+               Geophysalis Karte V2
+             </h1>
+             <p className="text-xl text-gray-400 mt-4 tracking-[0.3em] uppercase mb-12 animate-pulse">
+               Under Construction
+             </p>
+             
+             {/* Live Timer */}
+             <div className="flex gap-4 sm:gap-6 text-white text-5xl sm:text-7xl font-black drop-shadow-[0_0_20px_rgba(255,255,255,0.5)]">
+               <div className="flex flex-col items-center w-24">
+                 <span>{hours.toString().padStart(2, '0')}</span>
+                 <span className="text-sm text-gray-400 mt-2 font-normal">Stunden</span>
+               </div>
+               <span className="opacity-50">:</span>
+               <div className="flex flex-col items-center w-24">
+                 <span>{minutes.toString().padStart(2, '0')}</span>
+                 <span className="text-sm text-gray-400 mt-2 font-normal">Minuten</span>
+               </div>
+               <span className="opacity-50">:</span>
+               <div className="flex flex-col items-center w-24">
+                 <span>{seconds.toString().padStart(2, '0')}</span>
+                 <span className="text-sm text-gray-400 mt-2 font-normal">Sekunden</span>
+               </div>
+             </div>
+          </div>
+          <InstallPrompt />
+        </div>
+      );
+    }
+
+    // Phase 2: Less than 30 minutes left -> Show Dramatic Bouncing Countdown
     return (
       <>
-        <LaunchCountdown onComplete={handleLaunchComplete} />
+        <LaunchCountdown timeRemainingSeconds={timeRemainingSeconds} onComplete={handleLaunchComplete} />
         <InstallPrompt />
       </>
     );

@@ -1,39 +1,46 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function LaunchCountdown({ onComplete }) {
-  const [timeLeft, setTimeLeft] = useState(60);
-  const [isZooming, setIsZooming] = useState(false);
+export default function LaunchCountdown({ timeRemainingSeconds, onComplete }) {
+  const [isZooming, setIsZooming] = useState(timeRemainingSeconds <= 0);
   const containerRef = useRef(null);
   const itemsRef = useRef([]);
   const animRef = useRef(null);
   const videoRef = useRef(null);
 
+  // Trigger zooming when timer hits 0
   useEffect(() => {
-    if (isZooming) return;
-
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setIsZooming(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [onComplete, isZooming]);
+    if (timeRemainingSeconds <= 0 && !isZooming) {
+      setIsZooming(true);
+    }
+  }, [timeRemainingSeconds, isZooming]);
 
   useEffect(() => {
     if (isZooming) {
       cancelAnimationFrame(animRef.current);
-      // Ensure video plays
+      
+      // FAILSAFE: If video hangs or fails completely, force open map after 7 seconds
+      const failsafe = setTimeout(() => {
+        onComplete();
+      }, 7000);
+
+      // Play video handling Autoplay Policies
       if (videoRef.current) {
-        videoRef.current.play().catch(e => console.log("Autoplay prevented:", e));
+        videoRef.current.play().catch(err => {
+          console.warn("Audio autoplay blocked by browser. Playing muted...", err);
+          // Fallback to muted playback so the visual still works
+          if (videoRef.current) {
+             videoRef.current.muted = true;
+             videoRef.current.play().catch(e => {
+                console.error("Video completely blocked:", e);
+                onComplete(); // Skip immediately if even muted fails
+             });
+          }
+        });
       }
-      return;
+      return () => clearTimeout(failsafe);
     }
 
+    // Bouncing Physalis Logic
     const count = 20;
     const items = Array.from({ length: count }).map(() => ({
       x: Math.random() * (window.innerWidth - 64),
@@ -65,13 +72,17 @@ export default function LaunchCountdown({ onComplete }) {
     update();
 
     return () => cancelAnimationFrame(animRef.current);
-  }, [isZooming]);
+  }, [isZooming, onComplete]);
+
+  // Format time (MM:SS)
+  const displayMinutes = Math.floor(timeRemainingSeconds / 60);
+  const displaySeconds = timeRemainingSeconds % 60;
+  const isCritical = timeRemainingSeconds <= 10 && timeRemainingSeconds > 0;
 
   return (
     <div ref={containerRef} className="fixed inset-0 bg-black overflow-hidden z-[99999] font-mono">
       
       <style>{`
-        /* Last 10 seconds warning pulse */
         @keyframes timer-alert {
           0%, 100% { color: white; text-shadow: 0 0 30px rgba(255,255,255,0.4); transform: scale(1); }
           50% { color: #ef4444; text-shadow: 0 0 60px rgba(239,68,68,0.9); transform: scale(1.1); }
@@ -85,7 +96,6 @@ export default function LaunchCountdown({ onComplete }) {
             ref={videoRef}
             src="/launch_intro.mp4"
             className="w-full h-full object-cover"
-            autoPlay
             playsInline
             onEnded={() => onComplete()}
           />
@@ -107,25 +117,25 @@ export default function LaunchCountdown({ onComplete }) {
       {!isZooming && (
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none transition-opacity duration-1000">
           <h1 className="text-4xl md:text-6xl font-black text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.8)] mb-4 text-center px-4 tracking-widest uppercase">
-            Geophysalis Launch
+            System Initialisierung
           </h1>
           <div 
-            className="text-[100px] md:text-[150px] font-black leading-none will-change-transform"
+            className="text-[80px] md:text-[150px] font-black leading-none will-change-transform mt-8"
             style={{
-              animation: timeLeft <= 10 ? 'timer-alert 1s infinite ease-in-out' : 'none',
-              color: timeLeft <= 10 ? 'white' : 'white',
+              animation: isCritical ? 'timer-alert 1s infinite ease-in-out' : 'none',
+              color: 'white',
               textShadow: '0 0 30px rgba(255,255,255,0.4)'
             }}
           >
-            00:{timeLeft.toString().padStart(2, '0')}
+            {displayMinutes.toString().padStart(2, '0')}:{displaySeconds.toString().padStart(2, '0')}
           </div>
-          <div className="mt-8 flex gap-2">
+          <div className="mt-12 flex gap-2">
              <div className="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
              <div className="w-3 h-3 bg-red-500 rounded-full animate-ping" style={{ animationDelay: '0.2s' }}></div>
              <div className="w-3 h-3 bg-red-500 rounded-full animate-ping" style={{ animationDelay: '0.4s' }}></div>
           </div>
-          <p className="text-xl text-gray-500 mt-4 tracking-[0.3em] uppercase animate-pulse">
-            System Initialisierung
+          <p className="text-sm text-gray-500 mt-8 tracking-[0.2em] uppercase animate-pulse">
+            Bereit für Eintritt in die Atmosphäre
           </p>
         </div>
       )}
