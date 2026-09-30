@@ -108,6 +108,12 @@ export default function LaunchCountdown({ onComplete }) {
           80%, 93% { opacity: 0; }
           95%, 100% { opacity: 1; } /* Final flash into map */
         }
+        
+        /* Last 10 seconds warning pulse */
+        @keyframes timer-alert {
+          0%, 100% { color: white; text-shadow: 0 0 30px rgba(255,255,255,0.4); transform: scale(1); }
+          50% { color: #ef4444; text-shadow: 0 0 60px rgba(239,68,68,0.9); transform: scale(1.1); }
+        }
       `}</style>
 
       {isZooming && (
@@ -181,7 +187,14 @@ export default function LaunchCountdown({ onComplete }) {
           <h1 className="text-4xl md:text-6xl font-black text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.8)] mb-4 text-center px-4 tracking-widest uppercase">
             Geophysalis Launch
           </h1>
-          <div className="text-[100px] md:text-[150px] font-black text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.4)] leading-none">
+          <div 
+            className="text-[100px] md:text-[150px] font-black leading-none will-change-transform"
+            style={{
+              animation: timeLeft <= 10 ? 'timer-alert 1s infinite ease-in-out' : 'none',
+              color: timeLeft <= 10 ? 'white' : 'white',
+              textShadow: '0 0 30px rgba(255,255,255,0.4)'
+            }}
+          >
             00:{timeLeft.toString().padStart(2, '0')}
           </div>
           <div className="mt-8 flex gap-2">
