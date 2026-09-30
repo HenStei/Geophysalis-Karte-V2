@@ -8,17 +8,21 @@ import InstallPrompt from './components/InstallPrompt';
 
 function App() {
   // --- Pre-Release Under Construction Logic ---
-  const RELEASE_DATE = new Date('2026-10-01T10:00:00Z'); // 12:00 Berlin time
+  // TEST MODE: Set to a past date so the countdown triggers naturally for testing
+  const RELEASE_DATE = new Date('2026-09-01T10:00:00Z'); // Temporarily in the past
 
   // Secret bypass check: e.g. geophysalis.com/?dev=admin
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('dev') === 'admin') {
       localStorage.setItem('geophysalis_dev_bypass', 'true');
-      // Clean up the URL so the secret parameter isn't visible in the address bar anymore
       window.history.replaceState({}, document.title, window.location.pathname);
-      // Update state directly if they just hit the URL so they don't have to refresh
       setIsLaunched(true);
+    }
+    // TEST MODE: if ?test=launch is used, clear the launch storage so they can see the animation again
+    if (params.get('test') === 'launch') {
+      localStorage.removeItem('launchTestDone');
+      window.location.href = '/'; // reload cleanly
     }
   }, []);
 
