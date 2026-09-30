@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 export default function LaunchCountdown({ timeRemainingSeconds, onComplete }) {
   const [isZooming, setIsZooming] = useState(timeRemainingSeconds <= 0);
-  const containerRef = useRef(null);
-  const itemsRef = useRef([]);
+  const [items, setItems] = useState([]);
   const animRef = useRef(null);
   const videoRef = useRef(null);
+  // Store mutable animation state separately (not React state, for perf)
+  const animItems = useRef([]);
 
   // Trigger zooming when timer hits 0
   useEffect(() => {
@@ -14,50 +15,34 @@ export default function LaunchCountdown({ timeRemainingSeconds, onComplete }) {
     }
   }, [timeRemainingSeconds, isZooming]);
 
+  // Setup bouncing items
   useEffect(() => {
     if (isZooming) {
       cancelAnimationFrame(animRef.current);
-      
-      // FAILSAFE: If video hangs or fails completely, force open map after 7 seconds
-      const failsafe = setTimeout(() => {
-        onComplete();
-      }, 7000);
-
-      // Play video handling Autoplay Policies
-      if (videoRef.current) {
-        videoRef.current.play().catch(err => {
-          console.warn("Audio autoplay blocked by browser. Playing muted...", err);
-          // Fallback to muted playback so the visual still works
-          if (videoRef.current) {
-             videoRef.current.muted = true;
-             videoRef.current.play().catch(e => {
-                console.error("Video completely blocked:", e);
-                onComplete(); // Skip immediately if even muted fails
-             });
-          }
-        });
-      }
-      return () => clearTimeout(failsafe);
+      return;
     }
 
-    // Bouncing Physalis Logic - Optimized for Mobile
     const isMobile = window.innerWidth < 768;
-    const count = isMobile ? 8 : 20; // Reduce DOM elements on phones to prevent lag
-    
-    const items = Array.from({ length: count }).map(() => ({
+    const count = isMobile ? 8 : 18;
+
+    const newItems = Array.from({ length: count }).map((_, id) => ({
+      id,
       x: Math.random() * (window.innerWidth - 64),
       y: Math.random() * (window.innerHeight - 64),
       vx: (Math.random() > 0.5 ? 1 : -1) * (1.5 + Math.random() * 3),
       vy: (Math.random() > 0.5 ? 1 : -1) * (1.5 + Math.random() * 3),
-      el: null,
       size: 48 + Math.random() * 32,
       rot: 0,
-      rotSpeed: (Math.random() - 0.5) * 3
+      rotSpeed: (Math.random() - 0.5) * 3,
+      el: null,
     }));
-    itemsRef.current = items;
+
+    animItems.current = newItems;
+    // Trigger DOM render by setting state (items just need length/ids)
+    setItems(newItems.map(i => ({ id: i.id, size: i.size })));
 
     const update = () => {
-      items.forEach(item => {
+      animItems.current.forEach(item => {
         item.x += item.vx;
         item.y += item.vy;
         item.rot += item.rotSpeed;
@@ -66,7 +51,6 @@ export default function LaunchCountdown({ timeRemainingSeconds, onComplete }) {
         if (item.y <= 0 || item.y >= window.innerHeight - item.size) item.vy *= -1;
 
         if (item.el) {
-          // Use translate3d to force hardware acceleration (GPU) and prevent lag
           item.el.style.transform = `translate3d(${item.x}px, ${item.y}px, 0) rotate(${item.rot}deg)`;
         }
       });
@@ -75,16 +59,36 @@ export default function LaunchCountdown({ timeRemainingSeconds, onComplete }) {
     update();
 
     return () => cancelAnimationFrame(animRef.current);
+  }, [isZooming]);
+
+  // Video play logic
+  useEffect(() => {
+    if (!isZooming || !videoRef.current) return;
+
+    const failsafe = setTimeout(() => onComplete(), 7000);
+
+    videoRef.current.play().catch(() => {
+      if (videoRef.current) {
+        videoRef.current.muted = true;
+        videoRef.current.play().catch(() => onComplete());
+      }
+    });
+
+    return () => clearTimeout(failsafe);
   }, [isZooming, onComplete]);
 
-  // Format time (MM:SS)
+  const setItemEl = useCallback((id, el) => {
+    const item = animItems.current.find(i => i.id === id);
+    if (item) item.el = el;
+  }, []);
+
   const displayMinutes = Math.floor(timeRemainingSeconds / 60);
   const displaySeconds = timeRemainingSeconds % 60;
   const isCritical = timeRemainingSeconds <= 10 && timeRemainingSeconds > 0;
 
   return (
-    <div ref={containerRef} className="fixed inset-0 bg-black overflow-hidden z-[99999] font-mono">
-      
+    <div className="fixed inset-0 bg-black overflow-hidden z-[99999] font-mono">
+
       <style>{`
         @keyframes timer-alert {
           0%, 100% { color: white; text-shadow: 0 0 30px rgba(255,255,255,0.4); transform: scale(1); }
@@ -92,9 +96,9 @@ export default function LaunchCountdown({ timeRemainingSeconds, onComplete }) {
         }
       `}</style>
 
-      {/* Video Overlay triggered at 0 */}
+      {/* Video Overlay */}
       {isZooming && (
-        <div className="absolute inset-0 bg-black overflow-hidden flex items-center justify-center z-50">
+        <div className="absolute inset-0 bg-black z-50">
           <video
             ref={videoRef}
             src="/launch_intro.mp4"
@@ -105,11 +109,11 @@ export default function LaunchCountdown({ timeRemainingSeconds, onComplete }) {
         </div>
       )}
 
-      {/* Normal Countdown View */}
-      {!isZooming && itemsRef.current.map((item, i) => (
+      {/* Bouncing Physalis — rendered via state so refs work */}
+      {!isZooming && items.map(item => (
         <img
-          key={i}
-          ref={el => item.el = el}
+          key={item.id}
+          ref={el => setItemEl(item.id, el)}
           src="/badges/physalis_sprite.jpg"
           className="absolute top-0 left-0 mix-blend-screen opacity-90 object-contain will-change-transform"
           style={{ width: `${item.size}px`, height: `${item.size}px` }}
@@ -117,13 +121,14 @@ export default function LaunchCountdown({ timeRemainingSeconds, onComplete }) {
         />
       ))}
 
+      {/* Countdown Text */}
       {!isZooming && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none transition-opacity duration-1000">
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <h1 className="text-4xl md:text-6xl font-black text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.8)] mb-4 text-center px-4 tracking-widest uppercase">
             System Initialisierung
           </h1>
-          <div 
-            className="text-[80px] md:text-[150px] font-black leading-none will-change-transform mt-8"
+          <div
+            className="text-[80px] md:text-[150px] font-black leading-none will-change-transform mt-8 text-center"
             style={{
               animation: isCritical ? 'timer-alert 1s infinite ease-in-out' : 'none',
               color: 'white',
@@ -133,9 +138,9 @@ export default function LaunchCountdown({ timeRemainingSeconds, onComplete }) {
             {displayMinutes.toString().padStart(2, '0')}:{displaySeconds.toString().padStart(2, '0')}
           </div>
           <div className="mt-12 flex gap-2">
-             <div className="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
-             <div className="w-3 h-3 bg-red-500 rounded-full animate-ping" style={{ animationDelay: '0.2s' }}></div>
-             <div className="w-3 h-3 bg-red-500 rounded-full animate-ping" style={{ animationDelay: '0.4s' }}></div>
+            <div className="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+            <div className="w-3 h-3 bg-red-500 rounded-full animate-ping" style={{ animationDelay: '0.2s' }}></div>
+            <div className="w-3 h-3 bg-red-500 rounded-full animate-ping" style={{ animationDelay: '0.4s' }}></div>
           </div>
           <p className="text-sm text-gray-500 mt-8 tracking-[0.2em] uppercase animate-pulse text-center px-4">
             Bereit für Eintritt in die Atmosphäre
