@@ -1251,6 +1251,17 @@ const hasNightOwl = myPins.some(p => {
     return { label: 'Du rockst es! Erkunde die Welt weiter 🌍', progress: null };
   }, [session, myPins]);
 
+  // Memoized icons – verhindert Flimmern bei Re-Renders
+  const iconCache = useMemo(() => {
+    const cache = {};
+    displayPins.forEach(pin => {
+      const isTarget = !!(targetPinId && pin.id.toString() === targetPinId);
+      const isNewPin = isNew(pin.created_at);
+      cache[pin.id] = getStickerIcon(pin.image_url, isTarget, isNewPin);
+    });
+    return cache;
+  }, [displayPins, targetPinId]);
+
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden overscroll-none">
       
@@ -1534,9 +1545,9 @@ const hasNightOwl = myPins.some(p => {
 
         {/* Marker Layer (Hidden when Heatmap is active) */}
         {!showHeatmap && (
-          <MarkerClusterGroup chunkedLoading maxClusterRadius={50} showCoverageOnHover={false} spiderfyOnMaxZoom={true} disableClusteringAtZoom={15}>
+          <MarkerClusterGroup chunkedLoading maxClusterRadius={50} showCoverageOnHover={false} spiderfyOnMaxZoom={true} disableClusteringAtZoom={15} zoomToBoundsOnClick={true}>
             {displayPins.map(pin => (
-              <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getStickerIcon(pin.image_url, targetPinId && pin.id.toString() === targetPinId, isNew(pin.created_at))}>
+              <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={iconCache[pin.id]}>
                 <Popup>
                   <div className="flex flex-col bg-white">
                     <img src={pin.image_url} alt="Sticker" className="w-full h-48 object-cover rounded-t-xl" />
