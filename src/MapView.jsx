@@ -52,6 +52,36 @@ const draftIcon = L.divIcon({
   iconAnchor: [24, 48]
 });
 
+// PinMarker is memoized so it only re-renders when its OWN props change.
+// This prevents ALL markers from flickering when global state (e.g. copiedId) changes.
+const PinMarker = React.memo(function PinMarker({ pin, isTarget, isNewPin, isCopied, onCopy }) {
+  const icon = getStickerIcon(pin.image_url, isTarget, isNewPin);
+  return (
+    <Marker position={[pin.lat, pin.lng]} icon={icon}>
+      <Popup>
+        <div className="flex flex-col bg-white">
+          <img src={pin.image_url} alt="Sticker" className="w-full h-48 object-cover rounded-t-xl" />
+          <div className="p-4">
+            {pin.location_name && <p className="font-bold text-gray-900 text-sm mb-1">{pin.location_name}</p>}
+            {pin.message && <p className="text-gray-600 text-sm italic mb-2">"{pin.message}"</p>}
+            <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-1">
+              Gefunden am {new Date(pin.created_at).toLocaleDateString()}
+            </p>
+            <button
+              onClick={onCopy}
+              className="mt-3 w-full bg-blue-50 text-blue-600 font-bold py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-blue-100 transition active:scale-95"
+            >
+              {isCopied ? <Check size={16} /> : <Share2 size={16} />}
+              {isCopied ? 'Link kopiert!' : 'Sticker teilen'}
+            </button>
+          </div>
+        </div>
+      </Popup>
+    </Marker>
+  );
+});
+
+
 function MapClickHandler({ onMapClick }) {
   useMapEvents({
     click(e) {
@@ -1542,33 +1572,19 @@ const hasNightOwl = myPins.some(p => {
         {!showHeatmap && (
           <MarkerClusterGroup chunkedLoading maxClusterRadius={50} showCoverageOnHover={false} spiderfyOnMaxZoom={true} disableClusteringAtZoom={15} zoomToBoundsOnClick={true}>
             {displayPins.map(pin => (
-              <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getStickerIcon(pin.image_url, !!(targetPinId && pin.id.toString() === targetPinId), isNew(pin.created_at))}>
-                <Popup>
-                  <div className="flex flex-col bg-white">
-                    <img src={pin.image_url} alt="Sticker" className="w-full h-48 object-cover rounded-t-xl" />
-                    <div className="p-4">
-                      {pin.location_name && <p className="font-bold text-gray-900 text-sm mb-1">{pin.location_name}</p>}
-                      {pin.message && <p className="text-gray-600 text-sm italic mb-2">"{pin.message}"</p>}
-                      <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-1">
-                        Gefunden am {new Date(pin.created_at).toLocaleDateString()}
-                      </p>
-                      
-                      <button 
-                        onClick={() => {
-                          const url = `${window.location.origin}/?pin=${pin.id}`;
-                          navigator.clipboard.writeText(url);
-                          setCopiedId(pin.id);
-                          setTimeout(() => setCopiedId(null), 2000);
-                        }}
-                        className="mt-3 w-full bg-blue-50 text-blue-600 font-bold py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-blue-100 transition active:scale-95"
-                      >
-                        {copiedId === pin.id ? <Check size={16} /> : <Share2 size={16} />}
-                        {copiedId === pin.id ? 'Link kopiert!' : 'Sticker teilen'}
-                      </button>
-                    </div>
-                  </div>
-                </Popup>
-              </Marker>
+              <PinMarker
+                key={pin.id}
+                pin={pin}
+                isTarget={!!(targetPinId && pin.id.toString() === targetPinId)}
+                isNewPin={isNew(pin.created_at)}
+                isCopied={copiedId === pin.id}
+                onCopy={() => {
+                  const url = `${window.location.origin}/?pin=${pin.id}`;
+                  navigator.clipboard.writeText(url);
+                  setCopiedId(pin.id);
+                  setTimeout(() => setCopiedId(null), 2000);
+                }}
+              />
             ))}
           </MarkerClusterGroup>
         )}
