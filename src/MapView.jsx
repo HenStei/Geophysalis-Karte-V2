@@ -52,10 +52,21 @@ const draftIcon = L.divIcon({
   iconAnchor: [24, 48]
 });
 
-// PinMarker is memoized so it only re-renders when its OWN props change.
-// This prevents ALL markers from flickering when global state (e.g. copiedId) changes.
-const PinMarker = React.memo(function PinMarker({ pin, isTarget, isNewPin, isCopied, onCopy }) {
+// PinMarker manages its own copied state internally.
+// This way React.memo can ACTUALLY prevent re-renders: the only props are
+// pin (stable object), isTarget (bool), isNewPin (bool) – all stable between renders.
+// No inline callbacks, no external copiedId state leaking in.
+const PinMarker = React.memo(function PinMarker({ pin, isTarget, isNewPin }) {
+  const [copied, setCopied] = React.useState(false);
   const icon = getStickerIcon(pin.image_url, isTarget, isNewPin);
+
+  const handleCopy = React.useCallback(() => {
+    const url = `${window.location.origin}/?pin=${pin.id}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [pin.id]);
+
   return (
     <Marker position={[pin.lat, pin.lng]} icon={icon}>
       <Popup>
@@ -68,11 +79,11 @@ const PinMarker = React.memo(function PinMarker({ pin, isTarget, isNewPin, isCop
               Gefunden am {new Date(pin.created_at).toLocaleDateString()}
             </p>
             <button
-              onClick={onCopy}
+              onClick={handleCopy}
               className="mt-3 w-full bg-blue-50 text-blue-600 font-bold py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-blue-100 transition active:scale-95"
             >
-              {isCopied ? <Check size={16} /> : <Share2 size={16} />}
-              {isCopied ? 'Link kopiert!' : 'Sticker teilen'}
+              {copied ? <Check size={16} /> : <Share2 size={16} />}
+              {copied ? 'Link kopiert!' : 'Sticker teilen'}
             </button>
           </div>
         </div>
@@ -80,7 +91,6 @@ const PinMarker = React.memo(function PinMarker({ pin, isTarget, isNewPin, isCop
     </Marker>
   );
 });
-
 
 function MapClickHandler({ onMapClick }) {
   useMapEvents({
@@ -1577,13 +1587,6 @@ const hasNightOwl = myPins.some(p => {
                 pin={pin}
                 isTarget={!!(targetPinId && pin.id.toString() === targetPinId)}
                 isNewPin={isNew(pin.created_at)}
-                isCopied={copiedId === pin.id}
-                onCopy={() => {
-                  const url = `${window.location.origin}/?pin=${pin.id}`;
-                  navigator.clipboard.writeText(url);
-                  setCopiedId(pin.id);
-                  setTimeout(() => setCopiedId(null), 2000);
-                }}
               />
             ))}
           </MarkerClusterGroup>
