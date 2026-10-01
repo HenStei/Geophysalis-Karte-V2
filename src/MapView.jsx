@@ -23,15 +23,21 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Custom Icons generieren
+// Module-level icon cache – lives outside React, never re-created on re-render
+// Key: `${url}_${isTarget}_${isNew}` → guarantees Leaflet always gets the same object reference
+const _iconCache = new Map();
 const getStickerIcon = (url, isTarget = false, isNewPin = false) => {
-  return L.divIcon({
+  const key = `${url}_${isTarget ? 1 : 0}_${isNewPin ? 1 : 0}`;
+  if (_iconCache.has(key)) return _iconCache.get(key);
+  const icon = L.divIcon({
     className: `custom-sticker-icon ${isTarget ? 'is-target' : ''} ${isNewPin ? 'is-new' : ''}`,
     html: `<div style="background-image: url('${url}');"></div>`,
     iconSize: isTarget ? [60, 60] : [46, 46],
     iconAnchor: isTarget ? [30, 30] : [23, 23],
     popupAnchor: [0, -20]
   });
+  _iconCache.set(key, icon);
+  return icon;
 };
 
 const draftIcon = L.divIcon({
@@ -1251,17 +1257,6 @@ const hasNightOwl = myPins.some(p => {
     return { label: 'Du rockst es! Erkunde die Welt weiter 🌍', progress: null };
   }, [session, myPins]);
 
-  // Memoized icons – verhindert Flimmern bei Re-Renders
-  const iconCache = useMemo(() => {
-    const cache = {};
-    displayPins.forEach(pin => {
-      const isTarget = !!(targetPinId && pin.id.toString() === targetPinId);
-      const isNewPin = isNew(pin.created_at);
-      cache[pin.id] = getStickerIcon(pin.image_url, isTarget, isNewPin);
-    });
-    return cache;
-  }, [displayPins, targetPinId]);
-
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden overscroll-none">
       
@@ -1547,7 +1542,7 @@ const hasNightOwl = myPins.some(p => {
         {!showHeatmap && (
           <MarkerClusterGroup chunkedLoading maxClusterRadius={50} showCoverageOnHover={false} spiderfyOnMaxZoom={true} disableClusteringAtZoom={15} zoomToBoundsOnClick={true}>
             {displayPins.map(pin => (
-              <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={iconCache[pin.id]}>
+              <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getStickerIcon(pin.image_url, !!(targetPinId && pin.id.toString() === targetPinId), isNew(pin.created_at))}>
                 <Popup>
                   <div className="flex flex-col bg-white">
                     <img src={pin.image_url} alt="Sticker" className="w-full h-48 object-cover rounded-t-xl" />
