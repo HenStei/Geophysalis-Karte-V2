@@ -1911,7 +1911,7 @@ const hasNightOwl = myPins.some(p => {
       )}
       {/* Auth Modal */}
       {!session && (
-        <div className="absolute inset-0 z-[3000] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black">
           <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover z-0">
             <source src="/landingpage.mp4" type="video/mp4" />
           </video>
