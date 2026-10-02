@@ -1219,21 +1219,14 @@ const hasNightOwl = myPins.some(p => {
     }
 
     setUploadStep('compressing');
-    const options = { maxSizeMB: 0.3, maxWidthOrHeight: 1200, useWebWorker: true };
+    const options = { maxSizeMB: 0.3, maxWidthOrHeight: 1200, useWebWorker: false };
     try {
       const compressed = await imageCompression(file, options);
       setCompressedFile(compressed);
     } catch (error) {
-      console.error('Komprimierung fehlgeschlagen, versuche Originaldatei:', error);
-      // Fallback: use original file if it's small enough (< 5MB), otherwise show error
-      if (file.size < 5 * 1024 * 1024) {
-        setCompressedFile(file);
-        setExifNotice(prev => prev + ' ⚠️ Bild konnte nicht komprimiert werden, Originaldatei wird verwendet.');
-      } else {
-        setSelectedImage(null);
-        setCompressedFile(null);
-        alert('Das Bild ist zu groß und konnte nicht verarbeitet werden. Bitte wähle ein kleineres Foto (max. 5 MB) oder ein JPG/PNG.');
-      }
+      console.error('Komprimierung fehlgeschlagen, verwende Originaldatei:', error);
+      // Fallback: use original file directly
+      setCompressedFile(file);
     } finally {
       setIsCompressing(false);
       setUploadStep(null);
