@@ -2218,7 +2218,7 @@ const hasNightOwl = myPins.some(p => {
           }}>
             <source src="/temp1.mp4" type="video/mp4" />
           </video>
-          <button onClick={() => { localStorage.setItem('geophysalis_earth_zoom_done', 'true'); setShowEarthZoom(false); }} className="absolute bottom-10 right-10 text-white/50 text-sm hover:text-white font-mono">Überspringen >></button>
+          <button onClick={() => { localStorage.setItem('geophysalis_earth_zoom_done', 'true'); setShowEarthZoom(false); }} className="absolute bottom-10 right-10 text-white/50 text-sm hover:text-white font-mono">Überspringen &gt;&gt;</button>
         </div>
       )}
 
