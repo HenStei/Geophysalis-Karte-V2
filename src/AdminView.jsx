@@ -15,6 +15,8 @@ export default function AdminView() {
   
   // Dashboard 2.0 Tabs: 'pending' or 'approved'
   const [activeTab, setActiveTab] = useState('pending');
+  const [inviteCodes, setInviteCodes] = useState([]);
+  const [loadingCodes, setLoadingCodes] = useState(false);
 
   const SPECIAL_BADGES = [
     { id: '', label: 'Kein Special Badge' },
@@ -55,6 +57,31 @@ export default function AdminView() {
     const { data, error } = await supabase.from('pins').select('*').order('created_at', { ascending: false });
     if (data) setPins(data);
   };
+
+  
+  const fetchInviteCodes = async () => {
+    setLoadingCodes(true);
+    const { data, error } = await supabase.from('invite_codes').select('*').order('created_at', { ascending: false });
+    if (data) setInviteCodes(data);
+    setLoadingCodes(false);
+  };
+
+  const generateCode = async () => {
+    const randomCode = 'GEO-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const { error } = await supabase.from('invite_codes').insert({ code: randomCode });
+    if (!error) fetchInviteCodes();
+  };
+
+  const deleteCode = async (code) => {
+    const { error } = await supabase.from('invite_codes').delete().eq('code', code);
+    if (!error) fetchInviteCodes();
+  };
+
+  useEffect(() => {
+    if (activeTab === 'codes') {
+      fetchInviteCodes();
+    }
+  }, [activeTab]);
 
   const fetchStats = async () => {
     const { count } = await supabase
@@ -184,6 +211,15 @@ export default function AdminView() {
               </div>
               <div className="bg-green-100 p-2.5 rounded-2xl"><Globe className="text-green-600" size={20} /></div>
             </div>
+          <div onClick={() => setActiveTab('codes')} className={`cursor-pointer bg-white p-5 rounded-3xl border-2 transition-all shadow-sm ${activeTab === 'codes' ? 'border-purple-500 ring-4 ring-purple-50' : 'border-transparent hover:border-gray-200'}`}>
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Codes</p>
+                <h3 className="text-3xl font-black text-gray-900">{inviteCodes.length > 0 ? inviteCodes.length : '-'}</h3>
+              </div>
+              <div className="bg-purple-100 p-2.5 rounded-2xl"><Lock className="text-purple-600" size={20} /></div>
+            </div>
+          </div>
           </div>
           <div className="bg-white p-5 rounded-3xl border-2 border-transparent shadow-sm">
             <div className="flex justify-between items-start">

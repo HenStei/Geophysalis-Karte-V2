@@ -406,6 +406,9 @@ export default function MapView() {
   
   // Auth & Session
   const [session, setSession] = useState(null);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteCodeInput, setInviteCodeInput] = useState('');
+  const [inviteError, setInviteError] = useState('');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [profile, setProfile] = useState(null);
@@ -873,7 +876,10 @@ const hasNightOwl = myPins.some(p => {
       setProfile(data);
     } else {
       const { data: newProfile } = await supabase.from('profiles').insert({ id: userId }).select().single();
-      if (newProfile) setProfile(newProfile);
+      if (newProfile) {
+          setProfile(newProfile);
+          if (!newProfile.is_approved) setShowInviteModal(true);
+        }
     }
   };
 
@@ -894,6 +900,34 @@ const hasNightOwl = myPins.some(p => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  
+  const submitInviteCode = async () => {
+    setInviteError('');
+    if (!inviteCodeInput.trim()) return setInviteError('Bitte Code eingeben');
+    
+    // Check if code exists and is unused
+    const { data: codeData, error: codeError } = await supabase
+      .from('invite_codes')
+      .select('*')
+      .eq('code', inviteCodeInput.trim())
+      .eq('is_used', false)
+      .single();
+      
+    if (codeError || !codeData) {
+      return setInviteError('Code ungültig oder bereits verbraucht.');
+    }
+    
+    // Mark code as used
+    await supabase.from('invite_codes').update({ is_used: true, used_by: session.user.id, used_at: new Date() }).eq('code', codeData.code);
+    
+    // Approve user
+    await supabase.from('profiles').update({ is_approved: true }).eq('id', session.user.id);
+    
+    setProfile(prev => ({ ...prev, is_approved: true }));
+    setShowInviteModal(false);
+    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+  };
 
   const [draftPin, setDraftPin] = useState(null); 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1877,8 +1911,12 @@ const hasNightOwl = myPins.some(p => {
       )}
       {/* Auth Modal */}
       {!session && isAuthModalOpen && (
-        <div className="absolute inset-0 z-[3000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl relative">
+        <div className="absolute inset-0 z-[3000] flex items-center justify-center p-4">
+          <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover z-0">
+            <source src="/landingpage.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] z-0"></div>
+          <div className="bg-white/90 backdrop-blur-xl rounded-3xl w-full max-w-sm p-8 shadow-2xl relative z-10 border border-white/20">
             <button onClick={() => setIsAuthModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition">
               <X size={24} />
             </button>
