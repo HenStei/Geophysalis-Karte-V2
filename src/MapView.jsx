@@ -1916,17 +1916,17 @@ const hasNightOwl = myPins.some(p => {
             <source src="/landingpage.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] z-0"></div>
-          <div className="bg-white/90 backdrop-blur-xl rounded-3xl w-full max-w-sm p-8 shadow-2xl relative z-10 border border-white/20">
+          <div className="bg-black/60 backdrop-blur-xl rounded-3xl w-full max-w-sm p-8 shadow-2xl relative z-10 border border-white/10">
             
             <div className="text-center mb-6">
               <Sparkles size={40} className="text-blue-500 mx-auto mb-3" />
-              <h2 className="text-2xl font-black text-gray-900 mb-2">Login</h2>
-              <p className="text-sm text-gray-600 mb-4">Melde dich an, um in Zukunft Abzeichen zu sammeln und Styles freizuschalten.</p>
+              <h2 className="text-2xl font-black text-white mb-2 drop-shadow-md">Login</h2>
+              <p className="text-sm text-gray-300 mb-4 drop-shadow-sm">Melde dich an, um in Zukunft Abzeichen zu sammeln und Styles freizuschalten.</p>
               
-              <div className="text-left bg-gray-50 p-3 rounded-xl border border-gray-200">
+              <div className="text-left bg-black/50 p-3 rounded-xl border border-white/10">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} className="mt-0.5 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 shrink-0" />
-                  <span className="text-[10px] text-gray-600 leading-tight">
+                  <span className="text-[10px] text-gray-300 leading-tight">
                     <strong>Nutzungsbedingungen & Haftungsausschluss:</strong> Ich bestätige, dass ich mich vor dem Anbringen von Stickern über die lokalen Gesetze informiere. Ich hafte vollumfänglich und allein für mein Handeln. Der Seitenbetreiber übernimmt keinerlei Haftung für Schäden, Ordnungswidrigkeiten oder Straftaten (insb. Sachbeschädigung). Das Verkleben ohne Zustimmung des Eigentümers ist illegal.
                   </span>
                 </label>
@@ -1936,7 +1936,7 @@ const hasNightOwl = myPins.some(p => {
             <button 
               onClick={() => supabase.auth.signInWithOAuth({ provider: 'google' })}
               disabled={!agreedToTerms}
-              className={`w-full flex items-center justify-center gap-3 bg-white border-2 font-bold py-3 rounded-full transition mb-3 ${agreedToTerms ? 'border-gray-200 text-gray-800 hover:bg-gray-50 hover:border-gray-300' : 'border-gray-100 text-gray-400 cursor-not-allowed opacity-50'}`}
+              className={`w-full flex items-center justify-center gap-3 bg-white/10 backdrop-blur border font-bold py-3 rounded-full transition mb-3 ${agreedToTerms ? 'border-white/30 text-white hover:bg-white/20' : 'border-white/10 text-gray-400 cursor-not-allowed opacity-50'}`}
             >
               <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className={`w-5 h-5 ${!agreedToTerms && 'grayscale opacity-50'}`} />
               Weiter mit Google
@@ -2207,7 +2207,20 @@ const hasNightOwl = myPins.some(p => {
       
 
       {/* Onboarding Modal */}
-      {showOnboarding && <OnboardingModal onClose={() => { localStorage.setItem('geophysalis_onboarded', 'true'); setShowOnboarding(false); }} />}
+      {showOnboarding && session && profile?.is_approved && !showEarthZoom && <OnboardingModal onClose={() => { localStorage.setItem('geophysalis_onboarded', 'true'); setShowOnboarding(false); }} />}
+
+      {/* Earth Zoom Intro */}
+      {session && profile?.is_approved && showEarthZoom && (
+        <div className="fixed inset-0 z-[6000] bg-black">
+          <video id="earth-zoom-video" autoPlay playsInline muted className="w-full h-full object-cover" onEnded={() => {
+            localStorage.setItem('geophysalis_earth_zoom_done', 'true');
+            setShowEarthZoom(false);
+          }}>
+            <source src="/temp1.mp4" type="video/mp4" />
+          </video>
+          <button onClick={() => { localStorage.setItem('geophysalis_earth_zoom_done', 'true'); setShowEarthZoom(false); }} className="absolute bottom-10 right-10 text-white/50 text-sm hover:text-white font-mono">Überspringen >></button>
+        </div>
+      )}
 
       {/* Animated Achievement Popup */}
       <AchievementPopup
