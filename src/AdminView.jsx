@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabase';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, Trash2, MapPin, Clock, Check, Globe } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Trash2, MapPin, Clock, Check, Globe, Lock } from 'lucide-react';
 
 export default function AdminView() {
   const [session, setSession] = useState(null);
@@ -211,6 +211,7 @@ export default function AdminView() {
               </div>
               <div className="bg-green-100 p-2.5 rounded-2xl"><Globe className="text-green-600" size={20} /></div>
             </div>
+          </div>
           <div onClick={() => setActiveTab('codes')} className={`cursor-pointer bg-white p-5 rounded-3xl border-2 transition-all shadow-sm ${activeTab === 'codes' ? 'border-purple-500 ring-4 ring-purple-50' : 'border-transparent hover:border-gray-200'}`}>
             <div className="flex justify-between items-start">
               <div>
@@ -219,7 +220,6 @@ export default function AdminView() {
               </div>
               <div className="bg-purple-100 p-2.5 rounded-2xl"><Lock className="text-purple-600" size={20} /></div>
             </div>
-          </div>
           </div>
           <div className="bg-white p-5 rounded-3xl border-2 border-transparent shadow-sm">
             <div className="flex justify-between items-start">
