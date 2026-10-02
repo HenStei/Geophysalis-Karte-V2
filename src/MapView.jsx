@@ -1910,16 +1910,14 @@ const hasNightOwl = myPins.some(p => {
         </div>
       )}
       {/* Auth Modal */}
-      {!session && isAuthModalOpen && (
+      {!session && (
         <div className="absolute inset-0 z-[3000] flex items-center justify-center p-4">
           <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover z-0">
             <source src="/landingpage.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] z-0"></div>
           <div className="bg-white/90 backdrop-blur-xl rounded-3xl w-full max-w-sm p-8 shadow-2xl relative z-10 border border-white/20">
-            <button onClick={() => setIsAuthModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition">
-              <X size={24} />
-            </button>
+            
             <div className="text-center mb-6">
               <Sparkles size={40} className="text-blue-500 mx-auto mb-3" />
               <h2 className="text-2xl font-black text-gray-900 mb-2">Login</h2>
