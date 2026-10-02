@@ -1754,8 +1754,8 @@ const hasNightOwl = myPins.some(p => {
       )}
 
       {isModalOpen && draftPin && (
-        <div className="absolute inset-0 z-[2000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 transition-all overflow-y-auto">
-          <div className="bg-white rounded-3xl w-full max-w-md p-6 relative shadow-2xl my-auto">
+        <div className="absolute inset-0 z-[2000] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 transition-all">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6 relative shadow-2xl max-h-[92dvh] overflow-y-auto">
             <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 bg-gray-100 p-2 rounded-full transition">
               <X size={20} />
             </button>
