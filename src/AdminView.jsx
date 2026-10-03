@@ -22,7 +22,7 @@ export default function AdminView() {
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
-    const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    const { data } = await supabase.from('profiles').select('*');
     if (data) setUsersList(data);
     setLoadingUsers(false);
   };
