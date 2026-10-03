@@ -873,14 +873,14 @@ const hasNightOwl = myPins.some(p => {
 
   const fetchProfile = async (userId) => {
     const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
-    if (data) {
-      setProfile(data);
-    } else {
+    let currentProfile = data;
+    if (!currentProfile) {
       const { data: newProfile } = await supabase.from('profiles').insert({ id: userId }).select().single();
-      if (newProfile) {
-          setProfile(newProfile);
-          if (!newProfile.is_approved) setShowInviteModal(true);
-        }
+      currentProfile = newProfile;
+    }
+    if (currentProfile) {
+      setProfile(currentProfile);
+      if (!currentProfile.is_approved) setShowInviteModal(true);
     }
   };
 
@@ -1957,7 +1957,7 @@ const hasNightOwl = myPins.some(p => {
             
             <Shield size={40} className="text-yellow-500 mx-auto mb-3" />
             <h2 className="text-2xl font-black text-white mb-2 drop-shadow-md">Closed Beta</h2>
-            <p className="text-sm text-gray-300 mb-6 drop-shadow-sm">Bitte gib deinen Einladungscode ein, um freigeschaltet zu werden.</p>
+            <p className="text-sm text-gray-300 mb-6 drop-shadow-sm">Bitte gib deinen Einladungscode ein, um freigeschaltet zu werden.<br/><span className="text-xs text-yellow-500 font-bold mt-2 block">Einladungscode kannst du beim Admin anfragen.</span></p>
             
             <input 
               type="text" 
@@ -2228,10 +2228,25 @@ const hasNightOwl = myPins.some(p => {
                     <input type="checkbox" className="hidden" checked={showOnlyMyPins} onChange={e => { setShowOnlyMyPins(e.target.checked); if (e.target.checked) setIsAuthModalOpen(false); }} />
                   </label>
                   <button onClick={() => { supabase.auth.signOut(); setIsAuthModalOpen(false); }} className="w-full bg-white border-2 border-red-100 text-red-500 font-bold py-3 rounded-2xl hover:bg-red-50 transition">
-                    Abmelden
-                  </button>
-                </div>
-              )}
+                      Abmelden
+                    </button>
+                    
+                    <div className="mt-4 pt-4 border-t border-red-100">
+                      <p className="text-xs text-gray-500 mb-2 font-bold uppercase tracking-wider">Gefahrenzone</p>
+                      <button onClick={async () => { 
+                        if(window.confirm('Willst du deinen Account wirklich unwiderruflich löschen? Deine Sticker bleiben anonymisiert erhalten.')) {
+                          // Lösche das Profil aus der DB.
+                          await supabase.from('profiles').delete().eq('id', session.user.id);
+                          await supabase.auth.signOut();
+                          setIsAuthModalOpen(false);
+                          window.location.reload();
+                        }
+                      }} className="w-full text-xs bg-red-50 text-red-600 font-bold py-2 rounded-xl hover:bg-red-100 transition">
+                        Account löschen
+                      </button>
+                    </div>
+                  </div>
+                )}
 
             </div>
           </div>
