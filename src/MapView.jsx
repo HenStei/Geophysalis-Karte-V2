@@ -1928,7 +1928,7 @@ const hasNightOwl = myPins.some(p => {
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} className="mt-0.5 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 shrink-0" />
                   <span className="text-[10px] text-gray-300 leading-tight">
-                    <strong>Nutzungsbedingungen & Haftungsausschluss:</strong> Ich bestätige, dass ich mich vor dem Anbringen von Stickern über die lokalen Gesetze informiere. Ich hafte vollumfänglich und allein für mein Handeln. Der Seitenbetreiber übernimmt keinerlei Haftung für Schäden, Ordnungswidrigkeiten oder Straftaten (insb. Sachbeschädigung). Das Verkleben ohne Zustimmung des Eigentümers ist illegal.
+                    <strong>Nutzungsbedingungen & Haftungsausschluss:</strong> Ich bestätige, dass ich mich vor dem Anbringen von Stickern über die lokalen Gesetze informiere. Ich hafte vollumfänglich und allein für mein Handeln. Der Seitenbetreiber übernimmt keinerlei Haftung für Schäden, Ordnungswidrigkeiten oder Straftaten. Das Verkleben ohne Zustimmung des Eigentümers ist illegal.<br/><br/><strong>Datenschutz:</strong> Dies ist ein privates Hobby-Projekt. Deine E-Mail (Login), Fotos & GPS-Standorte werden gespeichert und sind für andere Eingeladene auf der Karte sichtbar. Es findet keine kommerzielle Auswertung statt.
                   </span>
                 </label>
               </div>
