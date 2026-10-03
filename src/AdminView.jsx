@@ -18,6 +18,7 @@ export default function AdminView() {
   const [inviteCodes, setInviteCodes] = useState([]);
   const [loadingCodes, setLoadingCodes] = useState(false);
   const [usersList, setUsersList] = useState([]);
+  const [globalAchievements, setGlobalAchievements] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
 
   const fetchUsers = async () => {
@@ -38,15 +39,20 @@ export default function AdminView() {
     { id: 'og', label: 'OG (Alte Geophysalis)' }
   ];
 
+  const fetchGlobalAchievements = async () => {
+    const { data } = await supabase.from('global_achievements').select('*');
+    if (data) setGlobalAchievements(data);
+  };
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) { fetchAllPins(); fetchStats(); }
+            if (session) { fetchAllPins(); fetchStats(); fetchUsers(); fetchGlobalAchievements(); }
     });
 
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) { fetchAllPins(); fetchStats(); }
+            if (session) { fetchAllPins(); fetchStats(); fetchUsers(); fetchGlobalAchievements(); }
     });
 
     const realtimeSubscription = supabase
@@ -90,15 +96,14 @@ export default function AdminView() {
     if (activeTab === 'codes') {
       fetchInviteCodes();
     }
-    if (activeTab === 'users') {
-      fetchUsers();
-    }
+    // users fetched globally now
   }, [activeTab]);
 
   const fetchStats = async () => {
     const { count } = await supabase
       .from('profiles')
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true })
+      .eq('is_approved', true);
     if (count !== null) setTotalUsers(count);
 
     const { data: activityData } = await supabase
@@ -316,8 +321,8 @@ export default function AdminView() {
                           <p className="font-black text-gray-800">{userPins.length}</p>
                         </div>
                         <div className="bg-gray-50 p-2 rounded-xl text-center">
-                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Letzter</p>
-                          <p className="font-black text-gray-800 text-xs mt-1">{lastActive}</p>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Dabei seit</p>
+                          <p className="font-black text-gray-800 text-xs mt-1">{userPins.length > 0 ? new Date(Math.min(...userPins.map(p => new Date(p.created_at)))).toLocaleDateString() : 'Unbekannt'}</p>
                         </div>
                       </div>
 
@@ -417,6 +422,11 @@ export default function AdminView() {
               
               <div className="p-5 flex flex-col flex-grow">
                 <div className="mb-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <p className="text-xs font-black text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">
+                      👤 {usersList.find(u => u.id === pin.user_id)?.nickname || 'Unbekannt'}
+                    </p>
+                  </div>
                   {pin.location_name && (
                     <p className="text-sm font-black text-gray-800 flex items-start gap-1.5 mb-2 leading-tight">
                       <MapPin size={16} className="text-blue-600 shrink-0 mt-0.5" /> 
@@ -440,9 +450,14 @@ export default function AdminView() {
                       value={selectedBadges[pin.id] || ''}
                       onChange={(e) => setSelectedBadges({...selectedBadges, [pin.id]: e.target.value})}
                     >
-                      {SPECIAL_BADGES.map(b => (
-                        <option key={b.id} value={b.id}>{b.label}</option>
-                      ))}
+                      {SPECIAL_BADGES.map(b => {
+                        const hasBadge = b.id && globalAchievements.some(g => g.achievement_id === b.id && g.user_id === pin.user_id);
+                        return (
+                          <option key={b.id} value={b.id} disabled={hasBadge}>
+                            {b.label} {hasBadge ? '(Bereits freigeschaltet ✓)' : ''}
+                          </option>
+                        );
+                      })}
                     </select>
                   )}
                   <div className="flex gap-2">
