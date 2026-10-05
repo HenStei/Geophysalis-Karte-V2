@@ -36,8 +36,10 @@ export default function AdminView() {
     { id: 'aurora', label: 'Aurora Borealis' },
     { id: 'sonnenfinsternis', label: 'Sonnenfinsternis' },
     { id: 'coop', label: 'Coop (Zusammen)' },
-    { id: 'og', label: 'OG (Alte Geophysalis)' }
-  ];
+    { id: 'og', label: 'OG (Alte Geophysalis)' },
+      { id: 'wuestenfuchs', label: 'Wüstenfuchs (Wüste)' },
+      { id: 'dreilaendereck', label: 'Drei-Länder-Eck' }
+    ];
 
   const fetchGlobalAchievements = async () => {
     const { data } = await supabase.from('global_achievements').select('*');
