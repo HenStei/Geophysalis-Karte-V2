@@ -792,6 +792,8 @@ const hasNightOwl = myPins.some(p => {
   const hasSonnenfinsternis = manualBadges.has('sonnenfinsternis');
   const hasCoop = manualBadges.has('coop');
   const hasOG = manualBadges.has('og');
+  const hasWuestenfuchs = manualBadges.has('wuestenfuchs');
+  const hasDreilaendereck = manualBadges.has('dreilaendereck');
   const hasMariana = manualBadges.has('mariana');
   const hasAlpinist = myPins.some(p => p.altitude >= 1000);
   const hasSafari = manualBadges.has('safari');
