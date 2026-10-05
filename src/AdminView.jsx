@@ -367,31 +367,37 @@ export default function AdminView() {
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500">
                       <th className="p-4 font-bold">Code</th>
-                      <th className="p-4 font-bold">Status</th>
-                      <th className="p-4 font-bold">Erstellt</th>
-                      <th className="p-4 font-bold text-right">Aktion</th>
+                        <th className="p-4 font-bold">Status</th>
+                        <th className="p-4 font-bold">Erstellt</th>
+                        <th className="p-4 font-bold">Eingelöst von</th>
+                        <th className="p-4 font-bold text-right">Aktion</th>
                     </tr>
                   </thead>
                   <tbody>
                     {inviteCodes.length === 0 ? (
-                      <tr><td colSpan="4" className="p-6 text-center text-gray-500 font-medium">Keine Codes vorhanden.</td></tr>
+                      <tr><td colSpan="5" className="p-6 text-center text-gray-500 font-medium">Keine Codes vorhanden.</td></tr>
                     ) : inviteCodes.map(c => (
                       <tr key={c.code} className="border-b border-gray-50 hover:bg-gray-50/50 transition">
-                        <td className="p-4 font-mono font-bold text-gray-900">{c.code}</td>
-                        <td className="p-4">
-                          {c.is_used ? (
-                            <span className="bg-gray-100 text-gray-500 text-xs font-bold px-2.5 py-1 rounded-full">Eingelöst</span>
-                          ) : (
-                            <span className="bg-green-100 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full">Aktiv</span>
-                          )}
-                        </td>
-                        <td className="p-4 text-sm text-gray-500">{new Date(c.created_at).toLocaleDateString()}</td>
-                        <td className="p-4 text-right">
-                          <button onClick={() => deleteCode(c.code)} className="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-lg transition" title="Löschen">
-                            <Trash2 size={16} />
-                          </button>
-                        </td>
-                      </tr>
+                          <td className="p-4 font-mono font-bold text-gray-900">{c.code}</td>
+                          <td className="p-4">
+                            {c.is_used ? (
+                              <span className="bg-gray-100 text-gray-500 text-xs font-bold px-2.5 py-1 rounded-full">Eingelöst</span>
+                            ) : (
+                              <span className="bg-green-100 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full animate-pulse shadow-sm">Aktiv</span>
+                            )}
+                          </td>
+                          <td className="p-4 text-sm text-gray-500">{new Date(c.created_at).toLocaleDateString()}</td>
+                          <td className="p-4 text-sm font-bold text-gray-700">
+                            {c.is_used ? (
+                              <span className="flex items-center gap-1.5"><span className="text-purple-500">👤</span> {usersList.find(u => u.id === c.used_by)?.nickname || 'Unbekannt'}</span>
+                            ) : '-'}
+                          </td>
+                          <td className="p-4 text-right">
+                            <button onClick={() => deleteCode(c.code)} className="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-lg transition" title="Löschen">
+                              <Trash2 size={16} />
+                            </button>
+                          </td>
+                        </tr>
                     ))}
                   </tbody>
                 </table>
