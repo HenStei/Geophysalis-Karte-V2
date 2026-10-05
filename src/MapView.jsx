@@ -920,10 +920,15 @@ const hasNightOwl = myPins.some(p => {
     }
     
     // Mark code as used
-    await supabase.from('invite_codes').update({ is_used: true, used_by: session.user.id, used_at: new Date() }).eq('code', codeData.code);
-    
-    // Approve user
-    await supabase.from('profiles').update({ is_approved: true }).eq('id', session.user.id);
+      const { error: updateError } = await supabase.from('invite_codes').update({ is_used: true, used_by: session.user.id, used_at: new Date() }).eq('code', codeData.code);
+      
+      if (updateError) {
+        console.error("Code Update Error:", updateError);
+        return setInviteError('Datenbank-Fehler: RLS blockiert das Einlösen (Code konnte nicht als verbraucht markiert werden).');
+      }
+
+      // Approve user
+      await supabase.from('profiles').update({ is_approved: true }).eq('id', session.user.id);
     
     setProfile(prev => ({ ...prev, is_approved: true }));
     setShowInviteModal(false);
