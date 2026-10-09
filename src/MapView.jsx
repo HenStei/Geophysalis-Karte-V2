@@ -634,7 +634,7 @@ export default function MapView() {
 
       for (let peak of peaks) {
          if (!globalAchievements.some(g => g.achievement_id === `gipfeli_${peak.id}`)) {
-            const peakPin = myPins.find(p => isNearCoords(p.lat, p.lng, peak.lat, peak.lng, 3.0));
+            const peakPin = myPins.find(p => isNearCoords(p.lat, p.lng, peak.lat, peak.lng, 0.3));
             if (peakPin) {
                const { error } = await supabase.from('global_achievements').insert({ achievement_id: `gipfeli_${peak.id}`, user_id: session.user.id });
                if (!error) {
@@ -695,7 +695,7 @@ const isNearPeak = (lat, lng) => {
       const dLng = (lng - peak.lng) * Math.PI / 180;
       const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(peak.lat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      if (R * c < 3.0) return true; // Within 3km
+      if (R * c < 0.3) return true; // Within 300m
     }
     return false;
   };
