@@ -233,32 +233,42 @@ const WinterAssets = () => {
   return assets.map(a => <Marker key={a.id} position={a.pos} icon={a.icon} interactive={false} />);
 };
 
-// Zufällige Halloween-Requisiten auf der Karte
-const HalloweenAssets = () => {
+// Interaktives Halloween Geisterjäger-Minigame auf der Karte
+const HalloweenAssets = ({ onCatch }) => {
   const map = useMap();
   const [assets, setAssets] = useState([]);
+
+  const spawnSingleAsset = (bounds, idSuffix = Math.random()) => {
+    const padLat = (bounds.getNorth() - bounds.getSouth()) * 0.12;
+    const padLng = (bounds.getEast() - bounds.getWest()) * 0.12;
+    const lat = (bounds.getSouth() + padLat) + Math.random() * Math.max(0.001, (bounds.getNorth() - bounds.getSouth() - 2 * padLat));
+    const lng = (bounds.getWest() + padLng) + Math.random() * Math.max(0.001, (bounds.getEast() - bounds.getWest() - 2 * padLng));
+    const types = [
+      { emoji: '👻', label: 'Geist gefangen!', glow: 'rgba(168,85,247,0.7)' },
+      { emoji: '🦇', label: 'Vampirfledermaus erwischt!', glow: 'rgba(239,68,68,0.7)' },
+      { emoji: '🎃', label: 'Kürbisgeist geschnappt!', glow: 'rgba(249,115,22,0.85)' },
+      { emoji: '🍬', label: 'Süßes ergattert!', glow: 'rgba(236,72,153,0.8)' }
+    ];
+    const chosen = types[Math.floor(Math.random() * types.length)];
+    const delay = (Math.random() * 2).toFixed(2);
+    return {
+      id: `spooky_${Date.now()}_${idSuffix}`,
+      pos: [lat, lng],
+      ...chosen,
+      icon: L.divIcon({
+        html: `<div class="spooky-entity" style="font-size: 34px; animation-delay: ${delay}s; filter: drop-shadow(0px 0px 10px ${chosen.glow});" title="Klick mich!"><span>${chosen.emoji}</span></div>`,
+        className: 'bg-transparent border-none',
+        iconSize: [42, 42],
+        iconAnchor: [21, 21]
+      })
+    };
+  };
 
   useEffect(() => {
     if (!map) return;
     const generateAssets = () => {
-      if (map.getZoom() < 8) {
-        setAssets([]);
-        return;
-      }
       const bounds = map.getBounds();
-      const newAssets = Array.from({ length: 5 }).map((_, i) => {
-        const lat = bounds.getSouth() + Math.random() * (bounds.getNorth() - bounds.getSouth());
-        const lng = bounds.getWest() + Math.random() * (bounds.getEast() - bounds.getWest());
-        const isGhost = Math.random() > 0.5;
-        return {
-          id: i,
-          pos: [lat, lng],
-          icon: L.divIcon({
-            html: `<div style="font-size: 32px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.4)); animation: ${isGhost ? 'float 3s ease-in-out infinite' : 'fly 2s linear infinite'};">${isGhost ? '👻' : '🦇'}</div>`,
-            className: 'bg-transparent border-none'
-          })
-        };
-      });
+      const newAssets = Array.from({ length: 6 }).map((_, i) => spawnSingleAsset(bounds, i));
       setAssets(newAssets);
     };
 
@@ -267,7 +277,32 @@ const HalloweenAssets = () => {
     return () => map.off('moveend', generateAssets);
   }, [map]);
 
-  return assets.map(a => <Marker key={a.id} position={a.pos} icon={a.icon} interactive={false} />);
+  const handleMarkerClick = (asset, e) => {
+    if (e && e.originalEvent) {
+      e.originalEvent.stopPropagation();
+    }
+    onCatch(asset, e?.originalEvent);
+    // Respawn a new spooky entity after a short delay
+    setAssets(prev => prev.filter(a => a.id !== asset.id));
+    setTimeout(() => {
+      if (map) {
+        setAssets(prev => [...prev, spawnSingleAsset(map.getBounds())]);
+      }
+    }, 900);
+  };
+
+  return assets.map(a => (
+    <Marker
+      key={a.id}
+      position={a.pos}
+      icon={a.icon}
+      interactive={true}
+      zIndexOffset={1500}
+      eventHandlers={{
+        click: (e) => handleMarkerClick(a, e)
+      }}
+    />
+  ));
 };
 
 const PEAKS = [
@@ -496,6 +531,43 @@ export default function MapView() {
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
   const [profileTab, setProfileTab] = useState('profil');
   const [openAccordion, setOpenAccordion] = useState('Exklusiv & Limitiert');
+  const [ghostHuntActive, setGhostHuntActive] = useState(true);
+  const [ghostsCaught, setGhostsCaught] = useState(() => parseInt(localStorage.getItem('geophysalis_ghosts_caught_2026') || '0', 10));
+  const [spookyPopups, setSpookyPopups] = useState([]);
+  const [spookyToast, setSpookyToast] = useState(null);
+  const hasGhostHunter = devMode || ghostsCaught >= 10;
+
+  const handleCatchGhost = (asset, domEvent) => {
+    const x = domEvent?.clientX || window.innerWidth / 2;
+    const y = domEvent?.clientY || window.innerHeight / 2;
+    const popId = Date.now() + Math.random();
+    setSpookyPopups(prev => [...prev, { id: popId, x, y, emoji: asset.emoji, label: asset.label }]);
+    setTimeout(() => {
+      setSpookyPopups(prev => prev.filter(p => p.id !== popId));
+    }, 1100);
+
+    confetti({
+      particleCount: 22,
+      spread: 55,
+      origin: { x: x / window.innerWidth, y: y / window.innerHeight },
+      colors: ['#f97316', '#a855f7', '#fde047', '#22c55e']
+    });
+
+    setGhostsCaught(prev => {
+      const next = prev + 1;
+      localStorage.setItem('geophysalis_ghosts_caught_2026', next.toString());
+      if (next === 10) {
+        confetti({ particleCount: 120, spread: 90, origin: { y: 0.6 }, colors: ['#f97316', '#a855f7', '#fde047'] });
+        setUnlockedAchievements(u => [...u, {
+          title: 'Geisterjäger 👻🎃',
+          text: 'Süßes oder Saures! Du hast 10 Geister auf der Karte gefangen! Das exklusive Geisterjäger-Abzeichen, der Kürbis-Avatar 🎃 und der Spooky-Rahmen sind jetzt frei!',
+          img: '/badges/badge_ghosthunter.jpg',
+          icon: '🎃'
+        }]);
+      }
+      return next;
+    });
+  };
   const [showOnboarding, setShowOnboarding] = useState(false);
   
   useEffect(() => {
@@ -887,7 +959,7 @@ const hasNightOwl = myPins.some(p => {
   const canUseDark = devMode || hasNightOwl;
   const canUseVintage = devMode || hasLocalHero;
   const canUseSunrise = devMode || hasEarlyBird;
-  const canUseSpooky = devMode || hasHalloween;
+  const canUseSpooky = devMode || hasHalloween || isHalloweenActive || hasGhostHunter;
   const canUseSnow = devMode || hasWinter;
   const canUseAurora = devMode || hasPolarExplorer;
   const canUseCyberpunk = devMode || hasUrbanLegend;
@@ -996,6 +1068,17 @@ const hasNightOwl = myPins.some(p => {
     const randomPin = pins[Math.floor(Math.random() * pins.length)];
     // "Teleport" statt Kameraflug, damit der Browser nicht hunderte Kacheln über dem Ozean laden muss
     map.setView([randomPin.lat, randomPin.lng], 16, { animate: false });
+    if (isHalloweenActive) {
+      const spookyLines = [
+        '🎃 Süßes oder Saures! Geister-Teleport nach:',
+        '👻 Buh! Ein Spuk hat dich verschlagen nach:',
+        '🦇 Auf Fledermausschwingen gelandet in:',
+        '🍬 Hexen-Roulette! Du bist gelandet in:'
+      ];
+      const line = spookyLines[Math.floor(Math.random() * spookyLines.length)];
+      setSpookyToast(`${line} ${randomPin.location_name || 'Unbekannter Ort'}`);
+      setTimeout(() => setSpookyToast(null), 4000);
+    }
   };
 
   const handleRadar = () => {
@@ -1413,9 +1496,43 @@ const hasNightOwl = myPins.some(p => {
         
         {/* Event Banners */}
         {isHalloweenActive && (
-          <div className="bg-orange-500/90 backdrop-blur-md px-3 py-1.5 sm:px-4 sm:py-2 rounded-full shadow-lg border border-orange-400 pointer-events-auto flex items-center gap-2 animate-bounce">
-            <span>🎃</span>
-            <span className="text-[10px] sm:text-xs font-black text-white uppercase tracking-wider">Halloween Event aktiv!</span>
+          <div className="bg-gradient-to-r from-orange-600/95 via-purple-800/95 to-slate-900/95 backdrop-blur-md p-2.5 sm:px-4 sm:py-2.5 rounded-2xl sm:rounded-3xl shadow-xl border border-orange-400/60 pointer-events-auto flex flex-col gap-1.5 max-w-[265px] sm:max-w-xs transition-all">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                <span className="text-base sm:text-lg animate-bounce">🎃</span>
+                <span className="text-[10px] sm:text-xs font-black text-orange-200 uppercase tracking-wider">Geisterjagd Event</span>
+              </div>
+              <span className="text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-full bg-orange-500/30 text-orange-100 border border-orange-400/40">
+                👻 {ghostsCaught}/10
+              </span>
+            </div>
+            <div className="w-full bg-black/40 rounded-full h-1.5 overflow-hidden">
+              <div
+                className="bg-gradient-to-r from-orange-400 via-amber-300 to-purple-400 h-1.5 rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(100, (ghostsCaught / 10) * 100)}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-1.5 pt-0.5">
+              <p className="text-[9px] sm:text-[10px] text-orange-100/90 font-medium leading-tight">
+                {ghostsCaught >= 10 ? '🏆 Geisterjäger-Bonus frei!' : 'Tippe auf 👻 🦇 🎃 auf der Karte!'}
+              </p>
+              <div className="flex gap-1 shrink-0">
+                <button
+                  onClick={() => setGhostHuntActive(!ghostHuntActive)}
+                  className={`text-[9px] font-bold px-2 py-0.5 rounded-full border transition ${ghostHuntActive ? 'bg-orange-500 text-white border-orange-300' : 'bg-white/10 text-gray-300 border-white/20'}`}
+                  title="Geister auf der Karte ein-/ausblenden"
+                >
+                  {ghostHuntActive ? 'Aktiv' : 'Pause'}
+                </button>
+                <button
+                  onClick={() => setMapStyle(mapStyle === 'neon' ? 'street' : 'neon')}
+                  className={`text-[9px] font-bold px-2 py-0.5 rounded-full border transition ${mapStyle === 'neon' ? 'bg-purple-600 text-white border-purple-300' : 'bg-white/10 text-orange-200 border-orange-400/30 hover:bg-white/20'}`}
+                  title="Spooky Karten-Modus umschalten"
+                >
+                  {mapStyle === 'neon' ? '☀️ Normal' : '🌙 Spooky'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
         {isWinterActive && (
@@ -1583,6 +1700,19 @@ const hasNightOwl = myPins.some(p => {
         </>
       )}
       {mapStyle === 'aurora' && <div className="aurora-overlay"></div>}
+      {mapStyle === 'neon' && <div className="spooky-vignette"></div>}
+      {spookyPopups.map(p => (
+        <div key={p.id} className="spooky-pop-effect flex flex-col items-center" style={{ left: p.x, top: p.y }}>
+          <span className="text-3xl drop-shadow-[0_0_10px_rgba(249,115,22,0.9)]">{p.emoji} +1</span>
+          <span className="text-[10px] font-black bg-purple-950/90 text-orange-300 px-2 py-0.5 rounded-full border border-orange-400/50 shadow-lg whitespace-nowrap">{p.label}</span>
+        </div>
+      ))}
+      {spookyToast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[3000] bg-gradient-to-r from-purple-950/95 via-slate-900/95 to-orange-950/95 text-orange-200 px-4 py-2.5 rounded-2xl shadow-2xl border border-orange-400/60 text-xs sm:text-sm font-bold flex items-center gap-2 animate-bounce pointer-events-none">
+          <span>🎃</span>
+          <span>{spookyToast}</span>
+        </div>
+      )}
 
       <MapContainer 
         center={userLocation} 
@@ -1669,7 +1799,7 @@ const hasNightOwl = myPins.some(p => {
         )}
         
         {mapStyle === 'snow' && <WinterAssets />}
-        {mapStyle === 'neon' && <HalloweenAssets />}
+        {(mapStyle === 'neon' || (isHalloweenActive && ghostHuntActive)) && <HalloweenAssets onCatch={handleCatchGhost} />}
 
         {/* Heatmap Layer */}
         {showHeatmap && <HeatmapLayer points={displayPins} />}
@@ -1718,7 +1848,7 @@ const hasNightOwl = myPins.some(p => {
         <div className="absolute bottom-32 right-4 sm:bottom-[150px] sm:right-8 z-[1000] flex flex-col gap-3 pointer-events-none">
           <button 
             onClick={handleRoulette} 
-            title="Zufälliger Sticker"
+            title={isHalloweenActive ? "🎃 Süßes oder Saures! (Zufälliger Sticker)" : "Zufälliger Sticker"}
             className="bg-white/95 backdrop-blur-md p-3 sm:p-3.5 rounded-full sm:rounded-full shadow-xl border border-gray-100 text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition pointer-events-auto flex items-center justify-center hover:scale-110 active:scale-95"
           >
             <Dices size={24} />
@@ -2123,7 +2253,7 @@ const hasNightOwl = myPins.some(p => {
                     <div className="flex gap-4 items-start">
                       <div className={`avatar-frame frame-${editFrame} relative w-16 h-16 text-3xl shadow bg-white rounded-full shrink-0`}>
                         <div className="w-full h-full overflow-hidden rounded-full flex items-center justify-center">
-                          {editAvatar === 'default' ? '🦊' : editAvatar === 'ghost' ? '👻' : editAvatar === 'bat' ? '🦇' : editAvatar === 'reindeer' ? '🦌' : editAvatar === 'snowman' ? '⛄' : editAvatar === 'fire' ? <img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /> : editAvatar === 'cyberpunk' ? <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /> : editAvatar === 'retro' ? <img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" /> : editAvatar === 'pioneer' ? <img src="/badges/avatar_pioneer.jpg" className="w-full h-full object-cover" /> : editAvatar === 'admin' ? <img src="/badges/avatar_admin.jpg" className="w-full h-full object-cover" /> : editAvatar === 'polar' ? <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /> : '🦊'}
+                          {editAvatar === 'default' ? '🦊' : editAvatar === 'pumpkin' ? '🎃' : editAvatar === 'ghost' ? '👻' : editAvatar === 'bat' ? '🦇' : editAvatar === 'reindeer' ? '🦌' : editAvatar === 'snowman' ? '⛄' : editAvatar === 'fire' ? <img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /> : editAvatar === 'cyberpunk' ? <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /> : editAvatar === 'retro' ? <img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" /> : editAvatar === 'pioneer' ? <img src="/badges/avatar_pioneer.jpg" className="w-full h-full object-cover" /> : editAvatar === 'admin' ? <img src="/badges/avatar_admin.jpg" className="w-full h-full object-cover" /> : editAvatar === 'polar' ? <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /> : '🦊'}
                         </div>
                       </div>
                       <div className="flex-1 space-y-2">
@@ -2131,8 +2261,9 @@ const hasNightOwl = myPins.some(p => {
                           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Avatar</p>
                           <div className="flex flex-wrap gap-1.5">
                             <button onClick={() => setEditAvatar('default')} className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'default' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>🦊</button>
-                            {hasHalloween && <button onClick={() => setEditAvatar('ghost')} className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'ghost' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>👻</button>}
-                            {hasHalloween && <button onClick={() => setEditAvatar('bat')} className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'bat' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>🦇</button>}
+                            {(hasHalloween || hasGhostHunter) && <button onClick={() => setEditAvatar('ghost')} className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'ghost' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>👻</button>}
+                            {(hasHalloween || hasGhostHunter) && <button onClick={() => setEditAvatar('bat')} className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'bat' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>🦇</button>}
+                            {hasGhostHunter && <button onClick={() => setEditAvatar('pumpkin')} title="Geisterjäger Belohnung" className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'pumpkin' ? 'bg-orange-100 ring-2 ring-orange-500' : 'bg-white border border-orange-200'}`}>🎃</button>}
                             {hasWinter && <button onClick={() => setEditAvatar('reindeer')} className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'reindeer' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>🦌</button>}
                             {hasWinter && <button onClick={() => setEditAvatar('snowman')} className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'snowman' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>⛄</button>}
                             {hasPolarExplorer && <button onClick={() => setEditAvatar('polar')} className={`w-9 h-9 rounded-lg overflow-hidden transition ${editAvatar === 'polar' ? 'ring-2 ring-purple-500' : 'border border-gray-200'}`}><img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /></button>}
@@ -2150,6 +2281,7 @@ const hasNightOwl = myPins.some(p => {
                             {(devMode || hasUrbanLegend) && <button onClick={() => setEditFrame('neon')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'neon' ? 'bg-purple-600 text-white' : 'bg-white border border-purple-200 text-purple-600'}`}>Neon</button>}
                             {(devMode || hasPolarExplorer || hasWinter) && <button onClick={() => setEditFrame('frost')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'frost' ? 'bg-cyan-500 text-white' : 'bg-white border border-cyan-200 text-cyan-600'}`}>Frost</button>}
                             {(devMode || hasMarathon) && <button onClick={() => setEditFrame('fire')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'fire' ? 'bg-orange-500 text-white' : 'bg-white border border-orange-200 text-orange-600'}`}>Feuer</button>}
+                            {(devMode || hasHalloween || hasGhostHunter) && <button onClick={() => setEditFrame('spooky')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'spooky' ? 'bg-orange-600 text-white' : 'bg-white border border-orange-300 text-orange-600'}`}>🎃 Spooky</button>}
                           </div>
                         </div>
                         <button onClick={() => handleUpdateAvatarAndFrame(editAvatar, editFrame)} className="w-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold py-2 rounded-xl transition">Speichern</button>
@@ -2206,6 +2338,7 @@ const hasNightOwl = myPins.some(p => {
                       { has: devMode || hasRetroGamer, img: '/badges/retro.jpg', title: 'Pixel Pioneer 👾', titleL: '??? (Retro Gamer)', desc: '10 Sticker geklebt. 8-Bit Karte frei!', descL: 'Klebe 10 Sticker, um in die Vergangenheit zu reisen...', date: null },
                     ]},
                     { label: 'Spezial & Zeitlich', color: 'ring-yellow-400', items: [
+                      { has: hasGhostHunter, img: '/badges/badge_ghosthunter.jpg', title: `Geisterjäger (${ghostsCaught} gefangen) 👻`, titleL: `??? (Halloween Geisterjagd ${ghostsCaught}/10)`, desc: '10 Spukgestalten auf der Karte gefangen! Kürbis-Avatar & Spooky-Rahmen frei.', descL: 'Fange während des Halloween-Events 10 Geister, Fledermäuse oder Kürbisse direkt auf der Karte!', date: null },
                       { has: devMode || hasPi, img: '/badges/badge_pi.jpg', title: 'PI (3,14) 🥧', titleL: '??? (Mathematiker)', desc: 'Auf dem 3,14 Breiten- oder Längengrad.', descL: 'Nur für wahre Geeks und Nerds...', date: getUnlockDate('pi') },
                       { has: devMode || hasMay4, img: '/badges/badge_may4.jpg', title: 'May the force be with you 🛸', titleL: '??? (Sci-Fi Fan)', desc: 'Am 4. Mai geklebt.', descL: 'Spüre die Macht an einem ganz bestimmten Tag...', date: getUnlockDate('may4') },
                       { has: devMode || hasLove, img: '/badges/badge_love.jpg', title: 'True Love 💌', titleL: '??? (Romantiker)', desc: 'Am Valentinstag (14. Feb) geklebt.', descL: 'Die Liebe liegt in der Luft...', date: getUnlockDate('love') },
