@@ -271,10 +271,10 @@ const HalloweenAssets = () => {
 };
 
 const PEAKS = [
-  { id: 'zugspitze', lat: 47.421, lng: 10.985, name: 'Zugspitze (Bayern)' },
-  { id: 'feldberg', lat: 47.873, lng: 8.004, name: 'Feldberg (BaWü)' },
-  { id: 'brocken', lat: 51.799, lng: 10.615, name: 'Brocken (Sachsen-Anhalt)' },
-  { id: 'fichtelberg', lat: 50.429, lng: 12.954, name: 'Fichtelberg (Sachsen)' },
+  { id: 'zugspitze', lat: 47.421, lng: 10.985, alt: 2962, name: 'Zugspitze (Bayern)' },
+  { id: 'feldberg', lat: 47.873, lng: 8.004, alt: 1493, name: 'Feldberg (BaWü)' },
+  { id: 'brocken', lat: 51.799, lng: 10.615, alt: 1141, name: 'Brocken (Sachsen-Anhalt)' },
+  { id: 'fichtelberg', lat: 50.429, lng: 12.954, alt: 1215, name: 'Fichtelberg (Sachsen)' },
   { id: 'wasserkuppe', lat: 50.498, lng: 9.937, name: 'Wasserkuppe (Hessen)' },
   { id: 'beerberg', lat: 50.658, lng: 9.746, name: 'Großer Beerberg (Thüringen)' },
   { id: 'wurmberg', lat: 51.756, lng: 10.617, name: 'Wurmberg (Niedersachsen)' },
@@ -675,9 +675,10 @@ export default function MapView() {
   const euOwner = globalAchievements.find(g => g.achievement_id === 'eu_center')?.user_id;
 
 
-  const myGipfeliObj = globalAchievements.find(g => g.achievement_id.startsWith('gipfeli_') && g.user_id === session?.user?.id);
+  const myGipfeliObjs = globalAchievements.filter(g => g.achievement_id.startsWith('gipfeli_') && g.user_id === session?.user?.id);
+  const myGipfeliObj = myGipfeliObjs[0] || null;
   const myGipfeliPeakId = myGipfeliObj ? myGipfeliObj.achievement_id.split('_')[1] : null;
-  const myGipfeliPeakName = myGipfeliPeakId ? PEAKS.find(p => p.id === myGipfeliPeakId)?.name : null;
+  const myGipfeliPeakName = myGipfeliObjs.map(g => PEAKS.find(p => p.id === g.achievement_id.split('_')[1])?.name).filter(Boolean).join(', ') || null;
 
 
 const isNearPeak = (lat, lng) => {
@@ -701,7 +702,7 @@ const isNearPeak = (lat, lng) => {
   };
 
   const hasYinYang = myPins.some(p => p.lat > 0) && myPins.some(p => p.lat < 0);
-  const hasGipfeli = myPins.some(p => isNearPeak(p.lat, p.lng));
+  const hasGipfeli = myGipfeliObjs.length > 0;
   const hasVivaldi = (() => {
     let seasons = new Set();
     myPins.forEach(p => {
@@ -779,9 +780,51 @@ const hasNightOwl = myPins.some(p => {
     return d.getFullYear() === 2027 && p.lat > 50.8 && p.lat < 51.0 && p.lng > 13.2 && p.lng < 13.5;
   });
 
-  const hasBerggams = myPins.some(p => p.altitude >= 2000);
-  const hasSteinbock = myPins.some(p => p.altitude >= 3000);
-  const hasLuft = myPins.some(p => p.altitude >= 7000);
+  const [resolvedElevations, setResolvedElevations] = useState({});
+
+  useEffect(() => {
+    const missing = myPins.filter(p => (p.altitude === null || p.altitude === undefined) && resolvedElevations[p.id] === undefined);
+    if (missing.length === 0) return;
+    const lats = missing.map(p => p.lat).join(',');
+    const lngs = missing.map(p => p.lng).join(',');
+    fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lngs}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data && Array.isArray(data.elevation)) {
+          const next = {};
+          missing.forEach((p, idx) => {
+            const elev = data.elevation[idx];
+            if (typeof elev === 'number') {
+              next[p.id] = Math.round(elev);
+              supabase.from('pins').update({ altitude: Math.round(elev) }).eq('id', p.id).then(() => {});
+            }
+          });
+          setResolvedElevations(prev => ({ ...prev, ...next }));
+        }
+      })
+      .catch(() => {});
+  }, [myPins]);
+
+  const getPinAltitude = (p) => {
+    if (typeof p.altitude === 'number') return p.altitude;
+    if (typeof resolvedElevations[p.id] === 'number') return resolvedElevations[p.id];
+    const matchedPeak = PEAKS.find(pk => pk.alt && isNearCoords(p.lat, p.lng, pk.lat, pk.lng, 0.5));
+    if (matchedPeak) return matchedPeak.alt;
+    return 0;
+  };
+
+  const hasGipfeliOver1000 = myGipfeliObjs.some(g => {
+    const pk = PEAKS.find(p => p.id === g.achievement_id.split('_')[1]);
+    return pk && pk.alt >= 1000;
+  });
+  const hasGipfeliOver2000 = myGipfeliObjs.some(g => {
+    const pk = PEAKS.find(p => p.id === g.achievement_id.split('_')[1]);
+    return pk && pk.alt >= 2000;
+  });
+
+  const hasBerggams = hasGipfeliOver2000 || myPins.some(p => getPinAltitude(p) >= 2000);
+  const hasSteinbock = myPins.some(p => getPinAltitude(p) >= 3000);
+  const hasLuft = myPins.some(p => getPinAltitude(p) >= 7000);
 
   // --- Manual Badges (from special_badge column) ---
   const manualBadges = new Set(myPins.map(p => p.special_badge).filter(Boolean));
@@ -795,7 +838,7 @@ const hasNightOwl = myPins.some(p => {
   const hasWuestenfuchs = manualBadges.has('wuestenfuchs');
   const hasDreilaendereck = manualBadges.has('dreilaendereck');
   const hasMariana = manualBadges.has('mariana');
-  const hasAlpinist = myPins.some(p => p.altitude >= 1000);
+  const hasAlpinist = hasGipfeliOver1000 || myPins.some(p => getPinAltitude(p) >= 1000);
   const hasSafari = manualBadges.has('safari');
   const hasPenguin = manualBadges.has('penguin');
   const hasBermuda = manualBadges.has('bermuda');
@@ -1151,6 +1194,14 @@ const hasNightOwl = myPins.some(p => {
   const fetchLocationName = async (lat, lng) => {
     setIsFetchingLocation(true);
     try {
+      fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lng}`)
+        .then(r => r.json())
+        .then(d => {
+          if (d && Array.isArray(d.elevation) && typeof d.elevation[0] === 'number') {
+            setDraftAltitude(prev => prev !== null ? prev : Math.round(d.elevation[0]));
+          }
+        })
+        .catch(() => {});
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
       const data = await res.json();
       if (data && data.address) {
