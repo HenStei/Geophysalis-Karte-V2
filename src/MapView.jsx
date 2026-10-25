@@ -2191,7 +2191,7 @@ const hasNightOwl = myPins.some(p => {
                         title: `${peak.name} (${peak.alt}m) 🏆`,
                         titleL: `${peak.name} (${peak.alt}m)`,
                         desc: `Weltweit einzigartig! Du hast diesen Bundesland-Gipfel als Allererster erobert.`,
-                        descL: claim ? `🔒 Bereits erobert von ${ownerName}${unlockDate ? ' am ' + unlockDate : ''}` : '🟢 Noch frei! Klebe als Erster im 300m-Radius um den Gipfel.',
+                        descL: claim ? `🔒 Bereits erobert von ${ownerName}${unlockDate ? ' am ' + unlockDate : ''}` : '🟢 Noch frei! Klebe als Erster auf diesen Gipfel.',
                         date: isMine ? unlockDate : null
                       };
                     })},
