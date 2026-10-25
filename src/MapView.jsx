@@ -233,73 +233,142 @@ const WinterAssets = () => {
   return assets.map(a => <Marker key={a.id} position={a.pos} icon={a.icon} interactive={false} />);
 };
 
-// Interaktives Halloween Geisterjäger-Minigame auf der Karte
-const HalloweenAssets = ({ onCatch }) => {
+// Interaktives Halloween Geisterjäger-Minigame (Spooky Kompass & Verstecke ab Zoom 13+)
+const HalloweenAssets = ({ pins, onCatch, onCompassUpdate }) => {
   const map = useMap();
-  const [assets, setAssets] = useState([]);
+  const [targetCluster, setTargetCluster] = useState(null);
+  const [currentZoom, setCurrentZoom] = useState(map ? map.getZoom() : 5);
 
-  const spawnSingleAsset = (bounds, idSuffix = Math.random()) => {
-    const padLat = (bounds.getNorth() - bounds.getSouth()) * 0.12;
-    const padLng = (bounds.getEast() - bounds.getWest()) * 0.12;
-    const lat = (bounds.getSouth() + padLat) + Math.random() * Math.max(0.001, (bounds.getNorth() - bounds.getSouth() - 2 * padLat));
-    const lng = (bounds.getWest() + padLng) + Math.random() * Math.max(0.001, (bounds.getEast() - bounds.getWest() - 2 * padLng));
-    const types = [
-      { emoji: '👻', label: 'Geist gefangen!', glow: 'rgba(168,85,247,0.7)' },
-      { emoji: '🦇', label: 'Vampirfledermaus erwischt!', glow: 'rgba(239,68,68,0.7)' },
-      { emoji: '🎃', label: 'Kürbisgeist geschnappt!', glow: 'rgba(249,115,22,0.85)' },
-      { emoji: '🍬', label: 'Süßes ergattert!', glow: 'rgba(236,72,153,0.8)' }
+  // Spawn 1 hidden ghost (plus 2 spider traps) near a random real pin (or peak)
+  const spawnNewTarget = (excludeLat = null, excludeLng = null) => {
+    const pool = (pins && pins.length > 0) ? pins : PEAKS;
+    let candidates = pool;
+    if (excludeLat !== null && pool.length > 1) {
+      const filtered = pool.filter(p => Math.hypot(p.lat - excludeLat, p.lng - excludeLng) > 0.02);
+      if (filtered.length > 0) candidates = filtered;
+    }
+    const anchor = candidates[Math.floor(Math.random() * candidates.length)];
+    // Offset by ~150m to 650m around the pin so you have to search the neighborhood!
+    const angle = Math.random() * Math.PI * 2;
+    const distDeg = 0.0015 + Math.random() * 0.0045;
+    const ghostLat = anchor.lat + Math.sin(angle) * distDeg;
+    const ghostLng = anchor.lng + (Math.cos(angle) * distDeg) / Math.max(0.2, Math.cos(anchor.lat * Math.PI / 180));
+
+    const isGolden = Math.random() < 0.14; // 14% chance for rare Golden Pumpkin (+3)
+    const spookyTypes = [
+      { emoji: '👻', label: 'Schattengeist gefangen!', points: 1, glow: 'rgba(168,85,247,0.75)' },
+      { emoji: '🦇', label: 'Nachtfledermaus erwischt!', points: 1, glow: 'rgba(239,68,68,0.75)' },
+      { emoji: '🎃', label: 'Kürbisgeist geschnappt!', points: 1, glow: 'rgba(249,115,22,0.8)' }
     ];
-    const chosen = types[Math.floor(Math.random() * types.length)];
-    const delay = (Math.random() * 2).toFixed(2);
-    return {
-      id: `spooky_${Date.now()}_${idSuffix}`,
-      pos: [lat, lng],
-      ...chosen,
+    const mainType = isGolden
+      ? { emoji: '🎃', label: ' Goldener Kürbisgeist! (+3)', points: 3, glow: 'rgba(250,204,21,0.95)', isGolden: true }
+      : spookyTypes[Math.floor(Math.random() * spookyTypes.length)];
+
+    const mainEntity = {
+      id: `ghost_main_${Date.now()}`,
+      pos: [ghostLat, ghostLng],
+      isTrap: false,
+      ...mainType,
       icon: L.divIcon({
-        html: `<div class="spooky-entity" style="font-size: 34px; animation-delay: ${delay}s; filter: drop-shadow(0px 0px 10px ${chosen.glow});" title="Klick mich!"><span>${chosen.emoji}</span></div>`,
+        html: `<div class="spooky-entity-stealth" style="font-size: ${isGolden ? '23px' : '19px'}; filter: drop-shadow(0px 0px ${isGolden ? '10px' : '6px'} ${mainType.glow});" title="Schnapp mich!"><span>${mainType.emoji}</span></div>`,
         className: 'bg-transparent border-none',
-        iconSize: [42, 42],
-        iconAnchor: [21, 21]
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
       })
     };
+
+    // Spawn 2 sneaky Spider Traps nearby (within 250m-500m of the ghost)
+    const traps = [0, 1].map(idx => {
+      const tAngle = Math.random() * Math.PI * 2;
+      const tDist = 0.0018 + Math.random() * 0.0035;
+      return {
+        id: `trap_${Date.now()}_${idx}`,
+        pos: [
+          ghostLat + Math.sin(tAngle) * tDist,
+          ghostLng + (Math.cos(tAngle) * tDist) / Math.max(0.2, Math.cos(ghostLat * Math.PI / 180))
+        ],
+        emoji: '🕷️',
+        label: 'Saures! Giftspinne erwischt (-1)',
+        points: -1,
+        isTrap: true,
+        icon: L.divIcon({
+          html: `<div class="spooky-entity-stealth" style="font-size: 18px; animation-delay: -${idx + 1.2}s; filter: drop-shadow(0px 0px 5px rgba(220,38,38,0.7));" title="Vorsicht..."><span>🕷️</span></div>`,
+          className: 'bg-transparent border-none',
+          iconSize: [26, 26],
+          iconAnchor: [13, 13]
+        })
+      };
+    });
+
+    setTargetCluster({
+      ghostPos: [ghostLat, ghostLng],
+      hintLocation: anchor.location_name || anchor.name || 'Geheimer Ort',
+      entities: [mainEntity, ...traps]
+    });
   };
 
   useEffect(() => {
-    if (!map) return;
-    const generateAssets = () => {
-      const bounds = map.getBounds();
-      const newAssets = Array.from({ length: 6 }).map((_, i) => spawnSingleAsset(bounds, i));
-      setAssets(newAssets);
+    spawnNewTarget();
+  }, [pins?.length > 0]);
+
+  // Calculate live bearing & distance from map center to the hidden ghost
+  useEffect(() => {
+    if (!map || !targetCluster) return;
+
+    const updateCompass = () => {
+      const z = map.getZoom();
+      setCurrentZoom(z);
+      const center = map.getCenter();
+      const [gLat, gLng] = targetCluster.ghostPos;
+
+      // Distance in meters
+      const distMeters = map.distance([center.lat, center.lng], [gLat, gLng]);
+
+      // Bearing in degrees (0 = North, 90 = East, 180 = South, 270 = West)
+      const lat1 = center.lat * Math.PI / 180;
+      const lat2 = gLat * Math.PI / 180;
+      const dLon = (gLng - center.lng) * Math.PI / 180;
+      const y = Math.sin(dLon) * Math.cos(lat2);
+      const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+      const brng = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+
+      onCompassUpdate({
+        bearing: Math.round(brng),
+        distanceMeters: Math.round(distMeters),
+        zoom: z,
+        isVisible: z >= 13,
+        hintLocation: targetCluster.hintLocation
+      });
     };
 
-    map.on('moveend', generateAssets);
-    generateAssets();
-    return () => map.off('moveend', generateAssets);
-  }, [map]);
+    map.on('move', updateCompass);
+    map.on('zoomend', updateCompass);
+    updateCompass();
+    return () => {
+      map.off('move', updateCompass);
+      map.off('zoomend', updateCompass);
+    };
+  }, [map, targetCluster]);
 
-  const handleMarkerClick = (asset, e) => {
-    if (e && e.originalEvent) {
-      e.originalEvent.stopPropagation();
-    }
-    onCatch(asset, e?.originalEvent);
-    // Respawn a new spooky entity after a short delay
-    setAssets(prev => prev.filter(a => a.id !== asset.id));
-    setTimeout(() => {
-      if (map) {
-        setAssets(prev => [...prev, spawnSingleAsset(map.getBounds())]);
-      }
-    }, 900);
-  };
+  if (!targetCluster || currentZoom < 13) {
+    // Below zoom 13, the ghost is completely invisible! You must use the Spooky Compass and zoom in!
+    return null;
+  }
 
-  return assets.map(a => (
+  return targetCluster.entities.map(entity => (
     <Marker
-      key={a.id}
-      position={a.pos}
-      icon={a.icon}
+      key={entity.id}
+      position={entity.pos}
+      icon={entity.icon}
       interactive={true}
-      zIndexOffset={1500}
+      zIndexOffset={1600}
       eventHandlers={{
-        click: (e) => handleMarkerClick(a, e)
+        click: (e) => {
+          if (e && e.originalEvent) e.originalEvent.stopPropagation();
+          onCatch(entity, e?.originalEvent);
+          // Immediately teleport ghost cluster to a brand new location!
+          spawnNewTarget(targetCluster.ghostPos[0], targetCluster.ghostPos[1]);
+        }
       }}
     />
   ));
@@ -531,36 +600,42 @@ export default function MapView() {
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
   const [profileTab, setProfileTab] = useState('profil');
   const [openAccordion, setOpenAccordion] = useState('Exklusiv & Limitiert');
+  const GHOST_GOAL = 20;
   const [ghostHuntActive, setGhostHuntActive] = useState(true);
   const [ghostsCaught, setGhostsCaught] = useState(() => parseInt(localStorage.getItem('geophysalis_ghosts_caught_2026') || '0', 10));
   const [spookyPopups, setSpookyPopups] = useState([]);
   const [spookyToast, setSpookyToast] = useState(null);
-  const hasGhostHunter = devMode || ghostsCaught >= 10;
+  const [spookyCompass, setSpookyCompass] = useState({ bearing: 0, distanceMeters: 0, zoom: 5, isVisible: false, hintLocation: '' });
+  const hasGhostHunter = devMode || ghostsCaught >= GHOST_GOAL;
 
   const handleCatchGhost = (asset, domEvent) => {
     const x = domEvent?.clientX || window.innerWidth / 2;
     const y = domEvent?.clientY || window.innerHeight / 2;
     const popId = Date.now() + Math.random();
-    setSpookyPopups(prev => [...prev, { id: popId, x, y, emoji: asset.emoji, label: asset.label }]);
+    const delta = asset.points || 1;
+    const signStr = delta > 0 ? `+${delta}` : `${delta}`;
+    setSpookyPopups(prev => [...prev, { id: popId, x, y, emoji: asset.emoji, signStr, label: asset.label, isTrap: asset.isTrap }]);
     setTimeout(() => {
       setSpookyPopups(prev => prev.filter(p => p.id !== popId));
-    }, 1100);
+    }, 1300);
 
-    confetti({
-      particleCount: 22,
-      spread: 55,
-      origin: { x: x / window.innerWidth, y: y / window.innerHeight },
-      colors: ['#f97316', '#a855f7', '#fde047', '#22c55e']
-    });
+    if (!asset.isTrap) {
+      confetti({
+        particleCount: delta >= 3 ? 55 : 24,
+        spread: 60,
+        origin: { x: x / window.innerWidth, y: y / window.innerHeight },
+        colors: ['#f97316', '#a855f7', '#fde047', '#22c55e']
+      });
+    }
 
     setGhostsCaught(prev => {
-      const next = prev + 1;
+      const next = Math.max(0, prev + delta);
       localStorage.setItem('geophysalis_ghosts_caught_2026', next.toString());
-      if (next === 10) {
-        confetti({ particleCount: 120, spread: 90, origin: { y: 0.6 }, colors: ['#f97316', '#a855f7', '#fde047'] });
+      if (prev < GHOST_GOAL && next >= GHOST_GOAL) {
+        confetti({ particleCount: 140, spread: 95, origin: { y: 0.6 }, colors: ['#f97316', '#a855f7', '#fde047'] });
         setUnlockedAchievements(u => [...u, {
-          title: 'Geisterjäger 👻🎃',
-          text: 'Süßes oder Saures! Du hast 10 Geister auf der Karte gefangen! Das exklusive Geisterjäger-Abzeichen, der Kürbis-Avatar 🎃 und der Spooky-Rahmen sind jetzt frei!',
+          title: 'Meister-Geisterjäger 👻🎃',
+          text: `Unglaublich! Du hast mit dem Spooky-Kompass ${GHOST_GOAL} versteckte Geister aufgespürt! Das Geisterjäger-Abzeichen, der Kürbis-Avatar 🎃 und der Spooky-Rahmen gehören dir!`,
           img: '/badges/badge_ghosthunter.jpg',
           icon: '🎃'
         }]);
@@ -1495,46 +1570,91 @@ const hasNightOwl = myPins.some(p => {
         </div>
         
         {/* Event Banners */}
-        {isHalloweenActive && (
-          <div className="bg-gradient-to-r from-orange-600/95 via-purple-800/95 to-slate-900/95 backdrop-blur-md p-2.5 sm:px-4 sm:py-2.5 rounded-2xl sm:rounded-3xl shadow-xl border border-orange-400/60 pointer-events-auto flex flex-col gap-1.5 max-w-[265px] sm:max-w-xs transition-all">
+        {isHalloweenActive && (() => {
+          const distKm = spookyCompass.distanceMeters / 1000;
+          const emf = distKm < 2 ? { label: '🔥 EXTREM NAH!', color: 'text-red-300', ring: 'border-red-400 bg-red-500/30', bars: 4 }
+                    : distKm < 20 ? { label: '🕯️ Heiß (In der Nähe)', color: 'text-orange-300', ring: 'border-orange-400 bg-orange-500/25', bars: 3 }
+                    : distKm < 150 ? { label: '🔮 Warm (Signal spürbar)', color: 'text-amber-200', ring: 'border-amber-400/60 bg-amber-500/20', bars: 2 }
+                    : { label: '❄️ Kalt (Weit entfernt)', color: 'text-cyan-200', ring: 'border-cyan-400/40 bg-cyan-500/15', bars: 1 };
+          const distLabel = spookyCompass.distanceMeters > 1000
+            ? `${distKm.toFixed(distKm > 20 ? 0 : 1)} km`
+            : `${spookyCompass.distanceMeters} m`;
+
+          return (
+          <div className="bg-gradient-to-br from-slate-950/95 via-purple-950/95 to-orange-950/95 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-2xl sm:rounded-3xl shadow-2xl border border-orange-400/60 pointer-events-auto flex flex-col gap-2 w-[275px] sm:w-[310px] transition-all">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5">
                 <span className="text-base sm:text-lg animate-bounce">🎃</span>
-                <span className="text-[10px] sm:text-xs font-black text-orange-200 uppercase tracking-wider">Geisterjagd Event</span>
+                <span className="text-[10px] sm:text-xs font-black text-orange-200 uppercase tracking-wider">Spooky Kompass</span>
               </div>
               <span className="text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-full bg-orange-500/30 text-orange-100 border border-orange-400/40">
-                👻 {ghostsCaught}/10
+                👻 {ghostsCaught}/{GHOST_GOAL}
               </span>
             </div>
-            <div className="w-full bg-black/40 rounded-full h-1.5 overflow-hidden">
+
+            {/* Progress Bar */}
+            <div className="w-full bg-black/50 rounded-full h-1.5 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-orange-400 via-amber-300 to-purple-400 h-1.5 rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(100, (ghostsCaught / 10) * 100)}%` }}
+                className="bg-gradient-to-r from-orange-500 via-amber-400 to-purple-400 h-1.5 rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(100, (ghostsCaught / GHOST_GOAL) * 100)}%` }}
               />
             </div>
-            <div className="flex items-center justify-between gap-1.5 pt-0.5">
-              <p className="text-[9px] sm:text-[10px] text-orange-100/90 font-medium leading-tight">
-                {ghostsCaught >= 10 ? '🏆 Geisterjäger-Bonus frei!' : 'Tippe auf 👻 🦇 🎃 auf der Karte!'}
-              </p>
+
+            {/* Live Spooky Compass & EMF Detector */}
+            {ghostHuntActive && (
+              <div className="flex items-center gap-3 bg-black/40 p-2 rounded-2xl border border-purple-500/30">
+                <div className={`emf-compass-dial relative w-11 h-11 rounded-full border-2 ${emf.ring} flex items-center justify-center shrink-0 shadow-inner`}>
+                  <span className="absolute top-0.5 text-[7px] font-black text-orange-200/70">N</span>
+                  <span className="absolute bottom-0.5 text-[7px] font-bold text-gray-400/60">S</span>
+                  <span className="absolute right-1 text-[7px] font-bold text-gray-400/60">O</span>
+                  <span className="absolute left-1 text-[7px] font-bold text-gray-400/60">W</span>
+                  <div
+                    className="w-full h-full flex items-center justify-center transition-transform duration-200"
+                    style={{ transform: `rotate(${spookyCompass.bearing}deg)` }}
+                  >
+                    <div className="flex flex-col items-center -mt-1">
+                      <span className="text-sm leading-none drop-shadow-[0_0_6px_rgba(249,115,22,1)]">🔺</span>
+                      <div className="w-0.5 h-2.5 bg-gradient-to-b from-orange-400 to-transparent rounded-full -mt-0.5" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className={`text-[10px] font-black ${emf.color} truncate`}>{emf.label}</span>
+                    <span className="text-[10px] font-mono font-bold text-white/90 bg-white/10 px-1.5 py-0.5 rounded">{distLabel}</span>
+                  </div>
+                  <p className="text-[9px] text-orange-100/80 mt-0.5 leading-snug">
+                    {!spookyCompass.isVisible
+                      ? `🔒 Geist unsichtbar! Folge dem Pfeil & zoome rein (Zoom ${spookyCompass.zoom}/13)`
+                      : '👀 Zoom aktiv! Suche den versteckten Geist (Vorsicht vor 🕷️!)'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between gap-1.5">
+              <span className="text-[9px] text-purple-200/75 truncate">
+                {ghostsCaught >= GHOST_GOAL ? '🏆 Meister-Geisterjäger!' : 'Tipp: Geister spuken nahe Stickern!'}
+              </span>
               <div className="flex gap-1 shrink-0">
                 <button
                   onClick={() => setGhostHuntActive(!ghostHuntActive)}
                   className={`text-[9px] font-bold px-2 py-0.5 rounded-full border transition ${ghostHuntActive ? 'bg-orange-500 text-white border-orange-300' : 'bg-white/10 text-gray-300 border-white/20'}`}
-                  title="Geister auf der Karte ein-/ausblenden"
                 >
-                  {ghostHuntActive ? 'Aktiv' : 'Pause'}
+                  {ghostHuntActive ? 'Radar AN' : 'Pause'}
                 </button>
                 <button
                   onClick={() => setMapStyle(mapStyle === 'neon' ? 'street' : 'neon')}
                   className={`text-[9px] font-bold px-2 py-0.5 rounded-full border transition ${mapStyle === 'neon' ? 'bg-purple-600 text-white border-purple-300' : 'bg-white/10 text-orange-200 border-orange-400/30 hover:bg-white/20'}`}
-                  title="Spooky Karten-Modus umschalten"
                 >
                   {mapStyle === 'neon' ? '☀️ Normal' : '🌙 Spooky'}
                 </button>
               </div>
             </div>
           </div>
-        )}
+          );
+        })()}
         {isWinterActive && (
           <div className="bg-blue-500/90 backdrop-blur-md px-3 py-1.5 sm:px-4 sm:py-2 rounded-full shadow-lg border border-blue-400 pointer-events-auto flex items-center gap-2 animate-bounce">
             <span>❄️</span>
@@ -1703,7 +1823,7 @@ const hasNightOwl = myPins.some(p => {
       {mapStyle === 'neon' && <div className="spooky-vignette"></div>}
       {spookyPopups.map(p => (
         <div key={p.id} className="spooky-pop-effect flex flex-col items-center" style={{ left: p.x, top: p.y }}>
-          <span className="text-3xl drop-shadow-[0_0_10px_rgba(249,115,22,0.9)]">{p.emoji} +1</span>
+          <span className={`text-3xl font-black ${p.isTrap ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.95)]' : 'text-amber-300 drop-shadow-[0_0_10px_rgba(249,115,22,0.9)]'}`}>{p.emoji} {p.signStr}</span>
           <span className="text-[10px] font-black bg-purple-950/90 text-orange-300 px-2 py-0.5 rounded-full border border-orange-400/50 shadow-lg whitespace-nowrap">{p.label}</span>
         </div>
       ))}
@@ -1799,7 +1919,7 @@ const hasNightOwl = myPins.some(p => {
         )}
         
         {mapStyle === 'snow' && <WinterAssets />}
-        {(mapStyle === 'neon' || (isHalloweenActive && ghostHuntActive)) && <HalloweenAssets onCatch={handleCatchGhost} />}
+        {(mapStyle === 'neon' || (isHalloweenActive && ghostHuntActive)) && <HalloweenAssets pins={pins} onCatch={handleCatchGhost} onCompassUpdate={setSpookyCompass} />}
 
         {/* Heatmap Layer */}
         {showHeatmap && <HeatmapLayer points={displayPins} />}
@@ -2338,7 +2458,7 @@ const hasNightOwl = myPins.some(p => {
                       { has: devMode || hasRetroGamer, img: '/badges/retro.jpg', title: 'Pixel Pioneer 👾', titleL: '??? (Retro Gamer)', desc: '10 Sticker geklebt. 8-Bit Karte frei!', descL: 'Klebe 10 Sticker, um in die Vergangenheit zu reisen...', date: null },
                     ]},
                     { label: 'Spezial & Zeitlich', color: 'ring-yellow-400', items: [
-                      { has: hasGhostHunter, img: '/badges/badge_ghosthunter.jpg', title: `Geisterjäger (${ghostsCaught} gefangen) 👻`, titleL: `??? (Halloween Geisterjagd ${ghostsCaught}/10)`, desc: '10 Spukgestalten auf der Karte gefangen! Kürbis-Avatar & Spooky-Rahmen frei.', descL: 'Fange während des Halloween-Events 10 Geister, Fledermäuse oder Kürbisse direkt auf der Karte!', date: null },
+                      { has: hasGhostHunter, img: '/badges/badge_ghosthunter.jpg', title: `Geisterjäger (${ghostsCaught} gefangen) 👻`, titleL: `??? (Halloween Geisterjagd ${ghostsCaught}/${GHOST_GOAL})`, desc: `${GHOST_GOAL} versteckte Spukgestalten mit dem Spooky-Kompass aufgespürt! Kürbis-Avatar & Spooky-Rahmen frei.`, descL: `Spüre während des Halloween-Events mit dem Spooky-Kompass ${GHOST_GOAL} versteckte Geister nahe Stickern auf (ab Zoom 13+)!`, date: null },
                       { has: devMode || hasPi, img: '/badges/badge_pi.jpg', title: 'PI (3,14) 🥧', titleL: '??? (Mathematiker)', desc: 'Auf dem 3,14 Breiten- oder Längengrad.', descL: 'Nur für wahre Geeks und Nerds...', date: getUnlockDate('pi') },
                       { has: devMode || hasMay4, img: '/badges/badge_may4.jpg', title: 'May the force be with you 🛸', titleL: '??? (Sci-Fi Fan)', desc: 'Am 4. Mai geklebt.', descL: 'Spüre die Macht an einem ganz bestimmten Tag...', date: getUnlockDate('may4') },
                       { has: devMode || hasLove, img: '/badges/badge_love.jpg', title: 'True Love 💌', titleL: '??? (Romantiker)', desc: 'Am Valentinstag (14. Feb) geklebt.', descL: 'Die Liebe liegt in der Luft...', date: getUnlockDate('love') },
