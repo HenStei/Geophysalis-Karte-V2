@@ -271,22 +271,22 @@ const HalloweenAssets = () => {
 };
 
 const PEAKS = [
-  { id: 'zugspitze', lat: 47.421, lng: 10.985, alt: 2962, name: 'Zugspitze (Bayern)' },
-  { id: 'feldberg', lat: 47.873, lng: 8.004, alt: 1493, name: 'Feldberg (BaWü)' },
-  { id: 'brocken', lat: 51.799, lng: 10.615, alt: 1141, name: 'Brocken (Sachsen-Anhalt)' },
-  { id: 'fichtelberg', lat: 50.429, lng: 12.954, alt: 1215, name: 'Fichtelberg (Sachsen)' },
-  { id: 'wasserkuppe', lat: 50.498, lng: 9.937, name: 'Wasserkuppe (Hessen)' },
-  { id: 'beerberg', lat: 50.658, lng: 9.746, name: 'Großer Beerberg (Thüringen)' },
-  { id: 'wurmberg', lat: 51.756, lng: 10.617, name: 'Wurmberg (Niedersachsen)' },
-  { id: 'langenberg', lat: 51.275, lng: 8.525, name: 'Langenberg (NRW)' },
-  { id: 'erbeskopf', lat: 49.730, lng: 7.089, name: 'Erbeskopf (RLP)' },
-  { id: 'dollberg', lat: 49.629, lng: 7.017, name: 'Dollberg (Saarland)' },
-  { id: 'mueggelberge', lat: 52.416, lng: 13.639, name: 'Müggelberge (Berlin)' },
-  { id: 'kutschenberg', lat: 51.423, lng: 13.722, name: 'Kutschenberg (Brandenburg)' },
-  { id: 'friedehorstpark', lat: 53.169, lng: 8.675, name: 'Friedehorstpark (Bremen)' },
-  { id: 'hasselbrack', lat: 53.431, lng: 9.865, name: 'Hasselbrack (Hamburg)' },
-  { id: 'helpterberge', lat: 53.483, lng: 13.606, name: 'Helpter Berge (MV)' },
-  { id: 'bungsberg', lat: 54.212, lng: 10.723, name: 'Bungsberg (SH)' }
+  { id: 'zugspitze', lat: 47.421, lng: 10.985, alt: 2962, name: 'Zugspitze (Bayern)', img: '/badges/peak_zugspitze.jpg' },
+  { id: 'feldberg', lat: 47.873, lng: 8.004, alt: 1493, name: 'Feldberg (BaWü)', img: '/badges/peak_feldberg.jpg' },
+  { id: 'fichtelberg', lat: 50.429, lng: 12.954, alt: 1215, name: 'Fichtelberg (Sachsen)', img: '/badges/peak_fichtelberg.jpg' },
+  { id: 'brocken', lat: 51.799, lng: 10.615, alt: 1141, name: 'Brocken (Sachsen-Anhalt)', img: '/badges/peak_brocken.jpg' },
+  { id: 'beerberg', lat: 50.658, lng: 9.746, alt: 983, name: 'Großer Beerberg (Thüringen)', img: '/badges/peak_beerberg.jpg' },
+  { id: 'wurmberg', lat: 51.756, lng: 10.617, alt: 971, name: 'Wurmberg (Niedersachsen)', img: '/badges/peak_wurmberg.jpg' },
+  { id: 'wasserkuppe', lat: 50.498, lng: 9.937, alt: 950, name: 'Wasserkuppe (Hessen)', img: '/badges/peak_wasserkuppe.jpg' },
+  { id: 'langenberg', lat: 51.275, lng: 8.525, alt: 843, name: 'Langenberg (NRW)', img: '/badges/peak_langenberg.jpg' },
+  { id: 'erbeskopf', lat: 49.730, lng: 7.089, alt: 816, name: 'Erbeskopf (RLP)', img: '/badges/peak_erbeskopf.jpg' },
+  { id: 'dollberg', lat: 49.629, lng: 7.017, alt: 695, name: 'Dollberg (Saarland)', img: '/badges/peak_dollberg.jpg' },
+  { id: 'kutschenberg', lat: 51.423, lng: 13.722, alt: 201, name: 'Kutschenberg (Brandenburg)', img: '/badges/peak_kutschenberg.jpg' },
+  { id: 'helpterberge', lat: 53.483, lng: 13.606, alt: 179, name: 'Helpter Berge (MV)', img: '/badges/peak_helpterberge.jpg' },
+  { id: 'bungsberg', lat: 54.212, lng: 10.723, alt: 168, name: 'Bungsberg (SH)', img: '/badges/peak_bungsberg.jpg' },
+  { id: 'hasselbrack', lat: 53.431, lng: 9.865, alt: 116, name: 'Hasselbrack (Hamburg)', img: '/badges/peak_hasselbrack.jpg' },
+  { id: 'mueggelberge', lat: 52.416, lng: 13.639, alt: 115, name: 'Müggelberge (Berlin)', img: '/badges/peak_mueggelberge.jpg' },
+  { id: 'friedehorstpark', lat: 53.169, lng: 8.675, alt: 32, name: 'Friedehorstpark (Bremen)', img: '/badges/peak_friedehorstpark.jpg' }
 ];
 
 const sessionLocks = new Set();
@@ -598,6 +598,7 @@ export default function MapView() {
 
   useEffect(() => {
     fetchGlobals();
+    fetchAllProfiles();
   }, []);
 
   const isNearCoords = (lat1, lon1, lat2, lon2, maxKm) => {
@@ -638,7 +639,7 @@ export default function MapView() {
             if (peakPin) {
                const { error } = await supabase.from('global_achievements').insert({ achievement_id: `gipfeli_${peak.id}`, user_id: session.user.id });
                if (!error) {
-                 newUnlocks.push({ title: "Gipfeli Alpinist", text: `Glückwunsch! Du hast das Gipfeli am ${peak.name} als Allererster gesichert!`, icon: '🥐' });
+                 newUnlocks.push({ title: `Gipfeli: ${peak.name}`, text: `Glückwunsch! Du hast den höchsten Punkt (${peak.name}, ${peak.alt}m) als Allererster weltweit gesichert!`, img: peak.img, icon: '🏔️' });
                  claimsMade = true;
                }
             }
@@ -2177,9 +2178,23 @@ const hasNightOwl = myPins.some(p => {
                   {[
                     { label: 'Exklusiv & Limitiert', color: 'ring-blue-400', items: [
                       { has: devMode || hasEuCenter, img: '/badges/badge_eu.png', bg: 'bg-blue-800', title: 'Mitte der EU', titleL: '??? (Limit: 1 Weltweit)', desc: 'Du warst der Erste in der Mitte der EU!', descL: euOwner ? 'Bereits von jemand anderem ergattert!' : 'Klebe als allererster Nutzer in die Mitte der EU.', date: getUnlockDate('eu_center') },
-                      { has: devMode || hasGipfeli, img: '/badges/badge_gipfeli.jpg', title: 'Gipfeli', titleL: '??? (Gipfeli)', desc: `Gipfeli erkraxelt!${myGipfeliPeakName ? ' 🏔️ ' + myGipfeliPeakName : ''}`, descL: 'Klebe als Erster auf den Gipfel eines Bundeslandes.', date: getUnlockDate('gipfeli') },
                       { has: hasPioneer, img: '/badges/badge_pioneer.jpg', title: `Pionier der ersten Stunde (No. ${myPioneerRank}/15) 🚀`, titleL: 'Pionier der ersten Stunde (Limit: 15)', desc: 'Du gehörst zu den ersten 15 Nutzern weltweit!', descL: 'Streng limitiert auf die exakt ersten 15 Nutzer.', date: getUnlockDate('pioneer') },
                     ]},
+                    { label: '🏔️ Gipfeli – 16 Bundesländer', color: 'ring-amber-400', items: PEAKS.map(peak => {
+                      const claim = globalAchievements.find(g => g.achievement_id === `gipfeli_${peak.id}`);
+                      const isMine = devMode || (claim && claim.user_id === session?.user?.id);
+                      const ownerName = claim ? (allProfiles[claim.user_id]?.nickname || 'einem Entdecker') : null;
+                      const unlockDate = claim?.claimed_at ? new Date(claim.claimed_at).toLocaleDateString('de-DE') : null;
+                      return {
+                        has: isMine,
+                        img: peak.img,
+                        title: `${peak.name} (${peak.alt}m) 🏆`,
+                        titleL: `${peak.name} (${peak.alt}m)`,
+                        desc: `Weltweit einzigartig! Du hast diesen Bundesland-Gipfel als Allererster erobert.`,
+                        descL: claim ? `🔒 Bereits erobert von ${ownerName}${unlockDate ? ' am ' + unlockDate : ''}` : '🟢 Noch frei! Klebe als Erster im 300m-Radius um den Gipfel.',
+                        date: isMine ? unlockDate : null
+                      };
+                    })},
                     { label: 'Karten-Freischaltungen', color: 'ring-indigo-400', items: [
                       { has: canUseDark, img: '/badges/night_owl.jpg', title: 'Nachteule 🦉', titleL: '??? (Nachteule)', desc: 'Nachts (22–4 Uhr) geklebt. Dark Mode frei.', descL: 'Ein Geheimnis, das im Schutz der Dunkelheit ruht...', date: getUnlockDate('nightOwl') },
                       { has: canUseVintage, img: '/badges/local_hero.jpg', title: 'Lokalmatador 🗺️', titleL: '??? (Lokalmatador)', desc: '5 Sticker geklebt. Explorer-Karte frei.', descL: 'Nur wer Ausdauer beweist, wird die alte Welt sehen...', date: getUnlockDate('localHero') },
