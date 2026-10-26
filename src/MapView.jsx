@@ -97,6 +97,9 @@ function MapClickHandler({ onMapClick }) {
     click(e) {
       onMapClick(e.latlng);
     },
+    dragstart() {
+      onMapClick(null);
+    },
   });
   return null;
 }
@@ -1795,60 +1798,60 @@ const hasNightOwl = myPins.some(p => {
             <div>
               <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Karten-Stil</p>
               <div className="flex flex-col gap-1">
-                <button onClick={() => setMapStyle('street')} className={`text-left px-3 py-2 rounded-full text-sm font-bold transition ${mapStyle === 'street' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Standard</button>
-                <button onClick={() => setMapStyle('satellite')} className={`text-left px-3 py-2 rounded-full text-sm font-bold transition ${mapStyle === 'satellite' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Satellit</button>
+                <button onClick={() => { setMapStyle('street'); if (window.innerWidth < 640) setShowLayerMenu(false); }} className={`text-left px-3 py-2 rounded-full text-sm font-bold transition ${mapStyle === 'street' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Standard</button>
+                <button onClick={() => { setMapStyle('satellite'); if (window.innerWidth < 640) setShowLayerMenu(false); }} className={`text-left px-3 py-2 rounded-full text-sm font-bold transition ${mapStyle === 'satellite' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}>Satellit</button>
                 
                 <button 
-                  onClick={() => canUseDark ? setMapStyle('dark') : alert("Du benötigst das Abzeichen 'Der erste Schritt'!")} 
+                  onClick={() => canUseDark ? (setMapStyle('dark'), window.innerWidth < 640 && setShowLayerMenu(false)) : alert("Du benötigst das Abzeichen 'Der erste Schritt'!")} 
                   className={`text-left px-3 py-2 rounded-full text-sm font-bold transition flex justify-between items-center ${mapStyle === 'dark' ? 'bg-blue-100 text-blue-700' : canUseDark ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
                 >
                   Dark Mode {!canUseDark && <Lock size={14} className="text-gray-400" />}
                 </button>
                 
                 <button 
-                  onClick={() => canUseVintage ? setMapStyle('vintage') : alert("Du benötigst das Abzeichen 'Entdecker' (5 Sticker)!")} 
+                  onClick={() => canUseVintage ? (setMapStyle('vintage'), window.innerWidth < 640 && setShowLayerMenu(false)) : alert("Du benötigst das Abzeichen 'Entdecker' (5 Sticker)!")} 
                   className={`text-left px-3 py-2 rounded-full text-sm font-bold transition flex justify-between items-center ${mapStyle === 'vintage' ? 'bg-blue-100 text-blue-700' : canUseVintage ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
                 >
                   Explorer (Vintage) {!canUseVintage && <Lock size={14} className="text-gray-400" />}
                 </button>
 
                 <button 
-                  onClick={() => canUseSunrise ? setMapStyle('sunrise') : alert("Du benötigst das Abzeichen 'Frühaufsteher' (5-8 Uhr)!")} 
+                  onClick={() => canUseSunrise ? (setMapStyle('sunrise'), window.innerWidth < 640 && setShowLayerMenu(false)) : alert("Du benötigst das Abzeichen 'Frühaufsteher' (5-8 Uhr)!")} 
                   className={`text-left px-3 py-2 rounded-full text-sm font-bold transition flex justify-between items-center ${mapStyle === 'sunrise' ? 'bg-orange-100 text-orange-700' : canUseSunrise ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
                 >
                   Sunrise (Morgen) {!canUseSunrise && <Lock size={14} className="text-gray-400" />}
                 </button>
 
                 <button 
-                  onClick={() => canUseSpooky ? setMapStyle('neon') : alert("Du benötigst das Abzeichen 'Süßes oder Saures' (Halloween-Event)!")} 
+                  onClick={() => canUseSpooky ? (setMapStyle('neon'), window.innerWidth < 640 && setShowLayerMenu(false)) : alert("Du benötigst das Abzeichen 'Süßes oder Saures' (Halloween-Event)!")} 
                   className={`text-left px-3 py-2 rounded-full text-sm font-bold transition flex justify-between items-center ${mapStyle === 'neon' ? 'bg-purple-100 text-purple-700' : canUseSpooky ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
                 >
                   Spooky (Halloween) {!canUseSpooky && <Lock size={14} className="text-gray-400" />}
                 </button>
 
                 <button 
-                  onClick={() => canUseSnow ? setMapStyle('snow') : alert("Du benötigst das Abzeichen 'Winterwunder' (Dezember-Event)!")} 
+                  onClick={() => canUseSnow ? (setMapStyle('snow'), window.innerWidth < 640 && setShowLayerMenu(false)) : alert("Du benötigst das Abzeichen 'Winterwunder' (Dezember-Event)!")} 
                   className={`text-left px-3 py-2 rounded-full text-sm font-bold transition flex justify-between items-center ${mapStyle === 'snow' ? 'bg-blue-100 text-blue-700' : canUseSnow ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
                 >
                   Winter (Schnee) {!canUseSnow && <Lock size={14} className="text-gray-400" />}
                 </button>
 
                 <button 
-                  onClick={() => canUseAurora ? setMapStyle('aurora') : alert("Du benötigst das Abzeichen 'Polarforscher'!")} 
+                  onClick={() => canUseAurora ? (setMapStyle('aurora'), window.innerWidth < 640 && setShowLayerMenu(false)) : alert("Du benötigst das Abzeichen 'Polarforscher'!")} 
                   className={`text-left px-3 py-2 rounded-full text-sm font-bold transition flex justify-between items-center ${mapStyle === 'aurora' ? 'bg-teal-100 text-teal-700' : canUseAurora ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
                 >
                   Polarlichter {!canUseAurora && <Lock size={14} className="text-gray-400" />}
                 </button>
 
                 <button 
-                  onClick={() => canUseCyberpunk ? setMapStyle('cyberpunk') : alert("Du benötigst das Abzeichen 'Urban Legend'!")} 
+                  onClick={() => canUseCyberpunk ? (setMapStyle('cyberpunk'), window.innerWidth < 640 && setShowLayerMenu(false)) : alert("Du benötigst das Abzeichen 'Urban Legend'!")} 
                   className={`text-left px-3 py-2 rounded-full text-sm font-bold transition flex justify-between items-center ${mapStyle === 'cyberpunk' ? 'bg-pink-100 text-pink-700' : canUseCyberpunk ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
                 >
                   Cyberpunk (Neon) {!canUseCyberpunk && <Lock size={14} className="text-gray-400" />}
                 </button>
 
                 <button 
-                  onClick={() => canUse8Bit ? setMapStyle('8bit') : alert("Du benötigst das Abzeichen 'Pixel Pioneer' (10 Sticker)!")} 
+                  onClick={() => canUse8Bit ? (setMapStyle('8bit'), window.innerWidth < 640 && setShowLayerMenu(false)) : alert("Du benötigst das Abzeichen 'Pixel Pioneer' (10 Sticker)!")} 
                   className={`text-left px-3 py-2 rounded-full text-sm font-bold transition flex justify-between items-center ${mapStyle === '8bit' ? 'bg-green-100 text-green-800' : canUse8Bit ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-400'}`}
                 >
                   8-Bit Retro 👾 {!canUse8Bit && <Lock size={14} className="text-gray-400" />}
@@ -1917,6 +1920,16 @@ const hasNightOwl = myPins.some(p => {
         className={`w-full h-full z-0 ${mapStyle === 'dark' ? 'bg-[#1a1a1a]' : 'bg-[#e5e5e5]'}`}
       >
         <ZoomControl position="bottomleft" />
+        <MapClickHandler
+          onMapClick={() => {
+            if (showLayerMenu) setShowLayerMenu(false);
+            if (radarActive) setRadarActive(false);
+            if (isAuthModalOpen) setIsAuthModalOpen(false);
+            if (isLeaderboardOpen) setIsLeaderboardOpen(false);
+            if (isAdminModalOpen) setIsAdminModalOpen(false);
+            if (window.innerWidth < 640 && !spookyCollapsed) setSpookyCollapsed(true);
+          }}
+        />
         
         {/* Map Layers */}
         {mapStyle === 'street' && (
@@ -2078,59 +2091,67 @@ const hasNightOwl = myPins.some(p => {
           </div>
 
           {/* MOBILE Floating Glassmorphism App Dock (< 640px) */}
-          <div className="sm:hidden fixed bottom-3 left-3 right-3 z-[1000] pointer-events-auto">
-            <div className="relative bg-white/95 backdrop-blur-xl px-2 py-1.5 rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.18)] border border-gray-200/80 flex items-center justify-around">
-              {/* Subtle Integrated Milestone Progress Bar along top edge of dock */}
-              {session && nextMilestone && nextMilestone.progress !== null && (
-                <div className="absolute top-0 left-6 right-6 h-[3px] bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 transition-all duration-500"
-                    style={{ width: `${Math.min(100, nextMilestone.progress * 100)}%` }}
-                  />
-                </div>
-              )}
-
+          <div className="sm:hidden fixed bottom-3 left-3 right-3 z-[3500] pointer-events-auto">
+            <div className="relative bg-white/95 backdrop-blur-xl px-1.5 py-1.5 rounded-[28px] shadow-[0_8px_30px_rgba(0,0,0,0.16)] border border-gray-200/90 grid grid-cols-5 items-center overflow-hidden">
               {/* 1. Rangliste */}
               <button
-                onClick={() => { fetchAllProfiles(); setIsLeaderboardOpen(true); }}
-                className="flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl text-gray-600 active:scale-95 transition"
+                onClick={() => {
+                  setShowLayerMenu(false);
+                  setIsAuthModalOpen(false);
+                  if (!isLeaderboardOpen) fetchAllProfiles();
+                  setIsLeaderboardOpen(!isLeaderboardOpen);
+                }}
+                className={`flex flex-col items-center justify-center py-1.5 rounded-2xl active:scale-95 transition ${isLeaderboardOpen ? 'text-amber-600 bg-amber-50' : 'text-gray-600'}`}
               >
-                <Trophy size={19} className="text-amber-500" />
-                <span className="text-[9px] font-bold mt-0.5">Ränge</span>
+                <Trophy size={18} className="text-amber-500" />
+                <span className="text-[9px] font-bold mt-0.5 leading-none">Ränge</span>
               </button>
 
               {/* 2. Karten-Layer */}
               <button
-                onClick={() => setShowLayerMenu(!showLayerMenu)}
-                className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl active:scale-95 transition ${showLayerMenu ? 'text-blue-600 bg-blue-50' : 'text-gray-600'}`}
+                onClick={() => {
+                  setIsAuthModalOpen(false);
+                  setIsLeaderboardOpen(false);
+                  setShowLayerMenu(!showLayerMenu);
+                }}
+                className={`flex flex-col items-center justify-center py-1.5 rounded-2xl active:scale-95 transition ${showLayerMenu ? 'text-blue-600 bg-blue-50' : 'text-gray-600'}`}
               >
-                <Layers size={19} />
-                <span className="text-[9px] font-bold mt-0.5">Karten</span>
+                <Layers size={18} />
+                <span className="text-[9px] font-bold mt-0.5 leading-none">Karten</span>
               </button>
 
               {/* 3. Center Hero CTA: Sticker setzen */}
               <button
-                onClick={handleStartNewPin}
-                className="-mt-5 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white px-4 py-2.5 rounded-full shadow-lg shadow-blue-600/35 border-2 border-white flex items-center gap-1.5 font-black text-xs active:scale-95 transition"
+                onClick={() => {
+                  setShowLayerMenu(false);
+                  setIsAuthModalOpen(false);
+                  setIsLeaderboardOpen(false);
+                  handleStartNewPin();
+                }}
+                className="mx-auto w-full max-w-[64px] py-1.5 bg-gradient-to-tr from-blue-600 to-indigo-500 text-white rounded-2xl shadow-md shadow-blue-500/30 flex flex-col items-center justify-center active:scale-95 transition"
               >
-                <MapPin size={17} />
-                <span>Klebe!</span>
+                <MapPin size={18} strokeWidth={2.5} />
+                <span className="text-[9px] font-black tracking-tight mt-0.5 leading-none">Klebe!</span>
               </button>
 
               {/* 4. Profil / Login */}
               <button
-                onClick={() => setIsAuthModalOpen(true)}
-                className="flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl text-gray-600 active:scale-95 transition"
+                onClick={() => {
+                  setShowLayerMenu(false);
+                  setIsLeaderboardOpen(false);
+                  setIsAuthModalOpen(!isAuthModalOpen);
+                }}
+                className={`flex flex-col items-center justify-center py-1.5 rounded-2xl active:scale-95 transition ${isAuthModalOpen ? 'text-blue-600 bg-blue-50' : 'text-gray-600'}`}
               >
                 {session ? (
                   <>
-                    <User size={19} className="text-blue-600" />
-                    <span className="text-[9px] font-bold mt-0.5">Profil</span>
+                    <User size={18} className="text-blue-600" />
+                    <span className="text-[9px] font-bold mt-0.5 leading-none">Profil</span>
                   </>
                 ) : (
                   <>
-                    <LogIn size={19} className="text-gray-600" />
-                    <span className="text-[9px] font-bold mt-0.5">Login</span>
+                    <LogIn size={18} className="text-gray-600" />
+                    <span className="text-[9px] font-bold mt-0.5 leading-none">Login</span>
                   </>
                 )}
               </button>
@@ -2138,11 +2159,26 @@ const hasNightOwl = myPins.some(p => {
               {/* 5. Story / Info */}
               <Link
                 to="/about"
-                className="flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl text-gray-600 active:scale-95 transition"
+                onClick={() => {
+                  setShowLayerMenu(false);
+                  setIsAuthModalOpen(false);
+                  setIsLeaderboardOpen(false);
+                }}
+                className="flex flex-col items-center justify-center py-1.5 rounded-2xl text-gray-600 active:scale-95 transition"
               >
-                <Info size={19} />
-                <span className="text-[9px] font-bold mt-0.5">Story</span>
+                <Info size={18} />
+                <span className="text-[9px] font-bold mt-0.5 leading-none">Story</span>
               </Link>
+
+              {/* Subtle Integrated Milestone Progress Bar along bottom edge of dock */}
+              {session && nextMilestone && nextMilestone.progress !== null && (
+                <div className="absolute bottom-0 left-5 right-5 h-[2.5px] bg-gray-100 rounded-full overflow-hidden pointer-events-none">
+                  <div
+                    className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 transition-all duration-500"
+                    style={{ width: `${Math.min(100, nextMilestone.progress * 100)}%` }}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </>
@@ -2243,9 +2279,16 @@ const hasNightOwl = myPins.some(p => {
       )}
 
       {isModalOpen && draftPin && (
-        <div className="absolute inset-0 z-[2000] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 transition-all">
+        <div
+          className="absolute inset-0 z-[3600] bg-black/50 backdrop-blur-[1px] sm:backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 transition-all"
+          onClick={() => setIsModalOpen(false)}
+        >
           {/* Modal card – flex column so button is always pinned to bottom */}
-          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md relative shadow-2xl flex flex-col" style={{ maxHeight: '92dvh' }}>
+          <div
+            className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md relative shadow-2xl flex flex-col"
+            style={{ maxHeight: '88dvh' }}
+            onClick={e => e.stopPropagation()}
+          >
             
             {/* Scrollable content area */}
             <div className="overflow-y-auto flex-1 p-6 pb-2">
@@ -2434,8 +2477,14 @@ const hasNightOwl = myPins.some(p => {
 
       {/* Profile Modal */}
       {session && isAuthModalOpen && (
-        <div className="absolute inset-0 z-[3000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) setIsAuthModalOpen(false); }}>
-          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl relative flex flex-col" style={{maxHeight:'92vh'}}>
+        <div
+          className="absolute inset-0 z-[3000] bg-black/35 sm:bg-black/60 backdrop-blur-[1px] sm:backdrop-blur-sm flex items-center justify-center p-3 pb-20 sm:p-4"
+          onClick={() => setIsAuthModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-3xl w-full max-w-sm shadow-2xl relative flex flex-col max-h-[74dvh] sm:max-h-[92vh]"
+            onClick={e => e.stopPropagation()}
+          >
             <button onClick={() => setIsAuthModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition z-10">
               <X size={24} />
             </button>
@@ -2716,6 +2765,15 @@ const hasNightOwl = myPins.some(p => {
                         Account löschen
                       </button>
                     </div>
+
+                    <div className="pt-2 text-center sm:hidden">
+                      <button
+                        onClick={() => alert("Lizenz & Urheberrecht:\n\nAlle Inhalte, Bilder (inklusive Avatare und Abzeichen), Quellcodes, Texte und Designs dieser Anwendung sind geistiges Eigentum des Seiteninhabers (Admin).\nJegliche Vervielfältigung, Verbreitung oder Nutzung ohne ausdrückliche schriftliche Erlaubnis ist strengstens untersagt.\n\nEs gelten die gesetzlichen Bestimmungen des Urheberrechts.")}
+                        className="text-[10px] text-gray-400 underline hover:text-gray-600"
+                      >
+                        &copy; {new Date().getFullYear()} Geophysalis · Lizenz &amp; Impressum
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -2788,8 +2846,14 @@ const hasNightOwl = myPins.some(p => {
           .slice(0, 10); // Top 10
 
         return (
-          <div className="absolute inset-0 z-[4000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] p-6 sm:p-8 shadow-2xl relative flex flex-col">
+          <div
+            className="absolute inset-0 z-[3000] bg-black/35 sm:bg-black/80 backdrop-blur-[1px] sm:backdrop-blur-sm flex items-center justify-center p-3 pb-20 sm:p-4"
+            onClick={() => setIsLeaderboardOpen(false)}
+          >
+            <div
+              className="bg-white rounded-3xl w-full max-w-lg max-h-[74dvh] sm:max-h-[90vh] p-5 sm:p-8 shadow-2xl relative flex flex-col"
+              onClick={e => e.stopPropagation()}
+            >
               <button onClick={() => setIsLeaderboardOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition">
                 <X size={28} />
               </button>
@@ -2856,8 +2920,14 @@ const hasNightOwl = myPins.some(p => {
 
       {/* Admin Modal */}
       {isAdminModalOpen && (
-        <div className="absolute inset-0 z-[4000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-4xl h-[80vh] p-6 sm:p-8 shadow-2xl relative flex flex-col">
+        <div
+          className="absolute inset-0 z-[3000] bg-black/35 sm:bg-black/80 backdrop-blur-[1px] sm:backdrop-blur-sm flex items-center justify-center p-3 pb-20 sm:p-4"
+          onClick={() => setIsAdminModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-3xl w-full max-w-4xl h-[74dvh] sm:h-[80vh] p-5 sm:p-8 shadow-2xl relative flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
             <button onClick={() => setIsAdminModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition">
               <X size={28} />
             </button>
@@ -2901,8 +2971,8 @@ const hasNightOwl = myPins.some(p => {
         </div>
       )}
 
-      {/* Footer (Lizenz & Impressum) */}
-      <div className="absolute bottom-1 sm:bottom-2 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md px-2 sm:px-6 py-0.5 sm:py-2 rounded-full shadow-lg border border-gray-200 z-[1000] flex items-center gap-1.5 sm:gap-4 text-[6px] sm:text-xs text-gray-400 sm:text-gray-500 whitespace-nowrap">
+      {/* Footer (Lizenz & Impressum – Desktop only, mobile has it in Settings) */}
+      <div className="hidden sm:flex absolute bottom-2 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md px-6 py-2 rounded-full shadow-lg border border-gray-200 z-[1000] items-center gap-4 text-xs text-gray-500 whitespace-nowrap">
         <span>&copy; {new Date().getFullYear()} Geophysalis. Alle Rechte vorbehalten.</span>
         <button onClick={() => alert("Lizenz & Urheberrecht:\n\nAlle Inhalte, Bilder (inklusive Avatare und Abzeichen), Quellcodes, Texte und Designs dieser Anwendung sind geistiges Eigentum des Seiteninhabers (Admin).\nJegliche Vervielfältigung, Verbreitung oder Nutzung ohne ausdrückliche schriftliche Erlaubnis ist strengstens untersagt.\n\nEs gelten die gesetzlichen Bestimmungen des Urheberrechts.")} className="font-bold underline hover:text-gray-900 transition">
           Lizenz & Impressum
