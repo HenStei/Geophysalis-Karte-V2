@@ -602,6 +602,7 @@ export default function MapView() {
   const [openAccordion, setOpenAccordion] = useState('Exklusiv & Limitiert');
   const GHOST_GOAL = 20;
   const [ghostHuntActive, setGhostHuntActive] = useState(true);
+  const [spookyCollapsed, setSpookyCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640);
   const [ghostsCaught, setGhostsCaught] = useState(() => parseInt(localStorage.getItem('geophysalis_ghosts_caught_2026') || '0', 10));
   const [spookyPopups, setSpookyPopups] = useState([]);
   const [spookyToast, setSpookyToast] = useState(null);
@@ -1555,41 +1556,111 @@ const hasNightOwl = myPins.some(p => {
     <div className="relative w-full h-[100dvh] overflow-hidden overscroll-none">
       
       {/* Top Left Header & Counter (Optimized for Mobile) */}
-      <div className="absolute top-4 left-4 z-[1000] pointer-events-none flex flex-col gap-2 sm:gap-3">
-        <div className="bg-white/95 backdrop-blur-md px-4 py-2 sm:px-6 sm:py-3 rounded-full sm:rounded-3xl shadow-xl border border-gray-100 flex items-center gap-2 sm:gap-3 pointer-events-auto transition-all">
-          <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight hidden sm:block">Geophysalis</h1>
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
-            </span>
-            <p className="text-[10px] sm:text-xs font-bold text-gray-700 tracking-wide uppercase mt-0.5">
-              {displayPins.length} <span className="hidden sm:inline">Sticker weltweit</span><span className="sm:hidden">Sticker</span>
-            </p>
+      <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-[1000] pointer-events-none flex flex-col gap-1.5 sm:gap-3 max-w-[calc(100vw-24px)]">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+          <div className="bg-white/95 backdrop-blur-md px-3.5 py-1.5 sm:px-6 sm:py-3 rounded-full sm:rounded-3xl shadow-lg border border-gray-100 flex items-center gap-2 sm:gap-3 pointer-events-auto transition-all">
+            <h1 className="text-sm sm:text-2xl font-black text-gray-900 tracking-tight">Geophysalis</h1>
+            <div className="h-3 w-px bg-gray-200 sm:hidden" />
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-green-500"></span>
+              </span>
+              <p className="text-[10px] sm:text-xs font-bold text-gray-700 tracking-wide uppercase">
+                {displayPins.length} <span className="hidden sm:inline">Sticker weltweit</span><span className="sm:hidden">Pins</span>
+              </p>
+            </div>
           </div>
+
+          {/* Mobile Compact Admin Pills (only visible to admins on mobile) */}
+          {profile?.is_admin && !draftPin && (
+            <div className="flex sm:hidden items-center gap-1 pointer-events-auto">
+              <button
+                onClick={() => { fetchUnapprovedPins(); setIsAdminModalOpen(true); }}
+                className="bg-red-500/95 backdrop-blur-md text-white px-2.5 py-1.5 rounded-full shadow-lg text-[10px] font-black flex items-center gap-1"
+              >
+                <Shield size={12} />
+              </button>
+              <button
+                onClick={() => setDevMode(!devMode)}
+                className={`px-2.5 py-1.5 rounded-full shadow-lg text-[10px] font-black transition ${devMode ? 'bg-purple-600 text-white' : 'bg-white/95 text-gray-600'}`}
+              >
+                Dev
+              </button>
+              <Link
+                to="/admin"
+                className="bg-white/95 text-gray-700 px-2.5 py-1.5 rounded-full shadow-lg text-[10px] font-black"
+              >
+                Panel
+              </Link>
+            </div>
+          )}
         </div>
         
         {/* Event Banners */}
         {isHalloweenActive && (() => {
           const distKm = spookyCompass.distanceMeters / 1000;
-          const emf = distKm < 2 ? { label: '🔥 EXTREM NAH!', color: 'text-red-300', ring: 'border-red-400 bg-red-500/30', bars: 4 }
-                    : distKm < 20 ? { label: '🕯️ Heiß (In der Nähe)', color: 'text-orange-300', ring: 'border-orange-400 bg-orange-500/25', bars: 3 }
-                    : distKm < 150 ? { label: '🔮 Warm (Signal spürbar)', color: 'text-amber-200', ring: 'border-amber-400/60 bg-amber-500/20', bars: 2 }
-                    : { label: '❄️ Kalt (Weit entfernt)', color: 'text-cyan-200', ring: 'border-cyan-400/40 bg-cyan-500/15', bars: 1 };
+          const emf = distKm < 2 ? { short: '🔥', label: '🔥 EXTREM NAH!', color: 'text-red-300', ring: 'border-red-400 bg-red-500/30', bars: 4 }
+                    : distKm < 20 ? { short: '🕯️', label: '🕯️ Heiß (In der Nähe)', color: 'text-orange-300', ring: 'border-orange-400 bg-orange-500/25', bars: 3 }
+                    : distKm < 150 ? { short: '🔮', label: '🔮 Warm (Signal spürbar)', color: 'text-amber-200', ring: 'border-amber-400/60 bg-amber-500/20', bars: 2 }
+                    : { short: '❄️', label: '❄️ Kalt (Weit entfernt)', color: 'text-cyan-200', ring: 'border-cyan-400/40 bg-cyan-500/15', bars: 1 };
           const distLabel = spookyCompass.distanceMeters > 1000
             ? `${distKm.toFixed(distKm > 20 ? 0 : 1)} km`
             : `${spookyCompass.distanceMeters} m`;
 
+          if (spookyCollapsed) {
+            return (
+              <div className="flex items-center gap-1.5 pointer-events-auto self-start">
+                <button
+                  onClick={() => setSpookyCollapsed(false)}
+                  className="bg-gradient-to-r from-slate-950/95 via-purple-950/95 to-orange-950/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-xl border border-orange-400/60 flex items-center gap-2 text-white active:scale-95 transition"
+                >
+                  <span className="text-xs">🎃</span>
+                  <span className="text-[10px] font-black text-orange-200">👻 {ghostsCaught}/{GHOST_GOAL}</span>
+                  {ghostHuntActive && (
+                    <>
+                      <span className="text-white/30">|</span>
+                      <span
+                        className="inline-block text-xs transition-transform duration-200"
+                        style={{ transform: `rotate(${spookyCompass.bearing}deg)` }}
+                      >
+                        🔺
+                      </span>
+                      <span className="text-[10px] font-mono font-bold text-orange-100">{distLabel}</span>
+                      <span className="text-[10px]">{emf.short}</span>
+                    </>
+                  )}
+                  <span className="text-[9px] text-orange-300/80 ml-0.5">▾</span>
+                </button>
+                <button
+                  onClick={() => setMapStyle(mapStyle === 'neon' ? 'street' : 'neon')}
+                  className={`px-2.5 py-1.5 rounded-full text-[10px] font-black shadow-lg border backdrop-blur-md transition ${mapStyle === 'neon' ? 'bg-purple-700/95 text-white border-purple-400' : 'bg-slate-900/90 text-orange-200 border-orange-400/40'}`}
+                >
+                  {mapStyle === 'neon' ? '☀️' : '🌙'}
+                </button>
+              </div>
+            );
+          }
+
           return (
-          <div className="bg-gradient-to-br from-slate-950/95 via-purple-950/95 to-orange-950/95 backdrop-blur-md p-3 sm:px-4 sm:py-3 rounded-2xl sm:rounded-3xl shadow-2xl border border-orange-400/60 pointer-events-auto flex flex-col gap-2 w-[275px] sm:w-[310px] transition-all">
+          <div className="bg-gradient-to-br from-slate-950/95 via-purple-950/95 to-orange-950/95 backdrop-blur-md p-2.5 sm:px-4 sm:py-3 rounded-2xl sm:rounded-3xl shadow-2xl border border-orange-400/60 pointer-events-auto flex flex-col gap-2 w-[265px] sm:w-[310px] transition-all">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5">
                 <span className="text-base sm:text-lg animate-bounce">🎃</span>
                 <span className="text-[10px] sm:text-xs font-black text-orange-200 uppercase tracking-wider">Spooky Kompass</span>
               </div>
-              <span className="text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-full bg-orange-500/30 text-orange-100 border border-orange-400/40">
-                👻 {ghostsCaught}/{GHOST_GOAL}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-full bg-orange-500/30 text-orange-100 border border-orange-400/40">
+                  👻 {ghostsCaught}/{GHOST_GOAL}
+                </span>
+                <button
+                  onClick={() => setSpookyCollapsed(true)}
+                  className="text-orange-200/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold transition"
+                  title="Minimieren"
+                >
+                  ▴
+                </button>
+              </div>
             </div>
 
             {/* Progress Bar */}
@@ -1663,9 +1734,9 @@ const hasNightOwl = myPins.some(p => {
         )}
       </div>
 
-      {/* Layer Menu & Auth Button (Top Right) */}
-      <div className="absolute top-4 right-4 z-[1000] pointer-events-auto flex flex-col items-end gap-2">
-        <div className="flex gap-2">
+      {/* Layer Menu & Auth Button (Top Right on Desktop, Popover above Dock on Mobile) */}
+      <div className="absolute bottom-24 right-3 sm:bottom-auto sm:top-4 sm:right-4 z-[1000] pointer-events-auto flex flex-col items-end gap-2">
+        <div className="hidden sm:flex gap-2">
           
           <button 
             onClick={() => {
@@ -1799,7 +1870,7 @@ const hasNightOwl = myPins.some(p => {
         )}
         
         {profile?.is_admin && !draftPin && (
-          <div className="flex gap-2 self-end pointer-events-auto">
+          <div className="hidden sm:flex gap-2 self-end pointer-events-auto">
             <button 
               onClick={() => setDevMode(!devMode)}
               className={`mt-1 sm:mt-2 px-4 py-2 sm:px-5 sm:py-3 rounded-full sm:rounded-full shadow-xl border border-gray-100 text-xs sm:text-sm font-bold transition ${devMode ? 'bg-purple-600 text-white' : 'bg-white/95 backdrop-blur-md text-gray-400 hover:text-gray-700 hover:bg-gray-50'}`}
@@ -1963,56 +2034,128 @@ const hasNightOwl = myPins.some(p => {
         )}
       </MapContainer>
 
-      {/* Radar & Roulette Buttons */}
+      {/* Radar & Roulette Floating Action Buttons */}
       {!draftPin && !isModalOpen && pins.length > 0 && (
-        <div className="absolute bottom-32 right-4 sm:bottom-[150px] sm:right-8 z-[1000] flex flex-col gap-3 pointer-events-none">
+        <div className="absolute bottom-24 right-3 sm:bottom-[150px] sm:right-8 z-[999] flex flex-col gap-2.5 sm:gap-3 pointer-events-none">
           <button 
             onClick={handleRoulette} 
             title={isHalloweenActive ? "🎃 Süßes oder Saures! (Zufälliger Sticker)" : "Zufälliger Sticker"}
-            className="bg-white/95 backdrop-blur-md p-3 sm:p-3.5 rounded-full sm:rounded-full shadow-xl border border-gray-100 text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition pointer-events-auto flex items-center justify-center hover:scale-110 active:scale-95"
+            className="bg-white/95 backdrop-blur-md p-2.5 sm:p-3.5 rounded-full shadow-lg border border-gray-100 text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition pointer-events-auto flex items-center justify-center hover:scale-110 active:scale-95"
           >
-            <Dices size={24} />
+            <Dices size={20} className="sm:w-6 sm:h-6" />
           </button>
           <button 
             onClick={handleRadar} 
             title="Radar (Nächster Sticker)"
-            className="bg-white/95 backdrop-blur-md p-3 sm:p-3.5 rounded-full sm:rounded-full shadow-xl border border-gray-100 text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition pointer-events-auto flex items-center justify-center hover:scale-110 active:scale-95"
+            className="bg-white/95 backdrop-blur-md p-2.5 sm:p-3.5 rounded-full shadow-lg border border-gray-100 text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition pointer-events-auto flex items-center justify-center hover:scale-110 active:scale-95"
           >
-            <Compass size={24} />
+            <Compass size={20} className="sm:w-6 sm:h-6" />
           </button>
         </div>
       )}
 
 
       {!draftPin ? (
-        <div className="absolute bottom-6 right-4 sm:bottom-8 sm:right-8 z-[1000] flex flex-col items-center gap-1.5 pointer-events-auto">
-          {session && nextMilestone && (
-            <div className="bg-white/95 backdrop-blur-md px-4 py-1.5 rounded-full shadow-md border border-gray-100 text-center w-full max-w-[220px]">
-              <p className="text-[10px] font-bold text-gray-600 leading-tight">{nextMilestone.label}</p>
-              {nextMilestone.progress !== null && (
-                <div className="w-full bg-gray-100 rounded-full h-1 mt-1">
+        <>
+          {/* DESKTOP Bottom Right CTA & Milestone (sm and up) */}
+          <div className="hidden sm:flex absolute bottom-8 right-8 z-[1000] flex-col items-center gap-1.5 pointer-events-auto">
+            {session && nextMilestone && (
+              <div className="bg-white/95 backdrop-blur-md px-4 py-1.5 rounded-full shadow-md border border-gray-100 text-center w-full max-w-[220px]">
+                <p className="text-[10px] font-bold text-gray-600 leading-tight">{nextMilestone.label}</p>
+                {nextMilestone.progress !== null && (
+                  <div className="w-full bg-gray-100 rounded-full h-1 mt-1">
+                    <div
+                      className="bg-gradient-to-r from-yellow-400 to-orange-500 h-1 rounded-full transition-all"
+                      style={{ width: `${Math.min(100, nextMilestone.progress * 100)}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+            <button onClick={handleStartNewPin} className="bg-blue-600 text-white px-6 py-4 w-full rounded-full shadow-xl hover:bg-blue-700 hover:scale-105 hover:-translate-y-1 transition-all font-bold text-lg flex items-center justify-center gap-2">
+              <MapPin size={24} /> Sticker setzen
+            </button>
+          </div>
+
+          {/* MOBILE Floating Glassmorphism App Dock (< 640px) */}
+          <div className="sm:hidden fixed bottom-3 left-3 right-3 z-[1000] pointer-events-auto">
+            <div className="relative bg-white/95 backdrop-blur-xl px-2 py-1.5 rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.18)] border border-gray-200/80 flex items-center justify-around">
+              {/* Subtle Integrated Milestone Progress Bar along top edge of dock */}
+              {session && nextMilestone && nextMilestone.progress !== null && (
+                <div className="absolute top-0 left-6 right-6 h-[3px] bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className="bg-gradient-to-r from-yellow-400 to-orange-500 h-1 rounded-full transition-all"
+                    className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 transition-all duration-500"
                     style={{ width: `${Math.min(100, nextMilestone.progress * 100)}%` }}
                   />
                 </div>
               )}
+
+              {/* 1. Rangliste */}
+              <button
+                onClick={() => { fetchAllProfiles(); setIsLeaderboardOpen(true); }}
+                className="flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl text-gray-600 active:scale-95 transition"
+              >
+                <Trophy size={19} className="text-amber-500" />
+                <span className="text-[9px] font-bold mt-0.5">Ränge</span>
+              </button>
+
+              {/* 2. Karten-Layer */}
+              <button
+                onClick={() => setShowLayerMenu(!showLayerMenu)}
+                className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl active:scale-95 transition ${showLayerMenu ? 'text-blue-600 bg-blue-50' : 'text-gray-600'}`}
+              >
+                <Layers size={19} />
+                <span className="text-[9px] font-bold mt-0.5">Karten</span>
+              </button>
+
+              {/* 3. Center Hero CTA: Sticker setzen */}
+              <button
+                onClick={handleStartNewPin}
+                className="-mt-5 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white px-4 py-2.5 rounded-full shadow-lg shadow-blue-600/35 border-2 border-white flex items-center gap-1.5 font-black text-xs active:scale-95 transition"
+              >
+                <MapPin size={17} />
+                <span>Klebe!</span>
+              </button>
+
+              {/* 4. Profil / Login */}
+              <button
+                onClick={() => setIsAuthModalOpen(true)}
+                className="flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl text-gray-600 active:scale-95 transition"
+              >
+                {session ? (
+                  <>
+                    <User size={19} className="text-blue-600" />
+                    <span className="text-[9px] font-bold mt-0.5">Profil</span>
+                  </>
+                ) : (
+                  <>
+                    <LogIn size={19} className="text-gray-600" />
+                    <span className="text-[9px] font-bold mt-0.5">Login</span>
+                  </>
+                )}
+              </button>
+
+              {/* 5. Story / Info */}
+              <Link
+                to="/about"
+                className="flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl text-gray-600 active:scale-95 transition"
+              >
+                <Info size={19} />
+                <span className="text-[9px] font-bold mt-0.5">Story</span>
+              </Link>
             </div>
-          )}
-          <button onClick={handleStartNewPin} className="bg-blue-600 text-white px-5 py-3 sm:px-6 sm:py-4 w-full rounded-full sm:rounded-full shadow-xl hover:bg-blue-700 hover:scale-105 hover:-translate-y-1 transition-all font-bold text-base sm:text-lg flex items-center justify-center gap-2">
-            <MapPin size={22} className="sm:w-6 sm:h-6" /> Sticker setzen
-          </button>
-        </div>
+          </div>
+        </>
       ) : !isModalOpen && (
-        <div className="absolute bottom-6 left-4 right-4 z-[1000] bg-white/95 backdrop-blur-md p-4 rounded-3xl shadow-2xl border border-blue-100 flex flex-col sm:flex-row items-center justify-between gap-4 pointer-events-auto animate-in slide-in-from-bottom-10">
-          <div className="flex-1">
-            <h3 className="font-bold text-gray-900 flex items-center gap-2"><MapPin size={18} className="text-blue-600"/> Pin platzieren</h3>
-            <p className="text-sm text-gray-600">Verschiebe den Pin auf der Karte an die exakte Stelle.</p>
+        <div className="absolute bottom-4 left-3 right-3 sm:bottom-6 sm:left-4 sm:right-4 z-[1000] bg-white/95 backdrop-blur-md p-3.5 sm:p-4 rounded-3xl shadow-2xl border border-blue-100 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 pointer-events-auto animate-in slide-in-from-bottom-10">
+          <div className="flex-1 text-center sm:text-left">
+            <h3 className="font-bold text-gray-900 text-sm sm:text-base flex items-center justify-center sm:justify-start gap-1.5"><MapPin size={16} className="text-blue-600"/> Pin platzieren</h3>
+            <p className="text-xs sm:text-sm text-gray-600">Verschiebe den Pin auf der Karte an die exakte Stelle.</p>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <button onClick={() => setDraftPin(null)} className="flex-1 sm:flex-none px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-full hover:bg-gray-200">Abbrechen</button>
-            <button onClick={handleConfirmPosition} className="flex-1 sm:flex-none px-6 py-3 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 flex items-center justify-center gap-2 shadow-md">
-              <Check size={20}/> Bestätigen
+            <button onClick={() => setDraftPin(null)} className="flex-1 sm:flex-none px-4 py-2.5 sm:py-3 bg-gray-100 text-gray-700 text-xs sm:text-sm font-bold rounded-full hover:bg-gray-200">Abbrechen</button>
+            <button onClick={handleConfirmPosition} className="flex-1 sm:flex-none px-5 py-2.5 sm:py-3 bg-blue-600 text-white text-xs sm:text-sm font-bold rounded-full hover:bg-blue-700 flex items-center justify-center gap-1.5 shadow-md">
+              <Check size={18}/> Bestätigen
             </button>
           </div>
         </div>

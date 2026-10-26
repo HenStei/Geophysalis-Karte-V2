@@ -442,3 +442,17 @@ body {
 .emf-compass-dial {
   animation: emf-ping 2s infinite;
 }
+
+/* Mobile Clean UI Optimizations */
+@media (max-width: 639px) {
+  .leaflet-control-zoom {
+    display: none !important;
+  }
+  .leaflet-control-attribution {
+    font-size: 8px !important;
+    background: rgba(255, 255, 255, 0.65) !important;
+    backdrop-filter: blur(4px);
+    border-radius: 6px 0 0 0;
+    padding: 1px 4px !important;
+  }
+}
