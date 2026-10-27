@@ -200,31 +200,78 @@ function getFlightArcSamples(p1, p2, steps = 26) {
   return pts;
 }
 
-// Expedition Route Layer: Dashed flight curves, #1..#N badges & animated Nano-Banana Airplane
-function ExpeditionRouteLayer({ routePins, showRouteLine, activeStepIdx, planeFlight }) {
-  const [planeState, setPlaneState] = useState(null); // { pos: [lat, lng], bearing: 0, altitudeScale: 1 }
+// Expedition Route Layer: Dashed flight curves, #1..#N badges & Follow-Cam Nano-Banana Airplane
+const PLANE_ICON_STATIC = L.divIcon({
+  className: 'bg-transparent border-none',
+  html: `<div style="width:68px;height:68px;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+           <img
+             id="expedition-plane-sprite"
+             src="/badges/expedition_plane.png"
+             style="width:58px;height:58px;object-fit:contain;transform:rotate(0deg) scale(1);filter:drop-shadow(0 6px 6px rgba(0,0,0,0.35));will-change:transform,filter;"
+           />
+         </div>`,
+  iconSize: [68, 68],
+  iconAnchor: [34, 34]
+});
 
-  // Animate the airplane smoothly along the curved path when planeFlight triggers
+function ExpeditionRouteLayer({ routePins, showRouteLine, activeStepIdx, planeFlight }) {
+  const map = useMap();
+  const planeMarkerRef = useRef(null);
+  const showPlane = routePins && routePins.length >= 2 && (activeStepIdx !== null || Boolean(planeFlight));
+  const initialPos = routePins && routePins.length > 0 ? [routePins[0].lat, routePins[0].lng] : [50, 10];
+
+  // Helper to update the airplane DOM sprite & Marker position directly at 60fps without React re-renders
+  const applyPlaneTransform = (pos, bearing, altitudeScale, inFlight) => {
+    if (planeMarkerRef.current) {
+      planeMarkerRef.current.setLatLng(pos);
+    }
+    const imgEl = document.getElementById('expedition-plane-sprite');
+    if (imgEl) {
+      imgEl.style.transform = `rotate(${bearing.toFixed(1)}deg) scale(${altitudeScale.toFixed(3)})`;
+      imgEl.style.filter = inFlight
+        ? 'drop-shadow(0 16px 12px rgba(0,0,0,0.45))'
+        : 'drop-shadow(0 5px 5px rgba(0,0,0,0.32))';
+    }
+  };
+
+  // Follow-Cam Flight Animation: Camera stays locked directly above the airplane at a constant zoom level!
   useEffect(() => {
-    if (!planeFlight || !routePins || routePins.length < 2) return;
+    if (!planeFlight || !routePins || routePins.length < 2 || !map) return;
     const fromPin = routePins[planeFlight.fromIdx];
     const toPin = routePins[planeFlight.toIdx];
     if (!fromPin || !toPin) return;
 
     const p1 = [fromPin.lat, fromPin.lng];
     const p2 = [toPin.lat, toPin.lng];
-    const durationMs = 1750;
+
+    // Calculate distance in km to pick a single comfortable cruising zoom level (avoids multi-zoom tile lag!)
+    const distMeters = map.distance(p1, p2);
+    const distKm = distMeters / 1000;
+    const cruiseZoom =
+      distKm < 20 ? 11 :
+      distKm < 90 ? 9 :
+      distKm < 350 ? 8 :
+      distKm < 1200 ? 6 : 5;
+
+    // Duration scales gently with distance (2.6s to 3.4s) with smooth cosine acceleration
+    const durationMs = Math.min(3400, Math.max(2500, 2300 + Math.sqrt(distKm) * 22));
     const startTime = performance.now();
     let rafId;
 
+    // Lock camera onto the departure pin at cruiseZoom before takeoff
+    map.stop();
+    map.setView(p1, cruiseZoom, { animate: false });
+
     const tick = (now) => {
       const rawT = Math.min(1, (now - startTime) / durationMs);
-      // Cubic ease-in-out for realistic takeoff & landing speed
-      const easeT = rawT < 0.5 ? 4 * rawT * rawT * rawT : 1 - Math.pow(-2 * rawT + 2, 3) / 2;
+      // Smooth cosine ease-in-out so takeoff is gentle and never shoots away
+      const easeT = 0.5 - 0.5 * Math.cos(Math.PI * rawT);
       const { pos, bearing } = getFlightCurvePointAndBearing(p1, p2, easeT);
-      // Plane climbs to cruising altitude in the middle of the leg (sin curve)
-      const altitudeScale = 1 + 0.34 * Math.sin(Math.PI * easeT);
-      setPlaneState({ pos, bearing, altitudeScale, inFlight: rawT < 1 });
+      const altitudeScale = 1 + 0.32 * Math.sin(Math.PI * easeT);
+
+      applyPlaneTransform(pos, bearing, altitudeScale, rawT < 1);
+      // Keep camera locked directly above the airplane looking straight down!
+      map.panTo(pos, { animate: false });
 
       if (rawT < 1) {
         rafId = requestAnimationFrame(tick);
@@ -237,55 +284,48 @@ function ExpeditionRouteLayer({ routePins, showRouteLine, activeStepIdx, planeFl
     };
   }, [planeFlight?.id]);
 
-  // If no flight animation has run yet, place plane at activeStepIdx (or first pin)
+  // Position airplane when parked at a stop (before or without active flight)
   useEffect(() => {
-    if (!routePins || routePins.length < 2) {
-      setPlaneState(null);
-      return;
-    }
-    if (activeStepIdx === null) {
-      setPlaneState(null);
-      return;
-    }
-    if (!planeFlight) {
-      const idx = Math.min(activeStepIdx, routePins.length - 1);
-      const nextIdx = Math.min(idx + 1, routePins.length - 1);
-      const p1 = [routePins[idx].lat, routePins[idx].lng];
-      const p2 = [routePins[nextIdx].lat, routePins[nextIdx].lng];
-      const { bearing } = idx !== nextIdx ? getFlightCurvePointAndBearing(p1, p2, 0) : { bearing: 0 };
-      setPlaneState({ pos: p1, bearing, altitudeScale: 1, inFlight: false });
-    }
+    if (!routePins || routePins.length < 2 || activeStepIdx === null || planeFlight) return;
+    const idx = Math.min(activeStepIdx, routePins.length - 1);
+    const nextIdx = Math.min(idx + 1, routePins.length - 1);
+    const p1 = [routePins[idx].lat, routePins[idx].lng];
+    const p2 = [routePins[nextIdx].lat, routePins[nextIdx].lng];
+    const { bearing } = idx !== nextIdx ? getFlightCurvePointAndBearing(p1, p2, 0) : { bearing: 0 };
+    applyPlaneTransform(p1, bearing, 1, false);
   }, [routePins, activeStepIdx]);
 
-  if (!routePins || routePins.length < 2 || !showRouteLine) return null;
+  if (!routePins || routePins.length < 2) return null;
 
   const segments = [];
-  for (let i = 0; i < routePins.length - 1; i++) {
-    const a = routePins[i];
-    const b = routePins[i + 1];
-    const pts = getFlightArcSamples([a.lat, a.lng], [b.lat, b.lng], 26);
-    const R = 6371;
-    const dLat = ((b.lat - a.lat) * Math.PI) / 180;
-    const dLng = ((b.lng - a.lng) * Math.PI) / 180;
-    const hav =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
-    const distKm = Math.round(R * 2 * Math.atan2(Math.sqrt(hav), Math.sqrt(1 - hav)));
-    const isCompletedLeg = activeStepIdx === null || i < activeStepIdx;
-    segments.push({
-      id: `${a.id}_${b.id}_${i}`,
-      idx: i,
-      pts,
-      distKm,
-      fromName: a.location_name ? a.location_name.split(',')[0] : `Stopp #${i + 1}`,
-      toName: b.location_name ? b.location_name.split(',')[0] : `Stopp #${i + 2}`,
-      isCompletedLeg
-    });
+  if (showRouteLine) {
+    for (let i = 0; i < routePins.length - 1; i++) {
+      const a = routePins[i];
+      const b = routePins[i + 1];
+      const pts = getFlightArcSamples([a.lat, a.lng], [b.lat, b.lng], 26);
+      const R = 6371;
+      const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+      const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+      const hav =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+      const distKm = Math.round(R * 2 * Math.atan2(Math.sqrt(hav), Math.sqrt(1 - hav)));
+      const isCompletedLeg = activeStepIdx === null || i < activeStepIdx;
+      segments.push({
+        id: `${a.id}_${b.id}_${i}`,
+        idx: i,
+        pts,
+        distKm,
+        fromName: a.location_name ? a.location_name.split(',')[0] : `Stopp #${i + 1}`,
+        toName: b.location_name ? b.location_name.split(',')[0] : `Stopp #${i + 2}`,
+        isCompletedLeg
+      });
+    }
   }
 
   return (
     <>
-      {segments.map(seg => (
+      {showRouteLine && segments.map(seg => (
         <Polyline
           key={seg.id}
           positions={seg.pts}
@@ -304,7 +344,7 @@ function ExpeditionRouteLayer({ routePins, showRouteLine, activeStepIdx, planeFl
       ))}
 
       {/* Chronological Stop Badges (#1 .. #N) */}
-      {routePins.map((pin, idx) => {
+      {showRouteLine && routePins.map((pin, idx) => {
         const isFirst = idx === 0;
         const isLast = idx === routePins.length - 1;
         const isCurrent = activeStepIdx === idx;
@@ -332,23 +372,14 @@ function ExpeditionRouteLayer({ routePins, showRouteLine, activeStepIdx, planeFl
         );
       })}
 
-      {/* Animated Nano-Banana Expedition Airplane Marker */}
-      {planeState && (
+      {/* Persistent Follow-Cam Airplane Marker (updated via ref at 60fps) */}
+      {showPlane && (
         <Marker
-          position={planeState.pos}
+          ref={planeMarkerRef}
+          position={initialPos}
           interactive={false}
           zIndexOffset={2500}
-          icon={L.divIcon({
-            className: 'bg-transparent border-none',
-            html: `<div style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;pointer-events:none;">
-                     <img
-                       src="/badges/expedition_plane.png"
-                       style="width:56px;height:56px;object-fit:contain;transform:rotate(${Math.round(planeState.bearing)}deg) scale(${planeState.altitudeScale.toFixed(2)});filter:drop-shadow(0 ${planeState.inFlight ? '14px 10px' : '4px 4px'} rgba(0,0,0,${planeState.inFlight ? '0.45' : '0.3'}));will-change:transform;"
-                     />
-                   </div>`,
-            iconSize: [64, 64],
-            iconAnchor: [32, 32]
-          })}
+          icon={PLANE_ICON_STATIC}
         />
       )}
     </>
@@ -1770,19 +1801,12 @@ const hasNightOwl = myPins.some(p => {
     setTargetPinId(destPin.id.toString());
 
     if (prevIdx !== clamped && routePins[prevIdx]) {
-      const startPin = routePins[prevIdx];
+      // ExpeditionRouteLayer locks camera onto the airplane & pans along the curve at a steady zoom!
       setPlaneFlight({ fromIdx: prevIdx, toIdx: clamped, id: Date.now() + Math.random() });
-      if (map) {
-        const bounds = L.latLngBounds([
-          [startPin.lat, startPin.lng],
-          [destPin.lat, destPin.lng]
-        ]);
-        map.flyToBounds(bounds, { padding: [70, 70], maxZoom: 12, duration: 1.65 });
-      }
     } else {
       setPlaneFlight(null);
       if (map) {
-        map.flyTo([destPin.lat, destPin.lng], 12, { animate: true, duration: 1.4 });
+        map.setView([destPin.lat, destPin.lng], 9, { animate: true });
       }
     }
   };
@@ -1797,7 +1821,7 @@ const hasNightOwl = myPins.some(p => {
       } else {
         stepToRoutePin(current + 1, current);
       }
-    }, 2800);
+    }, 3900);
     return () => clearTimeout(timer);
   }, [isPlayingRoute, routeStepIdx, routePins]);
 
@@ -2319,12 +2343,16 @@ const hasNightOwl = myPins.some(p => {
           <TileLayer 
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            keepBuffer={6}
+            updateWhenIdle={false}
           />
         )}
         {mapStyle === 'satellite' && (
           <TileLayer 
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" 
             attribution='Tiles &copy; Esri'
+            keepBuffer={6}
+            updateWhenIdle={false}
           />
         )}
         {mapStyle === 'dark' && (
