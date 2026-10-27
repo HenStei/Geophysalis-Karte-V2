@@ -548,6 +548,8 @@ export default function MapView() {
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [leaderboardTab, setLeaderboardTab] = useState('alltime'); // weekly, monthly, alltime
   const [allProfiles, setAllProfiles] = useState({});
+  const [selectedPlayerCard, setSelectedPlayerCard] = useState(null);
+  const [playerMapFilter, setPlayerMapFilter] = useState(null);
 
   // Avatar State
   const [editAvatar, setEditAvatar] = useState('default');
@@ -1544,8 +1546,10 @@ const hasNightOwl = myPins.some(p => {
     [90, 2000]
   ];
 
-  // Computed Pins based on toggle
-  const displayPins = showOnlyMyPins && session ? pins.filter(p => p.user_id === session.user.id) : pins;
+  // Computed Pins based on toggle or selected player filter
+  const displayPins = playerMapFilter
+    ? pins.filter(p => p.user_id === playerMapFilter.userId)
+    : (showOnlyMyPins && session ? pins.filter(p => p.user_id === session.user.id) : pins);
 
   const nextMilestone = useMemo(() => {
     if (!session) return null;
@@ -1576,13 +1580,23 @@ const hasNightOwl = myPins.some(p => {
             </div>
           </div>
 
-          {session && showOnlyMyPins && (
+          {session && showOnlyMyPins && !playerMapFilter && (
             <button
               onClick={() => setShowOnlyMyPins(false)}
-              className="bg-blue-600 text-white px-2.5 py-1.5 rounded-full shadow-lg text-[10px] font-black flex items-center gap-1 pointer-events-auto active:scale-95 transition"
+              className="bg-blue-600 text-white px-2.5 sm:px-3 py-1.5 rounded-full shadow-lg text-[10px] sm:text-xs font-black flex items-center gap-1 pointer-events-auto hover:bg-blue-700 active:scale-95 transition"
             >
               <span>📍 Meine Karte</span>
               <X size={12} />
+            </button>
+          )}
+
+          {playerMapFilter && (
+            <button
+              onClick={() => setPlayerMapFilter(null)}
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-2.5 sm:px-3.5 py-1.5 rounded-full shadow-lg text-[10px] sm:text-xs font-black flex items-center gap-1.5 pointer-events-auto hover:opacity-95 active:scale-95 transition"
+            >
+              <span>👤 {playerMapFilter.nickname}s Karte ({displayPins.length})</span>
+              <X size={13} />
             </button>
           )}
 
@@ -2925,7 +2939,7 @@ const hasNightOwl = myPins.some(p => {
         onDismiss={() => setUnlockedAchievements(prev => prev.slice(1))}
       />
 
-      {/* Leaderboard Modal */}
+      {/* Leaderboard Modal + Clickable Player Visitenkarte */}
       {isLeaderboardOpen && (() => {
         // Compute Leaderboard Data inline
         const now = new Date();
@@ -2957,74 +2971,405 @@ const hasNightOwl = myPins.some(p => {
           .sort((a, b) => b.count - a.count)
           .slice(0, 10); // Top 10
 
+        const renderUserAvatar = (avatar) => {
+          if (avatar === 'pumpkin') return '🎃';
+          if (avatar === 'ghost') return '👻';
+          if (avatar === 'bat') return '🦇';
+          if (avatar === 'reindeer') return '🦌';
+          if (avatar === 'snowman') return '⛄';
+          if (avatar === 'fire') return <img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" />;
+          if (avatar === 'cyberpunk') return <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" />;
+          if (avatar === 'retro') return <img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" />;
+          if (avatar === 'pioneer') return <img src="/badges/avatar_pioneer.jpg" className="w-full h-full object-cover" />;
+          if (avatar === 'admin') return <img src="/badges/avatar_admin.jpg" className="w-full h-full object-cover" />;
+          if (avatar === 'polar') return <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" />;
+          return '🦊';
+        };
+
+        // Compute detailed Player Card ("Visitenkarte") when a user is clicked
+        let cardData = null;
+        if (selectedPlayerCard) {
+          const targetId = selectedPlayerCard.userId;
+          const prof = allProfiles[targetId] || {};
+          const uPins = pins
+            .filter(p => p.user_id === targetId)
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          const uCountries = new Set(
+            uPins
+              .map(p => {
+                if (!p.location_name) return null;
+                const parts = p.location_name.split(',');
+                return parts[parts.length - 1].trim();
+              })
+              .filter(Boolean)
+          );
+          let uDistKm = 0;
+          if (uPins.length >= 2) {
+            const chron = [...uPins].reverse();
+            for (let idx = 1; idx < chron.length; idx++) {
+              const R = 6371;
+              const dLat = (chron[idx].lat - chron[idx - 1].lat) * Math.PI / 180;
+              const dLng = (chron[idx].lng - chron[idx - 1].lng) * Math.PI / 180;
+              const a =
+                Math.sin(dLat / 2) ** 2 +
+                Math.cos(chron[idx - 1].lat * Math.PI / 180) *
+                  Math.cos(chron[idx].lat * Math.PI / 180) *
+                  Math.sin(dLng / 2) ** 2;
+              uDistKm += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            }
+          }
+          uDistKm = Math.round(uDistKm);
+
+          const pEntry = globalAchievements.find(
+            g => g.achievement_id.startsWith('pioneer_') && g.user_id === targetId
+          );
+          const pRank = pEntry ? pEntry.achievement_id.split('_')[1] : null;
+          const uEuCenter = globalAchievements.some(
+            g => g.achievement_id === 'eu_center' && g.user_id === targetId
+          );
+          const uPeaks = globalAchievements
+            .filter(g => g.achievement_id.startsWith('gipfeli_') && g.user_id === targetId)
+            .map(g => PEAKS.find(pk => pk.id === g.achievement_id.split('_')[1]))
+            .filter(Boolean);
+
+          // Streak check for this player
+          const uDates = [...new Set(uPins.map(p => new Date(p.created_at).toISOString().split('T')[0]))].sort();
+          let maxStrk = uDates.length > 0 ? 1 : 0;
+          let curStrk = 1;
+          for (let idx = 1; idx < uDates.length; idx++) {
+            const diffD = Math.ceil(
+              Math.abs(new Date(uDates[idx]) - new Date(uDates[idx - 1])) / (1000 * 60 * 60 * 24)
+            );
+            if (diffD === 1) {
+              curStrk++;
+              if (curStrk > maxStrk) maxStrk = curStrk;
+            } else curStrk = 1;
+          }
+
+          const uManual = new Set(uPins.map(p => p.special_badge).filter(Boolean));
+          const uMaxAlt = uPins.reduce((mx, p) => Math.max(mx, getPinAltitude(p)), 0);
+
+          const badges = [];
+          if (uEuCenter) badges.push({ title: 'Mitte der EU', img: '/badges/badge_eu.png', bg: 'bg-blue-800', rare: true });
+          if (pRank) badges.push({ title: `Pionier No.${pRank}`, img: '/badges/badge_pioneer.jpg', rare: true });
+          uPeaks.forEach(pk => {
+            badges.push({ title: `🏔️ ${pk.name.split(' ')[0]}`, img: pk.img, rare: true });
+          });
+          if (uPins.length >= 100) badges.push({ title: 'Platin Sammler', img: '/badges/badge_platinum.jpg', rare: true });
+          else if (uPins.length >= 50) badges.push({ title: 'Gold Sammler', img: '/badges/badge_gold.jpg' });
+          else if (uPins.length >= 10) badges.push({ title: 'Silber Sammler', img: '/badges/badge_silver.jpg' });
+          else if (uPins.length >= 5) badges.push({ title: 'Bronze Sammler', img: '/badges/badge_bronze.jpg' });
+
+          if (uCountries.size >= 3) badges.push({ title: 'Weltenbummler', img: '/badges/world_traveler.jpg' });
+          if (maxStrk >= 3) badges.push({ title: 'Feuer & Flamme', img: '/badges/streak.jpg' });
+          if (uMaxAlt >= 3000) badges.push({ title: 'Steinbock (>3000m)', img: '/badges/badge_steinbock.jpg' });
+          else if (uMaxAlt >= 2000 || uPeaks.some(p => p.alt >= 2000)) badges.push({ title: 'Berggams (>2000m)', img: '/badges/badge_berggams.jpg' });
+          else if (uMaxAlt >= 1000 || uPeaks.some(p => p.alt >= 1000)) badges.push({ title: 'Alpinist (>1000m)', img: '/badges/badge_gipfeli.jpg' });
+
+          if (uPins.some(p => Math.abs(p.lat) >= 60)) badges.push({ title: 'Polarforscher', img: '/badges/polar.jpg' });
+          if (uPins.some(p => p.location_name && /berlin|new york|london|tokyo|paris|sydney|los angeles/i.test(p.location_name))) {
+            badges.push({ title: 'Urban Legend', img: '/badges/urban.jpg' });
+          }
+          if (uPins.some(p => { const h = new Date(p.created_at).getHours(); return h >= 22 || h <= 4; })) {
+            badges.push({ title: 'Nachteule', img: '/badges/night_owl.jpg' });
+          }
+          if (uPins.some(p => { const h = new Date(p.created_at).getHours(); return h >= 5 && h <= 8; })) {
+            badges.push({ title: 'Frühaufsteher', img: '/badges/early_bird.jpg' });
+          }
+          if (uPins.length >= 10) badges.push({ title: 'Pixel Pioneer', img: '/badges/retro.jpg' });
+          if (uManual.has('unter_tage')) badges.push({ title: 'Unter Tage', img: '/badges/badge_unter_tage.jpg', rare: true });
+          if (uManual.has('atlantis')) badges.push({ title: 'Atlantis', img: '/badges/badge_atlantis.jpg', rare: true });
+          if (uManual.has('lost_place')) badges.push({ title: 'Lost Place', img: '/badges/badge_lost_place.jpg', rare: true });
+          if (uManual.has('wuestenfuchs')) badges.push({ title: 'Wüstenfuchs', img: '/badges/badge_wuestenfuchs.jpg', rare: true });
+          if (uManual.has('dreilaendereck')) badges.push({ title: 'Drei-Länder-Eck', img: '/badges/badge_dreilaendereck.jpg', rare: true });
+          if (uManual.has('og')) badges.push({ title: 'OG Geophysalis', img: '/badges/badge_og.jpg', rare: true });
+          if (uManual.has('coop')) badges.push({ title: 'Coop', img: '/badges/badge_coop.jpg' });
+
+          cardData = {
+            userId: targetId,
+            rank: selectedPlayerCard.rank,
+            nickname: prof.nickname || 'Anonym',
+            avatar: prof.avatar || 'default',
+            frame: prof.frame_style || 'none',
+            pioneerRank: pRank,
+            pins: uPins,
+            countries: uCountries,
+            distanceKm: uDistKm,
+            badges
+          };
+        }
+
         return (
           <div
             className="absolute inset-0 z-[3000] bg-black/35 sm:bg-black/80 backdrop-blur-[1px] sm:backdrop-blur-sm flex items-center justify-center p-3 pb-20 sm:p-4"
-            onClick={() => setIsLeaderboardOpen(false)}
+            onClick={() => { setSelectedPlayerCard(null); setIsLeaderboardOpen(false); }}
           >
             <div
-              className="bg-white rounded-3xl w-full max-w-lg max-h-[74dvh] sm:max-h-[90vh] p-5 sm:p-8 shadow-2xl relative flex flex-col"
+              className="bg-white rounded-3xl w-full max-w-lg max-h-[76dvh] sm:max-h-[90vh] p-4 sm:p-7 shadow-2xl relative flex flex-col overflow-hidden"
               onClick={e => e.stopPropagation()}
             >
-              <button onClick={() => setIsLeaderboardOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition">
-                <X size={28} />
-              </button>
-              <h2 className="text-2xl font-black text-gray-900 flex items-center gap-3 mb-6">
-                <Trophy className="text-yellow-500" size={32} /> Rangliste
-              </h2>
+              {!cardData ? (
+                <>
+                  <button
+                    onClick={() => { setSelectedPlayerCard(null); setIsLeaderboardOpen(false); }}
+                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 bg-gray-100/80 hover:bg-gray-200/80 rounded-full p-1.5 transition"
+                  >
+                    <X size={22} />
+                  </button>
+                  <div className="mb-4 shrink-0">
+                    <h2 className="text-xl sm:text-2xl font-black text-gray-900 flex items-center gap-2.5">
+                      <Trophy className="text-yellow-500" size={28} /> Rangliste
+                    </h2>
+                    <p className="text-[11px] sm:text-xs text-gray-400 font-medium mt-0.5">
+                      Tippe auf einen Entdecker, um seine Visitenkarte &amp; Sticker zu sehen
+                    </p>
+                  </div>
 
-              <div className="flex bg-gray-100 rounded-full p-1 mb-6">
-                <button onClick={() => setLeaderboardTab('weekly')} className={`flex-1 text-sm font-bold py-2 rounded-lg transition ${leaderboardTab === 'weekly' ? 'bg-white shadow-sm text-yellow-600' : 'text-gray-500'}`}>Wöchentlich</button>
-                <button onClick={() => setLeaderboardTab('monthly')} className={`flex-1 text-sm font-bold py-2 rounded-lg transition ${leaderboardTab === 'monthly' ? 'bg-white shadow-sm text-yellow-600' : 'text-gray-500'}`}>Monatlich</button>
-                <button onClick={() => setLeaderboardTab('alltime')} className={`flex-1 text-sm font-bold py-2 rounded-lg transition ${leaderboardTab === 'alltime' ? 'bg-white shadow-sm text-yellow-600' : 'text-gray-500'}`}>All-Time</button>
-              </div>
+                  <div className="flex bg-gray-100 rounded-full p-1 mb-4 shrink-0">
+                    <button onClick={() => setLeaderboardTab('weekly')} className={`flex-1 text-xs sm:text-sm font-bold py-2 rounded-full transition ${leaderboardTab === 'weekly' ? 'bg-white shadow-sm text-yellow-600' : 'text-gray-500'}`}>Wöchentlich</button>
+                    <button onClick={() => setLeaderboardTab('monthly')} className={`flex-1 text-xs sm:text-sm font-bold py-2 rounded-full transition ${leaderboardTab === 'monthly' ? 'bg-white shadow-sm text-yellow-600' : 'text-gray-500'}`}>Monatlich</button>
+                    <button onClick={() => setLeaderboardTab('alltime')} className={`flex-1 text-xs sm:text-sm font-bold py-2 rounded-full transition ${leaderboardTab === 'alltime' ? 'bg-white shadow-sm text-yellow-600' : 'text-gray-500'}`}>All-Time</button>
+                  </div>
 
-              <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-3">
-                {sortedUsers.length === 0 ? (
-                  <p className="text-center text-gray-400 font-medium py-10">Noch keine Einträge in diesem Zeitraum.</p>
-                ) : (
-                  sortedUsers.map((u, i) => {
-                    const avatar = u.avatar || 'default';
-                    const frame = u.frame_style || 'none';
-                    
-                    let avatarContent;
-                    if (avatar === 'ghost') avatarContent = '👻';
-                    else if (avatar === 'bat') avatarContent = '🦇';
-                    else if (avatar === 'reindeer') avatarContent = '🦌';
-                    else if (avatar === 'snowman') avatarContent = '⛄';
-                    else if (avatar === 'fire') avatarContent = <img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" />;
-                    else if (avatar === 'cyberpunk') avatarContent = <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" />;
-                    else if (avatar === 'retro') avatarContent = <img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" />;
-                    else if (avatar === 'pioneer') avatarContent = <img src="/badges/avatar_pioneer.jpg" className="w-full h-full object-cover" />;
-                    else if (avatar === 'admin') avatarContent = <img src="/badges/avatar_admin.jpg" className="w-full h-full object-cover" />;
-                    else if (avatar === 'polar') avatarContent = <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" />;
-                    else avatarContent = '🦊';
+                  <div className="flex-1 overflow-y-auto overscroll-contain touch-pan-y custom-scrollbar pr-1 flex flex-col gap-2.5">
+                    {sortedUsers.length === 0 ? (
+                      <p className="text-center text-gray-400 font-medium py-10">Noch keine Einträge in diesem Zeitraum.</p>
+                    ) : (
+                      sortedUsers.map((u, i) => {
+                        const avatar = u.avatar || 'default';
+                        const frame = u.frame_style || 'none';
+                        const uGipfeliCount = globalAchievements.filter(
+                          g => g.achievement_id.startsWith('gipfeli_') && g.user_id === u.userId
+                        ).length;
 
-                    return (
-                      <div key={u.userId} className={`flex items-center justify-between p-3 rounded-full border ${i === 0 ? 'bg-yellow-50 border-yellow-200' : i === 1 ? 'bg-gray-50 border-gray-200' : i === 2 ? 'bg-orange-50 border-orange-200' : 'bg-white border-gray-100 shadow-sm'}`}>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xl w-6 text-center">
-                            {i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-sm font-black text-gray-400">{i + 1}.</span>}
-                          </span>
-                          
-                          {FEATURE_AVATARS && (
-                            <div className={`avatar-frame frame-${frame} w-10 h-10 text-xl shadow-sm bg-white shrink-0 overflow-hidden`}>
-                              {avatarContent}
+                        return (
+                          <button
+                            key={u.userId}
+                            onClick={() => setSelectedPlayerCard({ userId: u.userId, rank: i + 1 })}
+                            className={`w-full text-left flex items-center justify-between p-2.5 sm:p-3 rounded-2xl sm:rounded-full border transition hover:scale-[1.01] hover:shadow-md active:scale-[0.98] cursor-pointer group ${
+                              i === 0
+                                ? 'bg-yellow-50/90 border-yellow-200 hover:border-yellow-400'
+                                : i === 1
+                                  ? 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                                  : i === 2
+                                    ? 'bg-orange-50/90 border-orange-200 hover:border-orange-300'
+                                    : 'bg-white border-gray-100 shadow-sm hover:border-blue-200'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                              <span className="text-lg sm:text-xl w-6 text-center shrink-0">
+                                {i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-xs sm:text-sm font-black text-gray-400">{i + 1}.</span>}
+                              </span>
+
+                              {FEATURE_AVATARS && (
+                                <div className={`avatar-frame frame-${frame} w-10 h-10 text-xl shadow-sm bg-white shrink-0 overflow-hidden`}>
+                                  {renderUserAvatar(avatar)}
+                                </div>
+                              )}
+
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`font-black text-sm sm:text-base truncate ${i === 0 ? 'text-yellow-700' : i === 1 ? 'text-gray-700' : i === 2 ? 'text-orange-800' : 'text-gray-800'}`}>
+                                    {u.nickname}
+                                  </span>
+                                  {uGipfeliCount > 0 && (
+                                    <span className="text-[9px] bg-amber-100 text-amber-800 font-black px-1.5 py-0.5 rounded-full shrink-0" title="Eroberte Bundesland-Gipfel">
+                                      🏔️ {uGipfeliCount}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[10px] text-gray-400 font-semibold group-hover:text-blue-600 transition">
+                                  Visitenkarte ansehen →
+                                </p>
+                              </div>
                             </div>
-                          )}
 
-                          <span className={`font-black ${i === 0 ? 'text-yellow-700' : i === 1 ? 'text-gray-700' : i === 2 ? 'text-orange-800' : 'text-gray-700'}`}>
-                            {u.nickname}
-                          </span>
+                            <div className="flex items-center gap-2 shrink-0 pl-2">
+                              <div className={`font-black text-sm sm:text-base ${i === 0 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                                {u.count} <span className="text-[10px] uppercase font-bold text-gray-400 hidden sm:inline">Sticker</span>
+                              </div>
+                              <span className="text-gray-300 group-hover:text-blue-500 group-hover:translate-x-0.5 transition text-sm font-bold">›</span>
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              ) : (
+                /* SPIELER-VISITENKARTE VIEW (Mobile & Desktop optimized) */
+                <div className="flex flex-col h-full min-h-0">
+                  {/* Top Bar */}
+                  <div className="flex items-center justify-between pb-3 border-b border-gray-100 shrink-0">
+                    <button
+                      onClick={() => setSelectedPlayerCard(null)}
+                      className="flex items-center gap-1.5 text-xs sm:text-sm font-black text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full transition active:scale-95"
+                    >
+                      <span>←</span>
+                      <span>Rangliste</span>
+                    </button>
+                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-gray-400">
+                      Entdecker-Visitenkarte
+                    </span>
+                    <button
+                      onClick={() => { setSelectedPlayerCard(null); setIsLeaderboardOpen(false); }}
+                      className="text-gray-400 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-full p-1.5 transition"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+
+                  {/* Scrollable Visitenkarte Body */}
+                  <div className="flex-1 overflow-y-auto overscroll-contain touch-pan-y custom-scrollbar py-3.5 pr-1 flex flex-col gap-3.5">
+                    {/* Hero Banner Card */}
+                    <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-4 sm:p-5 rounded-3xl shadow-lg relative overflow-hidden">
+                      <div className="flex items-center gap-3.5 sm:gap-4">
+                        <div className={`avatar-frame frame-${cardData.frame} w-14 h-14 sm:w-16 sm:h-16 text-2xl sm:text-3xl shadow-xl bg-white text-gray-900 shrink-0 overflow-hidden`}>
+                          {renderUserAvatar(cardData.avatar)}
                         </div>
-                        <div className={`font-black text-sm ${i === 0 ? 'text-yellow-600' : 'text-gray-500'}`}>
-                          {u.count} <span className="text-[10px] uppercase font-bold text-gray-400 hidden sm:inline">Sticker</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] font-black uppercase tracking-wider bg-yellow-400/20 text-yellow-300 border border-yellow-400/40 px-2 py-0.5 rounded-full">
+                              {cardData.rank === 1 ? '👑 Platz #1' : cardData.rank === 2 ? '🥈 Platz #2' : cardData.rank === 3 ? '🥉 Platz #3' : `Platz #${cardData.rank}`}
+                            </span>
+                            {cardData.pioneerRank && (
+                              <span className="text-[10px] font-black bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full">
+                                🚀 Pionier No.{cardData.pioneerRank}
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="text-lg sm:text-xl font-black text-white truncate mt-1">
+                            {cardData.nickname}
+                          </h3>
                         </div>
                       </div>
-                    );
-                  })
-                )}
-              </div>
+
+                      {/* 3 Stats Tiles */}
+                      <div className="grid grid-cols-3 gap-2 mt-4 bg-white/10 backdrop-blur-md rounded-2xl p-2.5 border border-white/10">
+                        <div className="text-center">
+                          <p className="text-base sm:text-lg font-black text-yellow-300 leading-none">{cardData.pins.length}</p>
+                          <p className="text-[9px] text-slate-300 font-bold uppercase tracking-wider mt-1">Sticker</p>
+                        </div>
+                        <div className="text-center border-x border-white/10">
+                          <p className="text-base sm:text-lg font-black text-cyan-300 leading-none">
+                            {cardData.distanceKm > 999 ? `${(cardData.distanceKm / 1000).toFixed(1)}k` : cardData.distanceKm}
+                          </p>
+                          <p className="text-[9px] text-slate-300 font-bold uppercase tracking-wider mt-1">km Reise</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-base sm:text-lg font-black text-emerald-300 leading-none">{cardData.countries.size}</p>
+                          <p className="text-[9px] text-slate-300 font-bold uppercase tracking-wider mt-1">Länder</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Earned Trophies & Rare Badges */}
+                    <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-100">
+                      <div className="flex items-center justify-between mb-2.5">
+                        <p className="text-[10px] sm:text-xs font-black text-gray-700 uppercase tracking-wider">
+                          🏆 Errungene Trophäen ({cardData.badges.length})
+                        </p>
+                      </div>
+                      {cardData.badges.length === 0 ? (
+                        <p className="text-xs text-gray-400 italic py-2">Noch keine Abzeichen freigeschaltet.</p>
+                      ) : (
+                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                          {cardData.badges.slice(0, 12).map((b, idx) => (
+                            <div
+                              key={idx}
+                              className={`flex flex-col items-center text-center p-2 rounded-xl bg-white border ${
+                                b.rare ? 'border-amber-300 shadow-sm ring-1 ring-amber-200' : 'border-gray-100'
+                              }`}
+                            >
+                              <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl overflow-hidden mb-1 flex items-center justify-center ${b.bg || 'bg-gray-100'}`}>
+                                {b.img ? <img src={b.img} alt={b.title} className="w-full h-full object-cover" /> : <span>🏅</span>}
+                              </div>
+                              <span className="text-[9px] sm:text-[10px] font-bold text-gray-700 leading-tight line-clamp-2">
+                                {b.title}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Player's Explored World Map */}
+                    {cardData.countries.size > 0 && (
+                      <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-100">
+                        <p className="text-[10px] sm:text-xs font-black text-gray-700 uppercase tracking-wider mb-2">
+                          🌍 Bereiste Länder ({cardData.countries.size})
+                        </p>
+                        <div className="bg-white rounded-xl overflow-hidden border border-gray-100 pointer-events-none">
+                          <ErrorBoundary>
+                            <VisitedCountriesMap visitedCountries={cardData.countries} />
+                          </ErrorBoundary>
+                        </div>
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {[...cardData.countries].map(country => (
+                            <span key={country} className="text-[9px] bg-orange-100 text-orange-700 font-bold px-2 py-0.5 rounded-full">
+                              {country}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recent Sticker Spots Preview (Clickable to fly straight to that pin!) */}
+                    {cardData.pins.length > 0 && (
+                      <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-100">
+                        <p className="text-[10px] sm:text-xs font-black text-gray-700 uppercase tracking-wider mb-2">
+                          📸 Letzte Sticker-Spots (Antippen zum Hinfliegen)
+                        </p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {cardData.pins.slice(0, 3).map(pin => (
+                            <button
+                              key={pin.id}
+                              onClick={() => {
+                                setSelectedPlayerCard(null);
+                                setIsLeaderboardOpen(false);
+                                setTargetPinId(pin.id.toString());
+                                if (map) map.flyTo([pin.lat, pin.lng], 15, { animate: true, duration: 2.0 });
+                              }}
+                              className="group relative h-20 sm:h-24 rounded-xl overflow-hidden border border-gray-200 shadow-sm text-left active:scale-95 transition"
+                            >
+                              <img src={pin.image_url} alt="Pin" className="w-full h-full object-cover group-hover:scale-110 transition duration-300" />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-1.5">
+                                <span className="text-[9px] font-bold text-white truncate">
+                                  📍 {pin.location_name ? pin.location_name.split(',')[0] : 'Spot'}
+                                </span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sticky Bottom CTA: Show all pins of this user on the map */}
+                  <div className="pt-3 border-t border-gray-100 shrink-0">
+                    <button
+                      onClick={() => {
+                        setPlayerMapFilter({ userId: cardData.userId, nickname: cardData.nickname });
+                        setShowOnlyMyPins(false);
+                        setSelectedPlayerCard(null);
+                        setIsLeaderboardOpen(false);
+                        if (map && cardData.pins.length > 0) {
+                          if (cardData.pins.length === 1) {
+                            map.flyTo([cardData.pins[0].lat, cardData.pins[0].lng], 13, { animate: true, duration: 2.0 });
+                          } else {
+                            const bounds = L.latLngBounds(cardData.pins.map(p => [p.lat, p.lng]));
+                            map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 12, duration: 2.0 });
+                          }
+                        }
+                      }}
+                      className="w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-black py-3 rounded-2xl shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-98 transition"
+                    >
+                      <MapPin size={17} />
+                      <span>Alle {cardData.pins.length} Sticker von {cardData.nickname} auf Karte zeigen</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );
