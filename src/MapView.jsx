@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMapEvents, useMap, Rectangle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMapEvents, useMap, Rectangle, Polyline, Tooltip } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import imageCompression from 'browser-image-compression';
 import { X, Upload, MapPin, Check, Info, LocateFixed, Layers, Share2, Dices, Compass, Navigation2, User, LogIn, Mail, Sparkles, Shield, CheckCircle, Trash2, Lock, Moon, Award, Globe, Footprints, Trophy , Share, Loader2 } from 'lucide-react';
@@ -168,6 +168,191 @@ function MinimapBounds({ parentMap }) {
   }, [minimap, parentMap]);
   
   return <Rectangle bounds={bounds} pathOptions={{ color: '#2563eb', weight: 2, fillOpacity: 0.2 }} />;
+}
+
+// Helper: Compute Quadratic Bézier arc points & tangent bearing between two [lat, lng] coordinates
+function getFlightCurvePointAndBearing(p1, p2, t) {
+  const lat1 = p1[0], lng1 = p1[1];
+  const lat2 = p2[0], lng2 = p2[1];
+  const dLat = lat2 - lat1;
+  const dLng = lng2 - lng1;
+  // Perpendicular offset for a graceful flight arc (scaled by distance)
+  const midLat = (lat1 + lat2) / 2 + dLng * 0.16;
+  const midLng = (lng1 + lng2) / 2 - dLat * 0.16;
+
+  const u = 1 - t;
+  const lat = u * u * lat1 + 2 * u * t * midLat + t * t * lat2;
+  const lng = u * u * lng1 + 2 * u * t * midLng + t * t * lng2;
+
+  // Derivative dP/dt for exact heading/bearing
+  const dLatDt = 2 * u * (midLat - lat1) + 2 * t * (lat2 - midLat);
+  const dLngDt = (2 * u * (midLng - lng1) + 2 * t * (lng2 - midLng)) * Math.max(0.25, Math.cos((lat * Math.PI) / 180));
+  // Bearing where 0 deg = North (+lat), 90 deg = East (+lng)
+  const bearing = ((Math.atan2(dLngDt, dLatDt) * 180) / Math.PI + 360) % 360;
+  return { pos: [lat, lng], bearing };
+}
+
+function getFlightArcSamples(p1, p2, steps = 26) {
+  const pts = [];
+  for (let i = 0; i <= steps; i++) {
+    pts.push(getFlightCurvePointAndBearing(p1, p2, i / steps).pos);
+  }
+  return pts;
+}
+
+// Expedition Route Layer: Dashed flight curves, #1..#N badges & animated Nano-Banana Airplane
+function ExpeditionRouteLayer({ routePins, showRouteLine, activeStepIdx, planeFlight }) {
+  const [planeState, setPlaneState] = useState(null); // { pos: [lat, lng], bearing: 0, altitudeScale: 1 }
+
+  // Animate the airplane smoothly along the curved path when planeFlight triggers
+  useEffect(() => {
+    if (!planeFlight || !routePins || routePins.length < 2) return;
+    const fromPin = routePins[planeFlight.fromIdx];
+    const toPin = routePins[planeFlight.toIdx];
+    if (!fromPin || !toPin) return;
+
+    const p1 = [fromPin.lat, fromPin.lng];
+    const p2 = [toPin.lat, toPin.lng];
+    const durationMs = 1750;
+    const startTime = performance.now();
+    let rafId;
+
+    const tick = (now) => {
+      const rawT = Math.min(1, (now - startTime) / durationMs);
+      // Cubic ease-in-out for realistic takeoff & landing speed
+      const easeT = rawT < 0.5 ? 4 * rawT * rawT * rawT : 1 - Math.pow(-2 * rawT + 2, 3) / 2;
+      const { pos, bearing } = getFlightCurvePointAndBearing(p1, p2, easeT);
+      // Plane climbs to cruising altitude in the middle of the leg (sin curve)
+      const altitudeScale = 1 + 0.34 * Math.sin(Math.PI * easeT);
+      setPlaneState({ pos, bearing, altitudeScale, inFlight: rawT < 1 });
+
+      if (rawT < 1) {
+        rafId = requestAnimationFrame(tick);
+      }
+    };
+
+    rafId = requestAnimationFrame(tick);
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [planeFlight?.id]);
+
+  // If no flight animation has run yet, place plane at activeStepIdx (or first pin)
+  useEffect(() => {
+    if (!routePins || routePins.length < 2) {
+      setPlaneState(null);
+      return;
+    }
+    if (activeStepIdx === null) {
+      setPlaneState(null);
+      return;
+    }
+    if (!planeFlight) {
+      const idx = Math.min(activeStepIdx, routePins.length - 1);
+      const nextIdx = Math.min(idx + 1, routePins.length - 1);
+      const p1 = [routePins[idx].lat, routePins[idx].lng];
+      const p2 = [routePins[nextIdx].lat, routePins[nextIdx].lng];
+      const { bearing } = idx !== nextIdx ? getFlightCurvePointAndBearing(p1, p2, 0) : { bearing: 0 };
+      setPlaneState({ pos: p1, bearing, altitudeScale: 1, inFlight: false });
+    }
+  }, [routePins, activeStepIdx]);
+
+  if (!routePins || routePins.length < 2 || !showRouteLine) return null;
+
+  const segments = [];
+  for (let i = 0; i < routePins.length - 1; i++) {
+    const a = routePins[i];
+    const b = routePins[i + 1];
+    const pts = getFlightArcSamples([a.lat, a.lng], [b.lat, b.lng], 26);
+    const R = 6371;
+    const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+    const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+    const hav =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+    const distKm = Math.round(R * 2 * Math.atan2(Math.sqrt(hav), Math.sqrt(1 - hav)));
+    const isCompletedLeg = activeStepIdx === null || i < activeStepIdx;
+    segments.push({
+      id: `${a.id}_${b.id}_${i}`,
+      idx: i,
+      pts,
+      distKm,
+      fromName: a.location_name ? a.location_name.split(',')[0] : `Stopp #${i + 1}`,
+      toName: b.location_name ? b.location_name.split(',')[0] : `Stopp #${i + 2}`,
+      isCompletedLeg
+    });
+  }
+
+  return (
+    <>
+      {segments.map(seg => (
+        <Polyline
+          key={seg.id}
+          positions={seg.pts}
+          pathOptions={{
+            color: seg.isCompletedLeg ? '#dc2626' : '#94a3b8',
+            weight: seg.isCompletedLeg ? 3.5 : 2.5,
+            className: seg.isCompletedLeg ? 'expedition-route-line' : 'expedition-route-preview'
+          }}
+        >
+          <Tooltip sticky direction="top">
+            <div className="text-xs font-bold text-gray-800 px-1 py-0.5">
+              ✈️ Etappe #{seg.idx + 1} ➔ #{seg.idx + 2}: {seg.fromName} ➔ {seg.toName} ({seg.distKm} km)
+            </div>
+          </Tooltip>
+        </Polyline>
+      ))}
+
+      {/* Chronological Stop Badges (#1 .. #N) */}
+      {routePins.map((pin, idx) => {
+        const isFirst = idx === 0;
+        const isLast = idx === routePins.length - 1;
+        const isCurrent = activeStepIdx === idx;
+        const badgeLabel = isFirst ? '🏁 #1' : isLast ? `📍 #${idx + 1}` : `#${idx + 1}`;
+        const bgClass = isCurrent
+          ? 'background:#dc2626;color:white;border:2px solid #fef08a;transform:scale(1.18);'
+          : isFirst
+            ? 'background:#16a34a;color:white;border:1.5px solid white;'
+            : isLast
+              ? 'background:#2563eb;color:white;border:1.5px solid white;'
+              : 'background:#0f172a;color:#f8fafc;border:1.5px solid rgba(255,255,255,0.85);';
+        return (
+          <Marker
+            key={`route_badge_${pin.id}_${idx}`}
+            position={[pin.lat, pin.lng]}
+            interactive={false}
+            zIndexOffset={1400}
+            icon={L.divIcon({
+              className: 'bg-transparent border-none',
+              html: `<div style="display:inline-flex;align-items:center;justify-content:center;padding:1px 6px;border-radius:999px;font-size:10px;font-weight:900;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.35);${bgClass}">${badgeLabel}</div>`,
+              iconSize: [44, 20],
+              iconAnchor: [22, 36]
+            })}
+          />
+        );
+      })}
+
+      {/* Animated Nano-Banana Expedition Airplane Marker */}
+      {planeState && (
+        <Marker
+          position={planeState.pos}
+          interactive={false}
+          zIndexOffset={2500}
+          icon={L.divIcon({
+            className: 'bg-transparent border-none',
+            html: `<div style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+                     <img
+                       src="/badges/expedition_plane.png"
+                       style="width:56px;height:56px;object-fit:contain;transform:rotate(${Math.round(planeState.bearing)}deg) scale(${planeState.altitudeScale.toFixed(2)});filter:drop-shadow(0 ${planeState.inFlight ? '14px 10px' : '4px 4px'} rgba(0,0,0,${planeState.inFlight ? '0.45' : '0.3'}));will-change:transform;"
+                     />
+                   </div>`,
+            iconSize: [64, 64],
+            iconAnchor: [32, 32]
+          })}
+        />
+      )}
+    </>
+  );
 }
 
 // Schneeflocken Effekt (Winter Wonderland)
@@ -1551,6 +1736,97 @@ const hasNightOwl = myPins.some(p => {
     ? pins.filter(p => p.user_id === playerMapFilter.userId)
     : (showOnlyMyPins && session ? pins.filter(p => p.user_id === session.user.id) : pins);
 
+  // Expedition Route & Zeitreise State (active when viewing own map or a player's map)
+  const isExpeditionMode = Boolean((showOnlyMyPins && session) || playerMapFilter);
+  const routePins = useMemo(() => {
+    if (!isExpeditionMode) return [];
+    return [...displayPins].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  }, [displayPins, isExpeditionMode]);
+
+  const [showRouteLine, setShowRouteLine] = useState(true);
+  const [routeStepIdx, setRouteStepIdx] = useState(null);
+  const [isPlayingRoute, setIsPlayingRoute] = useState(false);
+  const [planeFlight, setPlaneFlight] = useState(null);
+
+  // Reset Zeitreise when exiting expedition mode or changing target player
+  useEffect(() => {
+    setIsPlayingRoute(false);
+    setRouteStepIdx(null);
+    setPlaneFlight(null);
+  }, [showOnlyMyPins, playerMapFilter?.userId]);
+
+  const stepToRoutePin = (targetIdx, fromOverride = null) => {
+    if (!routePins || routePins.length === 0) return;
+    const clamped = Math.max(0, Math.min(routePins.length - 1, targetIdx));
+    const prevIdx =
+      fromOverride !== null
+        ? fromOverride
+        : routeStepIdx !== null
+          ? routeStepIdx
+          : Math.max(0, clamped - 1);
+
+    const destPin = routePins[clamped];
+    setRouteStepIdx(clamped);
+    setTargetPinId(destPin.id.toString());
+
+    if (prevIdx !== clamped && routePins[prevIdx]) {
+      const startPin = routePins[prevIdx];
+      setPlaneFlight({ fromIdx: prevIdx, toIdx: clamped, id: Date.now() + Math.random() });
+      if (map) {
+        const bounds = L.latLngBounds([
+          [startPin.lat, startPin.lng],
+          [destPin.lat, destPin.lng]
+        ]);
+        map.flyToBounds(bounds, { padding: [70, 70], maxZoom: 12, duration: 1.65 });
+      }
+    } else {
+      setPlaneFlight(null);
+      if (map) {
+        map.flyTo([destPin.lat, destPin.lng], 12, { animate: true, duration: 1.4 });
+      }
+    }
+  };
+
+  // Auto-Play Zeitreise Timer
+  useEffect(() => {
+    if (!isPlayingRoute || routePins.length < 2) return;
+    const timer = setTimeout(() => {
+      const current = routeStepIdx === null ? 0 : routeStepIdx;
+      if (current >= routePins.length - 1) {
+        setIsPlayingRoute(false);
+      } else {
+        stepToRoutePin(current + 1, current);
+      }
+    }, 2800);
+    return () => clearTimeout(timer);
+  }, [isPlayingRoute, routeStepIdx, routePins]);
+
+  // Compute cumulative distance up to current routeStepIdx
+  const currentStepStats = useMemo(() => {
+    if (routeStepIdx === null || !routePins[routeStepIdx]) return null;
+    let km = 0;
+    for (let i = 1; i <= routeStepIdx; i++) {
+      const a = routePins[i - 1];
+      const b = routePins[i];
+      const R = 6371;
+      const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+      const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+      const hav =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+      km += R * 2 * Math.atan2(Math.sqrt(hav), Math.sqrt(1 - hav));
+    }
+    const pin = routePins[routeStepIdx];
+    return {
+      pin,
+      stepNum: routeStepIdx + 1,
+      totalSteps: routePins.length,
+      cumKm: Math.round(km),
+      shortLoc: pin.location_name ? pin.location_name.split(',')[0] : 'Sticker-Spot',
+      dateStr: new Date(pin.created_at).toLocaleDateString('de-DE')
+    };
+  }, [routeStepIdx, routePins]);
+
   const nextMilestone = useMemo(() => {
     if (!session) return null;
     const cnt = myPins.length;
@@ -1624,6 +1900,89 @@ const hasNightOwl = myPins.some(p => {
             </div>
           )}
         </div>
+
+        {/* Expedition & Zeitreise Cockpit Bar (only visible when viewing Own Map or Player Map with >= 2 pins) */}
+        {isExpeditionMode && routePins.length >= 2 && (
+          <div className="bg-white/95 backdrop-blur-md px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-2xl sm:rounded-full shadow-xl border border-red-200/80 flex flex-wrap items-center gap-1.5 sm:gap-2 pointer-events-auto self-start max-w-full">
+            <img src="/badges/expedition_plane.png" alt="Flugzeug" className="w-5 h-5 sm:w-6 sm:h-6 object-contain shrink-0" />
+
+            {/* Prev Stop Button */}
+            <button
+              onClick={() => {
+                setIsPlayingRoute(false);
+                const cur = routeStepIdx === null ? routePins.length - 1 : routeStepIdx;
+                stepToRoutePin(cur > 0 ? cur - 1 : 0, cur);
+              }}
+              title="Vorheriger Sticker"
+              className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-black text-xs flex items-center justify-center active:scale-90 transition"
+            >
+              ◀
+            </button>
+
+            {/* Play / Pause Zeitreise Button */}
+            <button
+              onClick={() => {
+                if (isPlayingRoute) {
+                  setIsPlayingRoute(false);
+                } else {
+                  setShowRouteLine(true);
+                  const startIdx = routeStepIdx === null || routeStepIdx >= routePins.length - 1 ? 0 : routeStepIdx;
+                  stepToRoutePin(startIdx, startIdx);
+                  setIsPlayingRoute(true);
+                }
+              }}
+              className={`px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-black flex items-center gap-1 shadow-sm transition active:scale-95 ${
+                isPlayingRoute
+                  ? 'bg-amber-500 text-white animate-pulse'
+                  : 'bg-gradient-to-r from-red-600 to-orange-500 text-white hover:opacity-95'
+              }`}
+            >
+              <span>{isPlayingRoute ? '⏸ Stopp' : '▶️ Zeitreise'}</span>
+            </button>
+
+            {/* Next Stop Button */}
+            <button
+              onClick={() => {
+                setIsPlayingRoute(false);
+                setShowRouteLine(true);
+                if (routeStepIdx === null) {
+                  stepToRoutePin(1, 0);
+                } else {
+                  const next = routeStepIdx < routePins.length - 1 ? routeStepIdx + 1 : 0;
+                  stepToRoutePin(next, routeStepIdx);
+                }
+              }}
+              title="Weiterfliegen zum nächsten Sticker"
+              className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-black text-xs flex items-center justify-center active:scale-90 transition"
+            >
+              ▶
+            </button>
+
+            {/* Toggle Dashed Route Line */}
+            <button
+              onClick={() => setShowRouteLine(!showRouteLine)}
+              title="Gestrichelte Flugroute ein-/ausblenden"
+              className={`px-2 py-1 rounded-full text-[10px] font-bold border transition ${
+                showRouteLine
+                  ? 'bg-red-50 text-red-700 border-red-200'
+                  : 'bg-gray-100 text-gray-400 border-gray-200'
+              }`}
+            >
+              〰️ Route
+            </button>
+
+            {/* Live Stage Info Pill when stepping/playing */}
+            {currentStepStats && (
+              <div className="flex items-center gap-1.5 bg-slate-900 text-white px-2.5 py-1 rounded-full text-[10px] font-bold max-w-[210px] sm:max-w-[280px] truncate">
+                <span className="text-amber-300 font-black shrink-0">
+                  #{currentStepStats.stepNum}/{currentStepStats.totalSteps}
+                </span>
+                <span className="truncate">{currentStepStats.shortLoc}</span>
+                <span className="text-cyan-300 font-mono shrink-0">· {currentStepStats.cumKm}km</span>
+              </div>
+            )}
+          </div>
+        )}
         
         {/* Event Banners */}
         {isHalloweenActive && (() => {
@@ -2028,6 +2387,16 @@ const hasNightOwl = myPins.some(p => {
         
         {mapStyle === 'snow' && <WinterAssets />}
         {(mapStyle === 'neon' || (isHalloweenActive && ghostHuntActive)) && <HalloweenAssets pins={pins} onCatch={handleCatchGhost} onCompassUpdate={setSpookyCompass} />}
+
+        {/* Expedition Flight Route & Animated Airplane */}
+        {isExpeditionMode && routePins.length >= 2 && (
+          <ExpeditionRouteLayer
+            routePins={routePins}
+            showRouteLine={showRouteLine}
+            activeStepIdx={routeStepIdx}
+            planeFlight={planeFlight}
+          />
+        )}
 
         {/* Heatmap Layer */}
         {showHeatmap && <HeatmapLayer points={displayPins} />}

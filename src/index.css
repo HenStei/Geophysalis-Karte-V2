@@ -450,3 +450,20 @@ body {
     display: none !important;
   }
 }
+
+/* Expedition Route Dashed Line & Plane Animation */
+@keyframes expedition-dash-flow {
+  0% { stroke-dashoffset: 36; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.expedition-route-line {
+  stroke-dasharray: 10, 8;
+  animation: expedition-dash-flow 1.4s linear infinite;
+  filter: drop-shadow(0 2px 4px rgba(220, 38, 38, 0.35));
+}
+
+.expedition-route-preview {
+  stroke-dasharray: 6, 8;
+  opacity: 0.45;
+}
