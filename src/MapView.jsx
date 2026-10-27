@@ -602,6 +602,7 @@ export default function MapView() {
 
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
   const [profileTab, setProfileTab] = useState('profil');
+  const [badgeFilter, setBadgeFilter] = useState('all');
   const [openAccordion, setOpenAccordion] = useState('Exklusiv & Limitiert');
   const GHOST_GOAL = 20;
   const [ghostHuntActive, setGhostHuntActive] = useState(true);
@@ -1566,14 +1567,24 @@ const hasNightOwl = myPins.some(p => {
             <div className="h-3 w-px bg-gray-200 sm:hidden" />
             <div className="flex items-center gap-1.5 sm:gap-2">
               <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-green-500"></span>
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${showOnlyMyPins ? 'bg-blue-400' : 'bg-green-400'} opacity-75`}></span>
+                <span className={`relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 ${showOnlyMyPins ? 'bg-blue-600' : 'bg-green-500'}`}></span>
               </span>
               <p className="text-[10px] sm:text-xs font-bold text-gray-700 tracking-wide uppercase">
-                {displayPins.length} <span className="hidden sm:inline">Sticker weltweit</span><span className="sm:hidden">Pins</span>
+                {displayPins.length} <span className="hidden sm:inline">{showOnlyMyPins ? 'Eigene Sticker' : 'Sticker weltweit'}</span><span className="sm:hidden">{showOnlyMyPins ? 'Meine' : 'Pins'}</span>
               </p>
             </div>
           </div>
+
+          {session && showOnlyMyPins && (
+            <button
+              onClick={() => setShowOnlyMyPins(false)}
+              className="bg-blue-600 text-white px-2.5 py-1.5 rounded-full shadow-lg text-[10px] font-black flex items-center gap-1 pointer-events-auto active:scale-95 transition"
+            >
+              <span>📍 Meine Karte</span>
+              <X size={12} />
+            </button>
+          )}
 
           {/* Mobile Compact Admin Pills (only visible to admins on mobile) */}
           {profile?.is_admin && !draftPin && (
@@ -1927,7 +1938,6 @@ const hasNightOwl = myPins.some(p => {
             if (isAuthModalOpen) setIsAuthModalOpen(false);
             if (isLeaderboardOpen) setIsLeaderboardOpen(false);
             if (isAdminModalOpen) setIsAdminModalOpen(false);
-            if (window.innerWidth < 640 && !spookyCollapsed) setSpookyCollapsed(true);
           }}
         />
         
@@ -2482,130 +2492,205 @@ const hasNightOwl = myPins.some(p => {
           onClick={() => setIsAuthModalOpen(false)}
         >
           <div
-            className="bg-white rounded-3xl w-full max-w-sm shadow-2xl relative flex flex-col max-h-[74dvh] sm:max-h-[92vh]"
+            className="bg-white rounded-3xl w-full max-w-sm shadow-2xl relative flex flex-col max-h-[78dvh] sm:max-h-[90vh] overflow-hidden"
             onClick={e => e.stopPropagation()}
           >
-            <button onClick={() => setIsAuthModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition z-10">
-              <X size={24} />
+            <button onClick={() => setIsAuthModalOpen(false)} className="absolute top-3.5 right-3.5 text-gray-400 hover:text-gray-900 bg-gray-100/80 hover:bg-gray-200/80 rounded-full p-1.5 transition z-10">
+              <X size={20} />
             </button>
 
-            {/* Fixed Header */}
-            <div className="p-5 pb-3 text-center shrink-0">
-              <div className="relative inline-block mb-2">
-                <img src={session.user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${session.user.email}&background=random`} alt="Avatar" className="w-[72px] h-[72px] rounded-full border-4 border-white shadow-lg" />
-                {hasPioneer && <span className="absolute -bottom-1 -right-1 bg-yellow-400 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow">No.{myPioneerRank}</span>}
+            {/* Compact Sticky Header (leaves maximum room for scrolling tabs on mobile) */}
+            <div className="p-4 pb-2.5 border-b border-gray-100 shrink-0">
+              <div className="flex items-center gap-3 pr-8 mb-3">
+                <div className="relative shrink-0">
+                  <img
+                    src={session.user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${session.user.email}&background=random`}
+                    alt="Avatar"
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white shadow-md object-cover"
+                  />
+                  {hasPioneer && (
+                    <span className="absolute -bottom-1 -right-1 bg-yellow-400 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow">
+                      No.{myPioneerRank}
+                    </span>
+                  )}
+                </div>
+
+                <div className="min-w-0 flex-1 text-left">
+                  {isEditingNickname ? (
+                    <div className="flex flex-col gap-1.5">
+                      <input
+                        type="text"
+                        value={tempNickname}
+                        onChange={e => setTempNickname(e.target.value)}
+                        placeholder="Nickname..."
+                        className="w-full px-3 py-1 border-2 border-blue-100 rounded-full focus:outline-none focus:border-blue-500 font-bold text-xs"
+                        maxLength={20}
+                      />
+                      <div className="flex gap-1.5">
+                        <button onClick={() => setIsEditingNickname(false)} className="flex-1 bg-gray-100 text-gray-600 font-bold py-1 rounded-full text-[10px]">Abbrechen</button>
+                        <button
+                          onClick={async () => {
+                            if (tempNickname.trim().length < 3) return alert('Nickname zu kurz!');
+                            const { error } = await supabase.from('profiles').update({ nickname: tempNickname.trim() }).eq('id', session.user.id);
+                            if (!error) {
+                              setProfile({ ...profile, nickname: tempNickname.trim() });
+                              setIsEditingNickname(false);
+                            } else alert('Name schon vergeben!');
+                          }}
+                          className="flex-1 bg-blue-600 text-white font-bold py-1 rounded-full text-[10px]"
+                        >
+                          Speichern
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h2 className="text-base sm:text-lg font-black text-gray-900 truncate leading-tight">
+                        {profile?.nickname || 'Kein Nickname'}
+                      </h2>
+                      <button
+                        onClick={() => { setTempNickname(profile?.nickname || ''); setIsEditingNickname(true); }}
+                        className="text-blue-500 text-[11px] font-bold hover:underline"
+                      >
+                        Nickname ändern
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Compact Stats Pills right in the header */}
+                <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1.5 rounded-2xl border border-gray-100 shrink-0">
+                  <div className="text-center px-1">
+                    <p className="text-xs sm:text-sm font-black text-gray-900 leading-none">{myPins.length}</p>
+                    <p className="text-[8px] text-gray-400 font-bold uppercase mt-0.5">Pins</p>
+                  </div>
+                  <div className="w-px h-5 bg-gray-200" />
+                  <div className="text-center px-1">
+                    <p className="text-xs sm:text-sm font-black text-gray-900 leading-none">{totalDistanceKm > 999 ? `${(totalDistanceKm / 1000).toFixed(1)}k` : totalDistanceKm}</p>
+                    <p className="text-[8px] text-gray-400 font-bold uppercase mt-0.5">km</p>
+                  </div>
+                  <div className="w-px h-5 bg-gray-200" />
+                  <div className="text-center px-1">
+                    <p className="text-xs sm:text-sm font-black text-gray-900 leading-none">{uniqueCountries.size}</p>
+                    <p className="text-[8px] text-gray-400 font-bold uppercase mt-0.5">Länder</p>
+                  </div>
+                </div>
               </div>
-
-              {isEditingNickname ? (
-                <div className="flex flex-col gap-2 mb-2">
-                  <input type="text" value={tempNickname} onChange={e => setTempNickname(e.target.value)} placeholder="Nickname..." className="w-full px-4 py-2 border-2 border-blue-100 rounded-full focus:outline-none focus:border-blue-500 font-bold text-center text-sm" maxLength={20} />
-                  <div className="flex gap-2">
-                    <button onClick={() => setIsEditingNickname(false)} className="flex-1 bg-gray-100 text-gray-600 font-bold py-2 rounded-full text-xs">Abbrechen</button>
-                    <button onClick={async () => { if (tempNickname.trim().length < 3) return alert('Nickname zu kurz!'); const { error } = await supabase.from('profiles').update({ nickname: tempNickname.trim() }).eq('id', session.user.id); if (!error) { setProfile({ ...profile, nickname: tempNickname.trim() }); setIsEditingNickname(false); } else alert('Name schon vergeben!'); }} className="flex-1 bg-blue-600 text-white font-bold py-2 rounded-full text-xs">Speichern</button>
-                  </div>
-                </div>
-              ) : (
-                <div className="mb-2">
-                  <h2 className="text-lg font-black text-gray-900">{profile?.nickname || 'Kein Nickname'}</h2>
-                  <button onClick={() => { setTempNickname(profile?.nickname || ''); setIsEditingNickname(true); }} className="text-blue-500 text-xs font-bold hover:underline">Nickname ändern</button>
-                </div>
-              )}
-
-              {/* Stats Bar */}
-              <div className="flex items-stretch justify-center mb-3 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100">
-                <div className="flex-1 text-center py-3">
-                  <p className="text-xl font-black text-gray-900">{myPins.length}</p>
-                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Sticker</p>
-                </div>
-                <div className="w-px bg-gray-200"/>
-                <div className="flex-1 text-center py-3">
-                  <p className="text-xl font-black text-gray-900">{totalDistanceKm > 999 ? `${(totalDistanceKm/1000).toFixed(1)}k` : totalDistanceKm}</p>
-                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">km Reise</p>
-                </div>
-                <div className="w-px bg-gray-200"/>
-                <div className="flex-1 text-center py-3">
-                  <p className="text-xl font-black text-gray-900">{uniqueCountries.size}</p>
-                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Länder</p>
-                </div>
-              </div>
-
-
-              {session && uniqueCountries.size > 0 && (
-                <div className="mb-3">
-                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-2">🌍 Erkundet: {uniqueCountries.size} {uniqueCountries.size === 1 ? 'Land' : 'Länder'}</p>
-                  <div className="bg-gray-50 rounded-2xl overflow-hidden border border-gray-100">
-                    <ErrorBoundary>
-                      <VisitedCountriesMap visitedCountries={uniqueCountries} />
-                    </ErrorBoundary>
-                  </div>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {[...uniqueCountries].filter(Boolean).map(country => (
-                      <span key={country} className="text-[9px] bg-orange-100 text-orange-700 font-bold px-2 py-0.5 rounded-full">{country}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Tabs */}
               <div className="flex bg-gray-100 rounded-2xl p-1">
-                {[['profil','👤 Profil'],['abzeichen','🏆 Abzeichen'],['einstellungen','⚙️ Einst.']].map(([tab, label]) => (
-                  <button key={tab} onClick={() => setProfileTab(tab)} className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${profileTab === tab ? 'bg-white shadow text-gray-900' : 'text-gray-400 hover:text-gray-700'}`}>{label}</button>
+                {[['profil', '👤 Profil'], ['abzeichen', '🏆 Abzeichen'], ['einstellungen', '⚙️ Einst.']].map(([tab, label]) => (
+                  <button
+                    key={tab}
+                    onClick={() => setProfileTab(tab)}
+                    className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${profileTab === tab ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    {label}
+                  </button>
                 ))}
               </div>
             </div>
 
-            {/* Scrollable Content */}
-            <div className="overflow-y-auto custom-scrollbar flex-1 p-5 pt-3 flex flex-col gap-4">
+            {/* Scrollable Content (now gets ~75% of modal height!) */}
+            <div className="overflow-y-auto overscroll-contain touch-pan-y custom-scrollbar flex-1 p-4 flex flex-col gap-3.5">
 
-              {/* TAB: PROFIL */}
+              {/* TAB: PROFIL (Weltkarte + Eigene Karte Toggle + Avatar & Rahmen) */}
               {profileTab === 'profil' && (
-                <div className="bg-gray-50 rounded-2xl p-4 text-left">
-                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Avatar & Rahmen</h3>
-                  {FEATURE_AVATARS ? (
-                    <div className="flex gap-4 items-start">
-                      <div className={`avatar-frame frame-${editFrame} relative w-16 h-16 text-3xl shadow bg-white rounded-full shrink-0`}>
-                        <div className="w-full h-full overflow-hidden rounded-full flex items-center justify-center">
-                          {editAvatar === 'default' ? '🦊' : editAvatar === 'pumpkin' ? '🎃' : editAvatar === 'ghost' ? '👻' : editAvatar === 'bat' ? '🦇' : editAvatar === 'reindeer' ? '🦌' : editAvatar === 'snowman' ? '⛄' : editAvatar === 'fire' ? <img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /> : editAvatar === 'cyberpunk' ? <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /> : editAvatar === 'retro' ? <img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" /> : editAvatar === 'pioneer' ? <img src="/badges/avatar_pioneer.jpg" className="w-full h-full object-cover" /> : editAvatar === 'admin' ? <img src="/badges/avatar_admin.jpg" className="w-full h-full object-cover" /> : editAvatar === 'polar' ? <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /> : '🦊'}
-                        </div>
+                <>
+                  {/* Eigene Weltkarte & Pin-Filter Card */}
+                  <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-100 text-left">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div>
+                        <p className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
+                          🌍 Deine Weltkarte ({uniqueCountries.size} {uniqueCountries.size === 1 ? 'Land' : 'Länder'})
+                        </p>
+                        <p className="text-[10px] text-gray-400">
+                          {myPins.length} eigene Sticker geklebt
+                        </p>
                       </div>
-                      <div className="flex-1 space-y-2">
-                        <div>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Avatar</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            <button onClick={() => setEditAvatar('default')} className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'default' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>🦊</button>
-                            {(hasHalloween || hasGhostHunter) && <button onClick={() => setEditAvatar('ghost')} className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'ghost' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>👻</button>}
-                            {(hasHalloween || hasGhostHunter) && <button onClick={() => setEditAvatar('bat')} className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'bat' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>🦇</button>}
-                            {hasGhostHunter && <button onClick={() => setEditAvatar('pumpkin')} title="Geisterjäger Belohnung" className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'pumpkin' ? 'bg-orange-100 ring-2 ring-orange-500' : 'bg-white border border-orange-200'}`}>🎃</button>}
-                            {hasWinter && <button onClick={() => setEditAvatar('reindeer')} className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'reindeer' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>🦌</button>}
-                            {hasWinter && <button onClick={() => setEditAvatar('snowman')} className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition ${editAvatar === 'snowman' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>⛄</button>}
-                            {hasPolarExplorer && <button onClick={() => setEditAvatar('polar')} className={`w-9 h-9 rounded-lg overflow-hidden transition ${editAvatar === 'polar' ? 'ring-2 ring-purple-500' : 'border border-gray-200'}`}><img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /></button>}
-                            {hasUrbanLegend && <button onClick={() => setEditAvatar('cyberpunk')} className={`w-9 h-9 rounded-lg overflow-hidden transition ${editAvatar === 'cyberpunk' ? 'ring-2 ring-purple-500' : 'border border-gray-200'}`}><img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /></button>}
-                            {hasRetroGamer && <button onClick={() => setEditAvatar('retro')} className={`w-9 h-9 rounded-lg overflow-hidden transition ${editAvatar === 'retro' ? 'ring-2 ring-purple-500' : 'border border-gray-200'}`}><img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" /></button>}
-                            {hasMarathon && <button onClick={() => setEditAvatar('fire')} className={`w-9 h-9 rounded-lg overflow-hidden transition ${editAvatar === 'fire' ? 'ring-2 ring-purple-500' : 'border border-gray-200'}`}><img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /></button>}
-                            {hasPioneer && <button onClick={() => setEditAvatar('pioneer')} className={`w-9 h-9 rounded-lg overflow-hidden transition ${editAvatar === 'pioneer' ? 'ring-2 ring-purple-500' : 'border border-gray-200'}`}><img src="/badges/avatar_pioneer.jpg" className="w-full h-full object-cover" /></button>}
-                            {isAdmin && <button onClick={() => setEditAvatar('admin')} className={`w-9 h-9 rounded-lg overflow-hidden ring-2 ring-yellow-400 transition ${editAvatar === 'admin' ? 'ring-purple-500' : ''}`}><img src="/badges/avatar_admin.jpg" className="w-full h-full object-cover" /></button>}
-                          </div>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Rahmen</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            <button onClick={() => setEditFrame('none')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'none' ? 'bg-gray-800 text-white' : 'bg-white border border-gray-200 text-gray-600'}`}>Keiner</button>
-                            {(devMode || hasUrbanLegend) && <button onClick={() => setEditFrame('neon')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'neon' ? 'bg-purple-600 text-white' : 'bg-white border border-purple-200 text-purple-600'}`}>Neon</button>}
-                            {(devMode || hasPolarExplorer || hasWinter) && <button onClick={() => setEditFrame('frost')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'frost' ? 'bg-cyan-500 text-white' : 'bg-white border border-cyan-200 text-cyan-600'}`}>Frost</button>}
-                            {(devMode || hasMarathon) && <button onClick={() => setEditFrame('fire')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'fire' ? 'bg-orange-500 text-white' : 'bg-white border border-orange-200 text-orange-600'}`}>Feuer</button>}
-                            {(devMode || hasHalloween || hasGhostHunter) && <button onClick={() => setEditFrame('spooky')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'spooky' ? 'bg-orange-600 text-white' : 'bg-white border border-orange-300 text-orange-600'}`}>🎃 Spooky</button>}
-                          </div>
-                        </div>
-                        <button onClick={() => handleUpdateAvatarAndFrame(editAvatar, editFrame)} className="w-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold py-2 rounded-xl transition">Speichern</button>
-                      </div>
+                      <button
+                        onClick={() => {
+                          const next = !showOnlyMyPins;
+                          setShowOnlyMyPins(next);
+                          if (next) setIsAuthModalOpen(false);
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-[10px] font-black transition flex items-center gap-1 shrink-0 shadow-sm ${
+                          showOnlyMyPins
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-blue-600 border border-blue-200 hover:bg-blue-50'
+                        }`}
+                      >
+                        <MapPin size={12} />
+                        <span>{showOnlyMyPins ? 'Alle Pins zeigen' : 'Meine Pins auf Karte'}</span>
+                      </button>
                     </div>
-                  ) : <p className="text-sm text-gray-400 text-center">Avatar-Auswahl kommt bald!</p>}
-                </div>
+
+                    <div className="bg-white rounded-xl overflow-hidden border border-gray-100 pointer-events-none">
+                      <ErrorBoundary>
+                        <VisitedCountriesMap visitedCountries={uniqueCountries} />
+                      </ErrorBoundary>
+                    </div>
+
+                    {uniqueCountries.size > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {[...uniqueCountries].filter(Boolean).map(country => (
+                          <span key={country} className="text-[9px] bg-orange-100 text-orange-700 font-bold px-2 py-0.5 rounded-full">
+                            {country}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Avatar & Rahmen Card */}
+                  <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-100 text-left">
+                    <h3 className="text-[10px] font-black text-gray-700 uppercase tracking-wider mb-2.5">🎨 Avatar &amp; Rahmen</h3>
+                    {FEATURE_AVATARS ? (
+                      <div className="flex gap-3.5 items-start">
+                        <div className={`avatar-frame frame-${editFrame} relative w-14 h-14 text-2xl shadow bg-white rounded-full shrink-0`}>
+                          <div className="w-full h-full overflow-hidden rounded-full flex items-center justify-center">
+                            {editAvatar === 'default' ? '🦊' : editAvatar === 'pumpkin' ? '🎃' : editAvatar === 'ghost' ? '👻' : editAvatar === 'bat' ? '🦇' : editAvatar === 'reindeer' ? '🦌' : editAvatar === 'snowman' ? '⛄' : editAvatar === 'fire' ? <img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /> : editAvatar === 'cyberpunk' ? <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /> : editAvatar === 'retro' ? <img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" /> : editAvatar === 'pioneer' ? <img src="/badges/avatar_pioneer.jpg" className="w-full h-full object-cover" /> : editAvatar === 'admin' ? <img src="/badges/avatar_admin.jpg" className="w-full h-full object-cover" /> : editAvatar === 'polar' ? <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /> : '🦊'}
+                          </div>
+                        </div>
+                        <div className="flex-1 space-y-2">
+                          <div>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Avatar</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              <button onClick={() => setEditAvatar('default')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-base transition ${editAvatar === 'default' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>🦊</button>
+                              {(hasHalloween || hasGhostHunter) && <button onClick={() => setEditAvatar('ghost')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-base transition ${editAvatar === 'ghost' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>👻</button>}
+                              {(hasHalloween || hasGhostHunter) && <button onClick={() => setEditAvatar('bat')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-base transition ${editAvatar === 'bat' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>🦇</button>}
+                              {hasGhostHunter && <button onClick={() => setEditAvatar('pumpkin')} title="Geisterjäger Belohnung" className={`w-8 h-8 rounded-lg flex items-center justify-center text-base transition ${editAvatar === 'pumpkin' ? 'bg-orange-100 ring-2 ring-orange-500' : 'bg-white border border-orange-200'}`}>🎃</button>}
+                              {hasWinter && <button onClick={() => setEditAvatar('reindeer')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-base transition ${editAvatar === 'reindeer' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>🦌</button>}
+                              {hasWinter && <button onClick={() => setEditAvatar('snowman')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-base transition ${editAvatar === 'snowman' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>⛄</button>}
+                              {hasPolarExplorer && <button onClick={() => setEditAvatar('polar')} className={`w-8 h-8 rounded-lg overflow-hidden transition ${editAvatar === 'polar' ? 'ring-2 ring-purple-500' : 'border border-gray-200'}`}><img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /></button>}
+                              {hasUrbanLegend && <button onClick={() => setEditAvatar('cyberpunk')} className={`w-8 h-8 rounded-lg overflow-hidden transition ${editAvatar === 'cyberpunk' ? 'ring-2 ring-purple-500' : 'border border-gray-200'}`}><img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /></button>}
+                              {hasRetroGamer && <button onClick={() => setEditAvatar('retro')} className={`w-8 h-8 rounded-lg overflow-hidden transition ${editAvatar === 'retro' ? 'ring-2 ring-purple-500' : 'border border-gray-200'}`}><img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" /></button>}
+                              {hasMarathon && <button onClick={() => setEditAvatar('fire')} className={`w-8 h-8 rounded-lg overflow-hidden transition ${editAvatar === 'fire' ? 'ring-2 ring-purple-500' : 'border border-gray-200'}`}><img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /></button>}
+                              {hasPioneer && <button onClick={() => setEditAvatar('pioneer')} className={`w-8 h-8 rounded-lg overflow-hidden transition ${editAvatar === 'pioneer' ? 'ring-2 ring-purple-500' : 'border border-gray-200'}`}><img src="/badges/avatar_pioneer.jpg" className="w-full h-full object-cover" /></button>}
+                              {isAdmin && <button onClick={() => setEditAvatar('admin')} className={`w-8 h-8 rounded-lg overflow-hidden ring-2 ring-yellow-400 transition ${editAvatar === 'admin' ? 'ring-purple-500' : ''}`}><img src="/badges/avatar_admin.jpg" className="w-full h-full object-cover" /></button>}
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Rahmen</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              <button onClick={() => setEditFrame('none')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'none' ? 'bg-gray-800 text-white' : 'bg-white border border-gray-200 text-gray-600'}`}>Keiner</button>
+                              {(devMode || hasUrbanLegend) && <button onClick={() => setEditFrame('neon')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'neon' ? 'bg-purple-600 text-white' : 'bg-white border border-purple-200 text-purple-600'}`}>Neon</button>}
+                              {(devMode || hasPolarExplorer || hasWinter) && <button onClick={() => setEditFrame('frost')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'frost' ? 'bg-cyan-500 text-white' : 'bg-white border border-cyan-200 text-cyan-600'}`}>Frost</button>}
+                              {(devMode || hasMarathon) && <button onClick={() => setEditFrame('fire')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'fire' ? 'bg-orange-500 text-white' : 'bg-white border border-orange-200 text-orange-600'}`}>Feuer</button>}
+                              {(devMode || hasHalloween || hasGhostHunter) && <button onClick={() => setEditFrame('spooky')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'spooky' ? 'bg-orange-600 text-white' : 'bg-white border border-orange-300 text-orange-600'}`}>🎃 Spooky</button>}
+                            </div>
+                          </div>
+                          <button onClick={() => handleUpdateAvatarAndFrame(editAvatar, editFrame)} className="w-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold py-2 rounded-xl transition">Speichern</button>
+                        </div>
+                      </div>
+                    ) : <p className="text-sm text-gray-400 text-center">Avatar-Auswahl kommt bald!</p>}
+                  </div>
+                </>
               )}
 
               {/* TAB: ABZEICHEN */}
               {profileTab === 'abzeichen' && (
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3">
                   {devMode && <div className="text-center text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full uppercase">DevMode: Alles frei</div>}
 
                   <div className="bg-gray-50 rounded-2xl p-3 border border-gray-100">
@@ -2613,10 +2698,31 @@ const hasNightOwl = myPins.some(p => {
                       <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Sammler Fortschritt</p>
                       <span className="text-xs font-bold text-gray-700">{myPins.length}/50</span>
                     </div>
-                    <div className="bg-gray-200 rounded-full h-2.5 mb-1">
-                      <div className="bg-gradient-to-r from-yellow-500 to-orange-400 h-2.5 rounded-full transition-all duration-500" style={{width: `${Math.min(100, (myPins.length / 50) * 100)}%`}} />
+                    <div className="bg-gray-200 rounded-full h-2 mb-1">
+                      <div className="bg-gradient-to-r from-yellow-500 to-orange-400 h-2 rounded-full transition-all duration-500" style={{width: `${Math.min(100, (myPins.length / 50) * 100)}%`}} />
                     </div>
                     <p className="text-[10px] text-gray-400">{myPins.length < 5 ? `Noch ${5 - myPins.length} bis Bronze` : myPins.length < 10 ? `Noch ${10 - myPins.length} bis Silber` : myPins.length < 50 ? `Noch ${50 - myPins.length} bis Gold` : 'Gold Sammler erreicht!'}</p>
+                  </div>
+
+                  {/* Schnellfilter-Pills für Mobile Übersicht */}
+                  <div className="flex items-center gap-1.5">
+                    {[
+                      ['all', 'Alle Kategorien'],
+                      ['unlocked', 'Freigeschaltet ✨'],
+                      ['locked', 'Offen 🔒']
+                    ].map(([val, lbl]) => (
+                      <button
+                        key={val}
+                        onClick={() => setBadgeFilter(val)}
+                        className={`flex-1 py-1.5 px-2 rounded-xl text-[10px] font-bold border transition ${
+                          badgeFilter === val
+                            ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                            : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                        }`}
+                      >
+                        {lbl}
+                      </button>
+                    ))}
                   </div>
 
                   {[
@@ -2693,30 +2799,36 @@ const hasNightOwl = myPins.some(p => {
                       { has: devMode || hasLuft, img: '/badges/badge_luft.jpg', title: 'Luft Luft Luft 🎈', titleL: '??? (Himmel)', desc: 'Sticker auf über 7000m Höhe.', descL: 'Greife nach den Sternen (>7000m)...', date: null },
                     ]}
                   ].map(section => {
-                    const isOpen = openAccordion === section.label;
+                    const filteredItems = badgeFilter === 'unlocked'
+                      ? section.items.filter(b => b.has)
+                      : badgeFilter === 'locked'
+                        ? section.items.filter(b => !b.has)
+                        : section.items;
+                    if (badgeFilter !== 'all' && filteredItems.length === 0) return null;
+                    const isOpen = badgeFilter !== 'all' || openAccordion === section.label;
                     const unlockedCount = section.items.filter(b => b.has).length;
                     return (
                     <div key={section.label} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
                       <button 
-                        onClick={() => setOpenAccordion(isOpen ? null : section.label)}
-                        className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition"
+                        onClick={() => setOpenAccordion(openAccordion === section.label ? null : section.label)}
+                        className="w-full flex items-center justify-between p-3.5 bg-gray-50 hover:bg-gray-100 transition"
                       >
                         <div className="flex items-center gap-2">
-                          <p className="text-xs font-black text-gray-700 uppercase tracking-wider">{section.label}</p>
-                          <span className="text-[10px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-bold">{unlockedCount}/{section.items.length}</span>
+                          <p className="text-xs font-black text-gray-700 uppercase tracking-wider text-left">{section.label}</p>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${unlockedCount > 0 ? 'bg-amber-100 text-amber-700' : 'bg-gray-200 text-gray-600'}`}>{unlockedCount}/{section.items.length}</span>
                         </div>
-                        <span className="text-gray-400">{isOpen ? '▲' : '▼'}</span>
+                        <span className="text-gray-400 text-xs">{isOpen ? '▲' : '▼'}</span>
                       </button>
                       {isOpen && (
-                        <div className="p-3 flex flex-col gap-2">
-                          {section.items.map((b, i) => (
-                            <div key={i} className={`flex items-center gap-3 p-3 rounded-xl transition ${b.has ? 'bg-white border border-gray-100 shadow-sm' : 'opacity-40 grayscale bg-gray-50'}`}>
-                              <div className={`w-12 h-12 rounded-xl overflow-hidden shrink-0 flex items-center justify-center text-2xl ${b.has ? section.color + ' ring-2 shadow' : 'border-2 border-gray-300'} ${b.bg || ''}`}>
+                        <div className="p-2.5 flex flex-col gap-2">
+                          {filteredItems.map((b, i) => (
+                            <div key={i} className={`flex items-center gap-3 p-2.5 rounded-xl transition ${b.has ? 'bg-white border border-gray-100 shadow-sm' : 'opacity-45 grayscale bg-gray-50'}`}>
+                              <div className={`w-11 h-11 rounded-xl overflow-hidden shrink-0 flex items-center justify-center text-xl ${b.has ? section.color + ' ring-2 shadow' : 'border-2 border-gray-300'} ${b.bg || ''}`}>
                                 {b.img ? <img src={b.img} className="w-full h-full object-cover" /> : b.icon}
                               </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-black text-gray-800 leading-tight truncate">{b.has ? b.title : b.titleL}</p>
-                                <p className="text-xs text-gray-500 line-clamp-2">{b.has ? b.desc : b.descL}</p>
+                              <div className="min-w-0 flex-1 text-left">
+                                <p className="text-xs sm:text-sm font-black text-gray-800 leading-tight truncate">{b.has ? b.title : b.titleL}</p>
+                                <p className="text-[11px] text-gray-500 line-clamp-2">{b.has ? b.desc : b.descL}</p>
                                 {b.has && b.date && <span className="text-[9px] text-gray-400">Freigeschaltet am {b.date}</span>}
                               </div>
                             </div>
