@@ -2515,7 +2515,7 @@ const hasNightOwl = myPins.some(p => {
 
             {/* Compact Sticky Header (leaves maximum room for scrolling tabs on mobile) */}
             <div className="p-4 pb-2.5 border-b border-gray-100 shrink-0">
-              <div className="flex items-center gap-3 pr-8 mb-3">
+              <div className="flex items-center gap-3 pr-9 mb-2.5">
                 <div className="relative shrink-0">
                   <img
                     src={session.user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${session.user.email}&background=random`}
@@ -2571,23 +2571,21 @@ const hasNightOwl = myPins.some(p => {
                     </>
                   )}
                 </div>
+              </div>
 
-                {/* Compact Stats Pills right in the header */}
-                <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1.5 rounded-2xl border border-gray-100 shrink-0">
-                  <div className="text-center px-1">
-                    <p className="text-xs sm:text-sm font-black text-gray-900 leading-none">{myPins.length}</p>
-                    <p className="text-[8px] text-gray-400 font-bold uppercase mt-0.5">Pins</p>
-                  </div>
-                  <div className="w-px h-5 bg-gray-200" />
-                  <div className="text-center px-1">
-                    <p className="text-xs sm:text-sm font-black text-gray-900 leading-none">{totalDistanceKm > 999 ? `${(totalDistanceKm / 1000).toFixed(1)}k` : totalDistanceKm}</p>
-                    <p className="text-[8px] text-gray-400 font-bold uppercase mt-0.5">km</p>
-                  </div>
-                  <div className="w-px h-5 bg-gray-200" />
-                  <div className="text-center px-1">
-                    <p className="text-xs sm:text-sm font-black text-gray-900 leading-none">{uniqueCountries.size}</p>
-                    <p className="text-[8px] text-gray-400 font-bold uppercase mt-0.5">Länder</p>
-                  </div>
+              {/* Clean Full-Width Compact Stats Strip */}
+              <div className="grid grid-cols-3 bg-gray-50 py-1.5 px-2 rounded-2xl border border-gray-100 mb-2.5">
+                <div className="text-center">
+                  <p className="text-xs sm:text-sm font-black text-gray-900 leading-none">{myPins.length}</p>
+                  <p className="text-[8px] text-gray-400 font-bold uppercase mt-0.5">Sticker</p>
+                </div>
+                <div className="text-center border-x border-gray-200/80">
+                  <p className="text-xs sm:text-sm font-black text-gray-900 leading-none">{totalDistanceKm > 999 ? `${(totalDistanceKm / 1000).toFixed(1)}k` : totalDistanceKm}</p>
+                  <p className="text-[8px] text-gray-400 font-bold uppercase mt-0.5">km Reise</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs sm:text-sm font-black text-gray-900 leading-none">{uniqueCountries.size}</p>
+                  <p className="text-[8px] text-gray-400 font-bold uppercase mt-0.5">Länder</p>
                 </div>
               </div>
 
@@ -2605,8 +2603,8 @@ const hasNightOwl = myPins.some(p => {
               </div>
             </div>
 
-            {/* Scrollable Content (now gets ~75% of modal height!) */}
-            <div className="overflow-y-auto overscroll-contain touch-pan-y custom-scrollbar flex-1 p-4 flex flex-col gap-3.5">
+            {/* Scrollable Content (block flow with space-y-3.5 prevents flexbox from clipping banners/cards!) */}
+            <div className="overflow-y-auto overscroll-contain touch-pan-y custom-scrollbar flex-1 min-h-0 p-4 space-y-3.5">
 
               {/* TAB: PROFIL (Weltkarte + Eigene Karte Toggle + Avatar & Rahmen) */}
               {profileTab === 'profil' && (
@@ -3131,7 +3129,7 @@ const hasNightOwl = myPins.some(p => {
                     <button onClick={() => setLeaderboardTab('alltime')} className={`flex-1 text-xs sm:text-sm font-bold py-2 rounded-full transition ${leaderboardTab === 'alltime' ? 'bg-white shadow-sm text-yellow-600' : 'text-gray-500'}`}>All-Time</button>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto overscroll-contain touch-pan-y custom-scrollbar pr-1 flex flex-col gap-2.5">
+                  <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y custom-scrollbar py-1 pr-1 space-y-2.5">
                     {sortedUsers.length === 0 ? (
                       <p className="text-center text-gray-400 font-medium py-10">Noch keine Einträge in diesem Zeitraum.</p>
                     ) : (
@@ -3162,8 +3160,10 @@ const hasNightOwl = myPins.some(p => {
                               </span>
 
                               {FEATURE_AVATARS && (
-                                <div className={`avatar-frame frame-${frame} w-10 h-10 text-xl shadow-sm bg-white shrink-0 overflow-hidden`}>
-                                  {renderUserAvatar(avatar)}
+                                <div className={`avatar-frame frame-${frame} w-10 h-10 text-xl shadow-sm bg-white shrink-0 rounded-full`}>
+                                  <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
+                                    {renderUserAvatar(avatar)}
+                                  </div>
                                 </div>
                               )}
 
@@ -3219,13 +3219,15 @@ const hasNightOwl = myPins.some(p => {
                     </button>
                   </div>
 
-                  {/* Scrollable Visitenkarte Body */}
-                  <div className="flex-1 overflow-y-auto overscroll-contain touch-pan-y custom-scrollbar py-3.5 pr-1 flex flex-col gap-3.5">
+                  {/* Scrollable Visitenkarte Body (block flow with space-y-3.5 prevents flexbox from clipping Hero Banner!) */}
+                  <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y custom-scrollbar py-3.5 pr-1 space-y-3.5">
                     {/* Hero Banner Card */}
-                    <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-4 sm:p-5 rounded-3xl shadow-lg relative overflow-hidden">
+                    <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-4 sm:p-5 rounded-3xl shadow-lg relative">
                       <div className="flex items-center gap-3.5 sm:gap-4">
-                        <div className={`avatar-frame frame-${cardData.frame} w-14 h-14 sm:w-16 sm:h-16 text-2xl sm:text-3xl shadow-xl bg-white text-gray-900 shrink-0 overflow-hidden`}>
-                          {renderUserAvatar(cardData.avatar)}
+                        <div className={`avatar-frame frame-${cardData.frame} w-14 h-14 sm:w-16 sm:h-16 text-2xl sm:text-3xl shadow-xl bg-white text-gray-900 shrink-0 rounded-full`}>
+                          <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
+                            {renderUserAvatar(cardData.avatar)}
+                          </div>
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
