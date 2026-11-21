@@ -38,12 +38,26 @@ export default function AdminView() {
     { id: 'coop', label: 'Coop (Zusammen)' },
     { id: 'og', label: 'OG (Alte Geophysalis)' },
       { id: 'wuestenfuchs', label: 'Wüstenfuchs (Wüste)' },
-      { id: 'dreilaendereck', label: 'Drei-Länder-Eck' }
+      { id: 'dreilaendereck', label: 'Drei-Länder-Eck' },
+      { id: 'ghosthunter', label: '🎃 Geisterjäger (Halloween Event)' }
     ];
 
   const fetchGlobalAchievements = async () => {
     const { data } = await supabase.from('global_achievements').select('*');
     if (data) setGlobalAchievements(data);
+  };
+
+  const toggleGhostHunterBadge = async (userId, currentlyHas) => {
+    const achId = `ghosthunter_2026_${userId}`;
+    if (currentlyHas) {
+      if (!window.confirm('Geisterjäger-Abzeichen für diesen Nutzer wirklich wieder entziehen?')) return;
+      const { error } = await supabase.from('global_achievements').delete().eq('achievement_id', achId);
+      if (error) alert('Fehler beim Entziehen: ' + error.message);
+    } else {
+      const { error } = await supabase.from('global_achievements').insert({ achievement_id: achId, user_id: userId });
+      if (error) alert('Fehler beim Vergeben: ' + error.message);
+    }
+    fetchGlobalAchievements();
   };
 
   useEffect(() => {
@@ -304,6 +318,12 @@ export default function AdminView() {
                 {usersList.map(user => {
                   const userPins = pins.filter(p => p.user_id === user.id);
                   const lastActive = userPins.length > 0 ? new Date(Math.max(...userPins.map(p => new Date(p.created_at)))).toLocaleDateString() : 'Nie';
+                  const hasUserGhostHunter =
+                    globalAchievements.some(
+                      g =>
+                        (g.achievement_id === `ghosthunter_2026_${user.id}` || g.achievement_id === 'ghosthunter_2026') &&
+                        g.user_id === user.id
+                    ) || userPins.some(p => p.special_badge === 'ghosthunter');
                   
                   return (
                     <div key={user.id} className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 flex flex-col hover:shadow-lg transition">
@@ -338,6 +358,17 @@ export default function AdminView() {
                             <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> Geschlossen
                           </span>
                         )}
+                        <button
+                          onClick={() => toggleGhostHunterBadge(user.id, hasUserGhostHunter)}
+                          className={`mt-2.5 w-full py-2 px-3 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1.5 ${
+                            hasUserGhostHunter
+                              ? 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100'
+                              : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-orange-50 hover:text-orange-700 hover:border-orange-200'
+                          }`}
+                        >
+                          <span>🎃</span>
+                          <span>{hasUserGhostHunter ? 'Geisterjäger aktiv ✅ (Entziehen)' : 'Geisterjäger-Badge vergeben'}</span>
+                        </button>
                       </div>
                     </div>
                   );

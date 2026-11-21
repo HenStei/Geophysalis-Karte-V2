@@ -829,7 +829,18 @@ export default function MapView() {
   const [spookyPopups, setSpookyPopups] = useState([]);
   const [spookyToast, setSpookyToast] = useState(null);
   const [spookyCompass, setSpookyCompass] = useState({ bearing: 0, distanceMeters: 0, zoom: 5, isVisible: false, hintLocation: '' });
-  const hasGhostHunter = devMode || ghostsCaught >= GHOST_GOAL;
+  const myGhostHunterEntry = session?.user?.id
+    ? globalAchievements.find(
+        g =>
+          g.achievement_id === `ghosthunter_2026_${session.user.id}` ||
+          (g.achievement_id === 'ghosthunter_2026' && g.user_id === session.user.id)
+      )
+    : null;
+  const hasGhostHunterGlobal = Boolean(myGhostHunterEntry);
+  const hasGhostHunterManual = session?.user?.id
+    ? pins.some(p => p.user_id === session.user.id && p.special_badge === 'ghosthunter')
+    : false;
+  const hasGhostHunter = devMode || ghostsCaught >= GHOST_GOAL || hasGhostHunterGlobal || hasGhostHunterManual;
 
   const handleCatchGhost = (asset, domEvent) => {
     const x = domEvent?.clientX || window.innerWidth / 2;
@@ -862,10 +873,38 @@ export default function MapView() {
           img: '/badges/badge_ghosthunter.jpg',
           icon: '🎃'
         }]);
+        setGhostHuntActive(false);
+        if (session?.user?.id) {
+          supabase
+            .from('global_achievements')
+            .insert({ achievement_id: `ghosthunter_2026_${session.user.id}`, user_id: session.user.id })
+            .then(({ error }) => {
+              if (!error) fetchGlobals();
+            });
+        }
       }
       return next;
     });
   };
+
+  useEffect(() => {
+    if (!session?.user?.id || !globalsLoaded) return;
+    if (hasGhostHunterGlobal || hasGhostHunterManual) {
+      if (ghostsCaught < GHOST_GOAL) {
+        setGhostsCaught(GHOST_GOAL);
+        localStorage.setItem('geophysalis_ghosts_caught_2026', GHOST_GOAL.toString());
+      }
+      setGhostHuntActive(false);
+      setSpookyCollapsed(true);
+    } else if (ghostsCaught >= GHOST_GOAL) {
+      supabase
+        .from('global_achievements')
+        .insert({ achievement_id: `ghosthunter_2026_${session.user.id}`, user_id: session.user.id })
+        .then(({ error }) => {
+          if (!error) fetchGlobals();
+        });
+    }
+  }, [session?.user?.id, globalsLoaded, hasGhostHunterGlobal, hasGhostHunterManual, ghostsCaught]);
   const [showOnboarding, setShowOnboarding] = useState(false);
   
   useEffect(() => {
@@ -3165,7 +3204,7 @@ const hasNightOwl = myPins.some(p => {
                       { has: devMode || hasRetroGamer, img: '/badges/retro.jpg', title: 'Pixel Pioneer 👾', titleL: '??? (Retro Gamer)', desc: '10 Sticker geklebt. 8-Bit Karte frei!', descL: 'Klebe 10 Sticker, um in die Vergangenheit zu reisen...', date: null },
                     ]},
                     { label: 'Spezial & Zeitlich', color: 'ring-yellow-400', items: [
-                      { has: hasGhostHunter, img: '/badges/badge_ghosthunter.jpg', title: `Geisterjäger (${ghostsCaught} gefangen) 👻`, titleL: `??? (Halloween Geisterjagd ${ghostsCaught}/${GHOST_GOAL})`, desc: `${GHOST_GOAL} versteckte Spukgestalten mit dem Spooky-Kompass aufgespürt! Kürbis-Avatar & Spooky-Rahmen frei.`, descL: `Spüre während des Halloween-Events mit dem Spooky-Kompass ${GHOST_GOAL} versteckte Geister nahe Stickern auf (ab Zoom 13+)!`, date: null },
+                      { has: hasGhostHunter, img: '/badges/badge_ghosthunter.jpg', title: `Geisterjäger (${hasGhostHunter ? Math.max(ghostsCaught, GHOST_GOAL) : ghostsCaught} gefangen) 👻`, titleL: `??? (Halloween Geisterjagd ${ghostsCaught}/${GHOST_GOAL})`, desc: `${GHOST_GOAL} versteckte Spukgestalten mit dem Spooky-Kompass aufgespürt! Kürbis-Avatar & Spooky-Rahmen frei.`, descL: `Spüre während des Halloween-Events mit dem Spooky-Kompass ${GHOST_GOAL} versteckte Geister nahe Stickern auf (ab Zoom 13+)!`, date: myGhostHunterEntry?.claimed_at ? new Date(myGhostHunterEntry.claimed_at).toLocaleDateString('de-DE') : null },
                       { has: devMode || hasPi, img: '/badges/badge_pi.jpg', title: 'PI (3,14) 🥧', titleL: '??? (Mathematiker)', desc: 'Auf dem 3,14 Breiten- oder Längengrad.', descL: 'Nur für wahre Geeks und Nerds...', date: getUnlockDate('pi') },
                       { has: devMode || hasMay4, img: '/badges/badge_may4.jpg', title: 'May the force be with you 🛸', titleL: '??? (Sci-Fi Fan)', desc: 'Am 4. Mai geklebt.', descL: 'Spüre die Macht an einem ganz bestimmten Tag...', date: getUnlockDate('may4') },
                       { has: devMode || hasLove, img: '/badges/badge_love.jpg', title: 'True Love 💌', titleL: '??? (Romantiker)', desc: 'Am Valentinstag (14. Feb) geklebt.', descL: 'Die Liebe liegt in der Luft...', date: getUnlockDate('love') },
@@ -3443,10 +3482,17 @@ const hasNightOwl = myPins.some(p => {
 
           const uManual = new Set(uPins.map(p => p.special_badge).filter(Boolean));
           const uMaxAlt = uPins.reduce((mx, p) => Math.max(mx, getPinAltitude(p)), 0);
+          const uGhostHunter =
+            globalAchievements.some(
+              g =>
+                (g.achievement_id === `ghosthunter_2026_${targetId}` || g.achievement_id === 'ghosthunter_2026') &&
+                g.user_id === targetId
+            ) || uManual.has('ghosthunter');
 
           const badges = [];
           if (uEuCenter) badges.push({ title: 'Mitte der EU', img: '/badges/badge_eu.png', bg: 'bg-blue-800', rare: true });
           if (pRank) badges.push({ title: `Pionier No.${pRank}`, img: '/badges/badge_pioneer.jpg', rare: true });
+          if (uGhostHunter) badges.push({ title: 'Geisterjäger 👻', img: '/badges/badge_ghosthunter.jpg', rare: true });
           uPeaks.forEach(pk => {
             badges.push({ title: `🏔️ ${pk.name.split(' ')[0]}`, img: pk.img, rare: true });
           });
