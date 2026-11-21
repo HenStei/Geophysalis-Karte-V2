@@ -2451,7 +2451,11 @@ const hasNightOwl = myPins.some(p => {
     <div className={`relative w-full h-[100dvh] overflow-hidden overscroll-none ${(isXmasEventActive || mapStyle === 'snow') ? 'xmas-active-map' : ''}`}>
       {(isXmasEventActive || mapStyle === 'snow') && (
         <div className="xmas-lights-bar" aria-hidden="true">
-          {Array.from({ length: 24 }).map((_, i) => <span key={i} className="xmas-bulb" />)}
+          {Array.from({ length: 16 }).map((_, i) => (
+            <div key={i} className="xmas-swag">
+              <span className="xmas-bulb" />
+            </div>
+          ))}
         </div>
       )}
       
@@ -3465,7 +3469,8 @@ const hasNightOwl = myPins.some(p => {
 
       {/* Floating Minimap (Desktop Only) */}
       {!draftPin && !isModalOpen && map && (
-        <div className="absolute bottom-8 left-20 z-[1000] hidden lg:block w-44 h-44 rounded-full border-4 border-white shadow-2xl overflow-hidden pointer-events-none transition-all">
+        <div className="absolute bottom-8 left-20 z-[1000] hidden lg:block w-44 h-44 pointer-events-none transition-all">
+          <div className={`w-full h-full rounded-full border-4 ${(isXmasEventActive || mapStyle === 'snow') ? 'border-yellow-300 shadow-[0_0_24px_rgba(250,204,21,0.45)]' : 'border-white shadow-2xl'} overflow-hidden`}>
           <MapContainer 
             center={userLocation} 
             zoom={0} 
@@ -3480,6 +3485,15 @@ const hasNightOwl = myPins.some(p => {
             <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}" />
             <MinimapBounds parentMap={map} />
           </MapContainer>
+          </div>
+          {(isXmasEventActive || mapStyle === 'snow') && (
+            <img
+              src="/badges/xmas_santa_hat.png"
+              alt="8-Bit Weihnachtsmütze"
+              style={{ imageRendering: 'pixelated' }}
+              className="absolute -top-[88px] left-[24px] w-[164px] h-[128px] object-contain drop-shadow-[0_6px_8px_rgba(0,0,0,0.45)] pointer-events-none select-none z-[1010]"
+            />
+          )}
         </div>
       )}
 
