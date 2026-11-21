@@ -3021,7 +3021,7 @@ const hasNightOwl = myPins.some(p => {
       
       {(mapStyle === 'snow' || sleighGameActive || isXmasEventActive) && (
         <>
-          {(mapStyle === 'snow' || sleighGameActive || (isXmasEventActive && xmasSnowEnabled)) && <Snowflakes />}
+          {xmasSnowEnabled && (mapStyle === 'snow' || sleighGameActive || isXmasEventActive) && <Snowflakes />}
           {mapStyle === 'snow' && <div className="frost-overlay"></div>}
         </>
       )}
