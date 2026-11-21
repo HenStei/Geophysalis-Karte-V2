@@ -3485,8 +3485,8 @@ const hasNightOwl = myPins.some(p => {
           const uGhostHunter =
             globalAchievements.some(
               g =>
-                (g.achievement_id === `ghosthunter_2026_${targetId}` || g.achievement_id === 'ghosthunter_2026') &&
-                g.user_id === targetId
+                g.achievement_id === `ghosthunter_2026_${targetId}` ||
+                (g.achievement_id === 'ghosthunter_2026' && g.user_id === targetId)
             ) || uManual.has('ghosthunter');
 
           const badges = [];

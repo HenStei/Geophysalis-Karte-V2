@@ -54,7 +54,7 @@ export default function AdminView() {
       const { error } = await supabase.from('global_achievements').delete().eq('achievement_id', achId);
       if (error) alert('Fehler beim Entziehen: ' + error.message);
     } else {
-      const { error } = await supabase.from('global_achievements').insert({ achievement_id: achId, user_id: userId });
+      const { error } = await supabase.from('global_achievements').insert({ achievement_id: achId, user_id: session.user.id });
       if (error) alert('Fehler beim Vergeben: ' + error.message);
     }
     fetchGlobalAchievements();
@@ -321,8 +321,8 @@ export default function AdminView() {
                   const hasUserGhostHunter =
                     globalAchievements.some(
                       g =>
-                        (g.achievement_id === `ghosthunter_2026_${user.id}` || g.achievement_id === 'ghosthunter_2026') &&
-                        g.user_id === user.id
+                        g.achievement_id === `ghosthunter_2026_${user.id}` ||
+                        (g.achievement_id === 'ghosthunter_2026' && g.user_id === user.id)
                     ) || userPins.some(p => p.special_badge === 'ghosthunter');
                   
                   return (
