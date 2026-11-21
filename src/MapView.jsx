@@ -200,7 +200,7 @@ function getFlightArcSamples(p1, p2, steps = 26) {
   return pts;
 }
 
-// Expedition Route Layer: Dashed flight curves, #1..#N badges & Follow-Cam Nano-Banana Airplane
+// Expedition Route Layer: Dashed flight curves, #1..#N badges & Follow-Cam Nano-Banana Airplane / 8-Bit Sleigh
 const PLANE_ICON_STATIC = L.divIcon({
   className: 'bg-transparent border-none',
   html: `<div style="width:68px;height:68px;display:flex;align-items:center;justify-content:center;pointer-events:none;">
@@ -214,11 +214,23 @@ const PLANE_ICON_STATIC = L.divIcon({
   iconAnchor: [34, 34]
 });
 
-function ExpeditionRouteLayer({ routePins, showRouteLine, activeStepIdx, planeFlight }) {
+function ExpeditionRouteLayer({ routePins, showRouteLine, activeStepIdx, planeFlight, vehicleMode = 'plane' }) {
   const map = useMap();
   const planeMarkerRef = useRef(null);
   const showPlane = routePins && routePins.length >= 2 && (activeStepIdx !== null || Boolean(planeFlight));
   const initialPos = routePins && routePins.length > 0 ? [routePins[0].lat, routePins[0].lng] : [50, 10];
+
+  useEffect(() => {
+    const imgEl = document.getElementById('expedition-plane-sprite');
+    if (imgEl) {
+      const targetSrc = vehicleMode === 'sleigh' ? '/badges/xmas_sleigh.png' : '/badges/expedition_plane.png';
+      if (!imgEl.src.endsWith(targetSrc)) {
+        imgEl.src = targetSrc;
+      }
+      imgEl.style.width = vehicleMode === 'sleigh' ? '72px' : '58px';
+      imgEl.style.height = vehicleMode === 'sleigh' ? '72px' : '58px';
+    }
+  }, [vehicleMode, showPlane, activeStepIdx, planeFlight?.id]);
 
   // Helper to update the airplane DOM sprite & Marker position directly at 60fps without React re-renders
   const applyPlaneTransform = (pos, bearing, altitudeScale, inFlight) => {
@@ -227,6 +239,8 @@ function ExpeditionRouteLayer({ routePins, showRouteLine, activeStepIdx, planeFl
     }
     const imgEl = document.getElementById('expedition-plane-sprite');
     if (imgEl) {
+      const targetSrc = vehicleMode === 'sleigh' ? '/badges/xmas_sleigh.png' : '/badges/expedition_plane.png';
+      if (!imgEl.src.endsWith(targetSrc)) imgEl.src = targetSrc;
       imgEl.style.transform = `rotate(${bearing.toFixed(1)}deg) scale(${altitudeScale.toFixed(3)})`;
       imgEl.style.filter = inFlight
         ? 'drop-shadow(0 16px 12px rgba(0,0,0,0.45))'
@@ -382,6 +396,252 @@ function ExpeditionRouteLayer({ routePins, showRouteLine, activeStepIdx, planeFl
           icon={PLANE_ICON_STATIC}
         />
       )}
+    </>
+  );
+}
+
+// 8-Bit Weihnachts-Minigame: Santa's Schlitten-Abwurf (Arcade-Mitflug über echte Community-Sticker!)
+const SLEIGH_ICON_STATIC = L.divIcon({
+  className: 'bg-transparent border-none',
+  html: `<div style="width:82px;height:82px;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+           <img
+             id="xmas-sleigh-sprite"
+             src="/badges/xmas_sleigh.png"
+             style="width:76px;height:76px;object-fit:contain;image-rendering:pixelated;transform:rotate(0deg) scale(1);filter:drop-shadow(0 12px 10px rgba(0,0,0,0.48));will-change:transform;"
+           />
+         </div>`,
+  iconSize: [82, 82],
+  iconAnchor: [41, 41]
+});
+
+const XMAS_CHIMNEY_ICON = L.divIcon({
+  className: 'bg-transparent border-none',
+  html: `<div class="xmas-target-ring">
+           <div class="xmas-target-bullseye">🏠</div>
+         </div>`,
+  iconSize: [78, 78],
+  iconAnchor: [39, 39]
+});
+
+function SleighDeliveryLayer({ targets, droppedGifts, sleighLiveRef, onLegChange, onTourFinish }) {
+  const map = useMap();
+  const sleighMarkerRef = useRef(null);
+  const [activeLeg, setActiveLeg] = useState(0);
+
+  // Polyline samples for Santa's golden festive flight route
+  const routeSamples = useMemo(() => {
+    if (!targets || targets.length < 2) return [];
+    const segs = [];
+    for (let i = 0; i < targets.length - 1; i++) {
+      segs.push({
+        id: `sleigh_seg_${i}_${targets[i].id}_${targets[i + 1].id}`,
+        pts: getFlightArcSamples([targets[i].lat, targets[i].lng], [targets[i + 1].lat, targets[i + 1].lng], 26)
+      });
+    }
+    return segs;
+  }, [targets]);
+
+  useEffect(() => {
+    if (!map || !targets || targets.length < 2) return;
+
+    const totalLegs = targets.length - 1;
+    let legIdx = 0;
+    let legStartTime = performance.now();
+    let lastReportedLeg = -1;
+    let tourCompleted = false;
+    let finishTimeoutId = null;
+    let rafId = null;
+
+    const setupLegCamera = (idx) => {
+      const fromPin = targets[idx];
+      const toPin = targets[idx + 1];
+      const distKm = map.distance([fromPin.lat, fromPin.lng], [toPin.lat, toPin.lng]) / 1000;
+      const zoom =
+        distKm < 15 ? 11 :
+        distKm < 65 ? 9 :
+        distKm < 260 ? 8 :
+        distKm < 900 ? 6 : 5;
+      const durationMs = Math.min(4600, Math.max(3600, 3400 + Math.sqrt(distKm) * 16));
+      map.stop();
+      map.setView([fromPin.lat, fromPin.lng], zoom, { animate: false });
+      return { zoom, durationMs };
+    };
+
+    let legCfg = setupLegCamera(0);
+    setActiveLeg(0);
+    if (onLegChange) onLegChange(0, targets[1]);
+
+    const tick = (now) => {
+      if (tourCompleted) return;
+      let elapsed = now - legStartTime;
+
+      if (elapsed >= legCfg.durationMs) {
+        if (legIdx < totalLegs - 1) {
+          legIdx += 1;
+          legStartTime = now;
+          elapsed = 0;
+          legCfg = setupLegCamera(legIdx);
+          setActiveLeg(legIdx);
+          if (onLegChange && lastReportedLeg !== legIdx) {
+            lastReportedLeg = legIdx;
+            onLegChange(legIdx, targets[legIdx + 1]);
+          }
+        } else {
+          // Final stop reached! Hold briefly (~550ms grace window) so late drops still register
+          tourCompleted = true;
+          const endPos = [targets[totalLegs].lat, targets[totalLegs].lng];
+          if (sleighMarkerRef.current) sleighMarkerRef.current.setLatLng(endPos);
+          map.panTo(endPos, { animate: false });
+          sleighLiveRef.current = {
+            ...(sleighLiveRef.current || {}),
+            legIdx,
+            t: 1,
+            elapsedInLeg: legCfg.durationMs,
+            pos: endPos,
+            distPx: 0,
+            finished: true
+          };
+          finishTimeoutId = setTimeout(() => {
+            if (onTourFinish) onTourFinish();
+          }, 550);
+          return;
+        }
+      }
+
+      const rawT = Math.min(1, Math.max(0, elapsed / legCfg.durationMs));
+      // Smooth continuous glide across targets; tiny soft ramp only on very first launch
+      const t = legIdx === 0 && rawT < 0.12 ? (rawT / 0.12) * 0.12 * (0.5 + 0.5 * (rawT / 0.12)) : rawT;
+
+      const fromPin = targets[legIdx];
+      const toPin = targets[legIdx + 1];
+      const p1 = [fromPin.lat, fromPin.lng];
+      const p2 = [toPin.lat, toPin.lng];
+      const { pos, bearing } = getFlightCurvePointAndBearing(p1, p2, t);
+
+      if (sleighMarkerRef.current) sleighMarkerRef.current.setLatLng(pos);
+      map.panTo(pos, { animate: false });
+
+      const spriteEl = document.getElementById('xmas-sleigh-sprite');
+      if (spriteEl) {
+        const bobScale = 1 + 0.08 * Math.sin(now * 0.008);
+        spriteEl.style.transform = `rotate(${bearing.toFixed(1)}deg) scale(${bobScale.toFixed(3)})`;
+      }
+
+      // Compute pixel distance on screen from Santa to active chimney target (zoom-independent!)
+      const sleighPt = map.latLngToContainerPoint(pos);
+      const targetPt = map.latLngToContainerPoint(p2);
+      const distPx = sleighPt.distanceTo(targetPt);
+
+      sleighLiveRef.current = {
+        legIdx,
+        t,
+        elapsedInLeg: elapsed,
+        pos,
+        bearing,
+        distPx,
+        finished: false
+      };
+
+      // Update arcade timing gauge & zone badge directly at 60fps
+      const gaugeEl = document.getElementById('sleigh-live-gauge');
+      const zoneLabelEl = document.getElementById('sleigh-live-zone-label');
+      if (gaugeEl) {
+        gaugeEl.style.width = `${Math.round(rawT * 100)}%`;
+        if (distPx <= 26) {
+          gaugeEl.style.backgroundColor = '#22c55e';
+        } else if (distPx <= 52) {
+          gaugeEl.style.backgroundColor = '#facc15';
+        } else {
+          gaugeEl.style.backgroundColor = '#ef4444';
+        }
+      }
+      if (zoneLabelEl) {
+        if (distPx <= 26) {
+          zoneLabelEl.textContent = '🔥 SCHORNSTEIN! JETZT (+3)';
+          zoneLabelEl.style.color = '#86efac';
+        } else if (distPx <= 52) {
+          zoneLabelEl.textContent = '🏠 ZIELZONE! ABWURF (+1)';
+          zoneLabelEl.style.color = '#fde047';
+        } else {
+          zoneLabelEl.textContent = `🛷 Anflug · ${Math.round(distPx)}px`;
+          zoneLabelEl.style.color = '#cbd5e1';
+        }
+      }
+
+      rafId = requestAnimationFrame(tick);
+    };
+
+    rafId = requestAnimationFrame(tick);
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      if (finishTimeoutId) clearTimeout(finishTimeoutId);
+    };
+  }, [map, targets]);
+
+  if (!targets || targets.length < 2) return null;
+  const activeTarget = targets[Math.min(activeLeg + 1, targets.length - 1)];
+
+  return (
+    <>
+      {routeSamples.map(seg => (
+        <Polyline
+          key={seg.id}
+          positions={seg.pts}
+          pathOptions={{ color: '#facc15', weight: 3, dashArray: '8, 10', opacity: 0.8 }}
+        />
+      ))}
+
+      {/* Chimney Bullseye Ring on current target sticker */}
+      {activeTarget && (
+        <Marker
+          key={`xmas_target_${activeTarget.id}_${activeLeg}`}
+          position={[activeTarget.lat, activeTarget.lng]}
+          interactive={false}
+          zIndexOffset={2200}
+          icon={XMAS_CHIMNEY_ICON}
+        />
+      )}
+
+      {/* Upcoming target number tags */}
+      {targets.slice(1).map((pin, idx) => (
+        <Marker
+          key={`xmas_num_${pin.id}_${idx}`}
+          position={[pin.lat, pin.lng]}
+          interactive={false}
+          zIndexOffset={2100}
+          icon={L.divIcon({
+            className: 'bg-transparent border-none',
+            html: `<div style="display:inline-flex;align-items:center;justify-content:center;padding:1px 6px;border-radius:999px;font-size:10px;font-weight:900;background:${idx === activeLeg ? '#16a34a' : '#7f1d1d'};color:white;border:1.5px solid #fef08a;box-shadow:0 2px 6px rgba(0,0,0,0.4);">🎁 #${idx + 1}</div>`,
+            iconSize: [44, 20],
+            iconAnchor: [22, -16]
+          })}
+        />
+      ))}
+
+      {/* Dropped Gift Parcels left behind along the flight */}
+      {droppedGifts.map(g => (
+        <Marker
+          key={g.id}
+          position={[g.lat, g.lng]}
+          interactive={false}
+          zIndexOffset={2400}
+          icon={L.divIcon({
+            className: 'bg-transparent border-none',
+            html: `<div class="xmas-dropped-gift" style="font-size:26px;filter:drop-shadow(0 3px 5px rgba(0,0,0,0.45));">${g.points >= 3 ? '🎯' : g.points >= 1 ? '🎁' : '❄️'}</div>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 14]
+          })}
+        />
+      ))}
+
+      {/* 8-Bit Follow-Cam Sleigh */}
+      <Marker
+        ref={sleighMarkerRef}
+        position={[targets[0].lat, targets[0].lng]}
+        interactive={false}
+        zIndexOffset={2600}
+        icon={SLEIGH_ICON_STATIC}
+      />
     </>
   );
 }
@@ -905,6 +1165,225 @@ export default function MapView() {
         });
     }
   }, [session?.user?.id, globalsLoaded, hasGhostHunterGlobal, hasGhostHunterManual, ghostsCaught]);
+
+  // Weihnachts-Event 2026: "Santa's Schlitten-Abwurf" (komplett eigene Event-Belohnungen & Cloud-Sync!)
+  const XMAS_GOAL = 15;
+  const [xmasTestMode, setXmasTestMode] = useState(false);
+  const [xmasCollapsed, setXmasCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640);
+  const [xmasScore, setXmasScore] = useState(() => parseInt(localStorage.getItem('geophysalis_xmas_score_2026') || '0', 10));
+  const [sleighGameActive, setSleighGameActive] = useState(false);
+  const [sleighTargets, setSleighTargets] = useState([]);
+  const [sleighCurrentLeg, setSleighCurrentLeg] = useState(0);
+  const [sleighRoundScore, setSleighRoundScore] = useState(0);
+  const [sleighDroppedGifts, setSleighDroppedGifts] = useState([]);
+  const [sleighRoundSummary, setSleighRoundSummary] = useState(null);
+  const [showXmasIntroVideo, setShowXmasIntroVideo] = useState(false);
+  const [showXmasVictoryModal, setShowXmasVictoryModal] = useState(false);
+  const [xmasIntroHasPlayed, setXmasIntroHasPlayed] = useState(() => localStorage.getItem('geophysalis_xmas_intro_2026') === 'true');
+  const [expeditionVehicle, setExpeditionVehicle] = useState('plane');
+
+  const sleighLiveRef = useRef({ legIdx: 0, t: 0, elapsedInLeg: 0, pos: [50, 10], bearing: 0, distPx: 999, finished: false });
+  const sleighDroppedTargetSetRef = useRef(new Set());
+  const sleighLastDropAtRef = useRef(0);
+  const sleighRoundScoreRef = useRef(0);
+
+  const myXmasEntry = session?.user?.id
+    ? globalAchievements.find(
+        g =>
+          g.achievement_id === `xmas_2026_${session.user.id}` ||
+          (g.achievement_id === 'xmas_2026' && g.user_id === session.user.id)
+      )
+    : null;
+  const hasXmasGlobal = Boolean(myXmasEntry);
+  const hasXmasManual = session?.user?.id
+    ? pins.some(p => p.user_id === session.user.id && p.special_badge === 'xmas_2026')
+    : false;
+  const hasXmasPilot = devMode || xmasScore >= XMAS_GOAL || hasXmasGlobal || hasXmasManual;
+
+  useEffect(() => {
+    if (!session?.user?.id || !globalsLoaded) return;
+    if (hasXmasGlobal || hasXmasManual) {
+      if (xmasScore < XMAS_GOAL) {
+        setXmasScore(XMAS_GOAL);
+        localStorage.setItem('geophysalis_xmas_score_2026', XMAS_GOAL.toString());
+      }
+    } else if (xmasScore >= XMAS_GOAL) {
+      supabase
+        .from('global_achievements')
+        .insert({ achievement_id: `xmas_2026_${session.user.id}`, user_id: session.user.id })
+        .then(({ error }) => {
+          if (!error) fetchGlobals();
+        });
+    }
+  }, [session?.user?.id, globalsLoaded, hasXmasGlobal, hasXmasManual, xmasScore]);
+
+  const pickSleighTourTargets = () => {
+    const rawPool = (pins && pins.length >= 6) ? pins : [...(pins || []), ...PEAKS];
+    const uniquePool = [];
+    for (const item of rawPool) {
+      if (!uniquePool.some(u => Math.hypot(u.lat - item.lat, u.lng - item.lng) < 0.04)) {
+        uniquePool.push(item);
+      }
+    }
+    const source = uniquePool.length >= 6 ? uniquePool : PEAKS;
+    // Shuffle slightly and pick up to 8 candidates, then sort nearest-neighbor to pick 6 fluid stops
+    const shuffled = [...source].sort(() => Math.random() - 0.5).slice(0, Math.min(10, source.length));
+    const ordered = [shuffled.shift()];
+    while (ordered.length < 6 && shuffled.length > 0) {
+      const last = ordered[ordered.length - 1];
+      let bestIdx = 0;
+      let bestDist = Infinity;
+      shuffled.forEach((cand, idx) => {
+        const d = Math.hypot(cand.lat - last.lat, cand.lng - last.lng);
+        if (d < bestDist) {
+          bestDist = d;
+          bestIdx = idx;
+        }
+      });
+      ordered.push(shuffled.splice(bestIdx, 1)[0]);
+    }
+    return ordered;
+  };
+
+  const launchSleighTourNow = () => {
+    const chosen = pickSleighTourTargets();
+    if (!chosen || chosen.length < 2) return;
+    setIsAuthModalOpen(false);
+    setIsLeaderboardOpen(false);
+    setShowLayerMenu(false);
+    setIsPlayingRoute(false);
+    setPlaneFlight(null);
+    setSleighTargets(chosen);
+    setSleighCurrentLeg(0);
+    setSleighRoundScore(0);
+    sleighRoundScoreRef.current = 0;
+    setSleighDroppedGifts([]);
+    setSleighRoundSummary(null);
+    sleighDroppedTargetSetRef.current = new Set();
+    sleighLiveRef.current = { legIdx: 0, t: 0, elapsedInLeg: 0, pos: [chosen[0].lat, chosen[0].lng], bearing: 0, distPx: 999, finished: false };
+    setSleighGameActive(true);
+  };
+
+  const startSleighDelivery = (forceIntro = false) => {
+    if (forceIntro || !xmasIntroHasPlayed) {
+      setShowXmasIntroVideo(true);
+    } else {
+      launchSleighTourNow();
+    }
+  };
+
+  const handleDropGift = () => {
+    if (!sleighGameActive || !map || !sleighTargets || sleighTargets.length < 2) return;
+    const now = performance.now();
+    if (now - sleighLastDropAtRef.current < 260) return;
+
+    const live = sleighLiveRef.current;
+    if (!live || !live.pos) return;
+
+    // Candidate 1: current target (legIdx + 1). Candidate 2: just-passed target (legIdx) during grace window
+    const curTargetIdx = Math.min(live.legIdx + 1, sleighTargets.length - 1);
+    const prevTargetIdx = live.legIdx >= 1 ? live.legIdx : null;
+
+    let chosenTargetIdx = null;
+    let bestDistPx = Infinity;
+
+    const sleighScreenPt = map.latLngToContainerPoint(live.pos);
+
+    if (prevTargetIdx !== null && live.elapsedInLeg < 650 && !sleighDroppedTargetSetRef.current.has(prevTargetIdx)) {
+      const prevPin = sleighTargets[prevTargetIdx];
+      const prevDist = sleighScreenPt.distanceTo(map.latLngToContainerPoint([prevPin.lat, prevPin.lng]));
+      if (prevDist <= 56) {
+        chosenTargetIdx = prevTargetIdx;
+        bestDistPx = prevDist;
+      }
+    }
+
+    if (chosenTargetIdx === null && !sleighDroppedTargetSetRef.current.has(curTargetIdx)) {
+      const curPin = sleighTargets[curTargetIdx];
+      chosenTargetIdx = curTargetIdx;
+      bestDistPx = sleighScreenPt.distanceTo(map.latLngToContainerPoint([curPin.lat, curPin.lng]));
+    }
+
+    if (chosenTargetIdx === null) {
+      // Already dropped for this target!
+      const popId = Date.now() + Math.random();
+      setSpookyPopups(prev => [...prev, { id: popId, x: window.innerWidth / 2, y: window.innerHeight / 2 - 40, emoji: '⏳', signStr: '', label: 'Schon abgeworfen! Nächstes Haus kommt gleich...', isTrap: false }]);
+      setTimeout(() => setSpookyPopups(prev => prev.filter(p => p.id !== popId)), 1100);
+      return;
+    }
+
+    sleighLastDropAtRef.current = now;
+    sleighDroppedTargetSetRef.current.add(chosenTargetIdx);
+
+    let pts = 0;
+    let label = '❄️ Im Schnee gelandet!';
+    let emoji = '❄️';
+    if (bestDistPx <= 26) {
+      pts = 3;
+      label = '🎯 VOLLTREFFER IM SCHORNSTEIN!';
+      emoji = '🎯';
+      confetti({ particleCount: 75, spread: 75, origin: { y: 0.5 }, colors: ['#dc2626', '#16a34a', '#facc15', '#ffffff'] });
+    } else if (bestDistPx <= 52) {
+      pts = 1;
+      label = '🏠 Aufs Dach getroffen!';
+      emoji = '🎁';
+      confetti({ particleCount: 28, spread: 50, origin: { y: 0.5 }, colors: ['#facc15', '#22c55e', '#ffffff'] });
+    }
+
+    setSleighDroppedGifts(prev => [
+      ...prev,
+      { id: `${Date.now()}_${Math.random()}`, lat: live.pos[0], lng: live.pos[1], points: pts }
+    ]);
+
+    const popId = Date.now() + Math.random();
+    setSpookyPopups(prev => [
+      ...prev,
+      {
+        id: popId,
+        x: window.innerWidth / 2,
+        y: Math.max(120, window.innerHeight / 2 - 50),
+        emoji,
+        signStr: pts > 0 ? `+${pts}` : '+0',
+        label,
+        isTrap: pts === 0
+      }
+    ]);
+    setTimeout(() => setSpookyPopups(prev => prev.filter(p => p.id !== popId)), 1350);
+
+    if (pts > 0) {
+      sleighRoundScoreRef.current += pts;
+      setSleighRoundScore(r => r + pts);
+      setXmasScore(prev => {
+        const next = prev + pts;
+        localStorage.setItem('geophysalis_xmas_score_2026', next.toString());
+        if (prev < XMAS_GOAL && next >= XMAS_GOAL) {
+          confetti({ particleCount: 160, spread: 100, origin: { y: 0.55 }, colors: ['#dc2626', '#16a34a', '#facc15', '#ffffff'] });
+          setShowXmasVictoryModal(true);
+          if (session?.user?.id) {
+            supabase
+              .from('global_achievements')
+              .insert({ achievement_id: `xmas_2026_${session.user.id}`, user_id: session.user.id })
+              .then(({ error }) => {
+                if (!error) fetchGlobals();
+              });
+          }
+        }
+        return next;
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (!sleighGameActive) return;
+    const onKeyDown = (e) => {
+      if (e.code === 'Space' && !e.repeat) {
+        e.preventDefault();
+        handleDropGift();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [sleighGameActive, sleighTargets, map, session?.user?.id]);
   const [showOnboarding, setShowOnboarding] = useState(false);
   
   useEffect(() => {
@@ -959,6 +1438,7 @@ export default function MapView() {
   const currentDay = today.getDate();
   const isHalloweenActive = (currentMonth === 9 && currentDay >= 25) || (currentMonth === 10 && currentDay <= 5);
   const isWinterActive = currentMonth === 11;
+  const isXmasEventActive = isWinterActive || devMode || xmasTestMode;
   
   const hasFirstStep = myPins.length >= 1;
   const hasLocalHero = myPins.length >= 5;
@@ -1954,6 +2434,15 @@ const hasNightOwl = myPins.some(p => {
               >
                 Dev
               </button>
+              {!isWinterActive && (
+                <button
+                  onClick={() => setXmasTestMode(!xmasTestMode)}
+                  title="Weihnachts-Event testen"
+                  className={`px-2.5 py-1.5 rounded-full shadow-lg text-[10px] font-black transition ${xmasTestMode ? 'bg-emerald-600 text-white ring-2 ring-yellow-300' : 'bg-white/95 text-emerald-700'}`}
+                >
+                  🎄
+                </button>
+              )}
               <Link
                 to="/admin"
                 className="bg-white/95 text-gray-700 px-2.5 py-1.5 rounded-full shadow-lg text-[10px] font-black"
@@ -1967,7 +2456,24 @@ const hasNightOwl = myPins.some(p => {
         {/* Expedition & Zeitreise Cockpit Bar (only visible when viewing Own Map or Player Map with >= 2 pins) */}
         {isExpeditionMode && routePins.length >= 2 && (
           <div className="bg-white/95 backdrop-blur-md px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-2xl sm:rounded-full shadow-xl border border-red-200/80 flex flex-wrap items-center gap-1.5 sm:gap-2 pointer-events-auto self-start max-w-full">
-            <img src="/badges/expedition_plane.png" alt="Flugzeug" className="w-5 h-5 sm:w-6 sm:h-6 object-contain shrink-0" />
+            <img
+              src={expeditionVehicle === 'sleigh' ? '/badges/xmas_sleigh.png' : '/badges/expedition_plane.png'}
+              alt="Fahrzeug"
+              className="w-5 h-5 sm:w-6 sm:h-6 object-contain shrink-0"
+            />
+            {(isXmasEventActive || hasXmasPilot) && (
+              <button
+                onClick={() => setExpeditionVehicle(expeditionVehicle === 'sleigh' ? 'plane' : 'sleigh')}
+                title={expeditionVehicle === 'sleigh' ? 'Auf Flugzeug wechseln' : 'Mit 8-Bit Weihnachtsschlitten fliegen!'}
+                className={`px-2 py-0.5 rounded-full text-[10px] font-black border transition ${
+                  expeditionVehicle === 'sleigh'
+                    ? 'bg-emerald-600 text-white border-emerald-400'
+                    : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-emerald-50'
+                }`}
+              >
+                {expeditionVehicle === 'sleigh' ? '🛷' : '✈️'}
+              </button>
+            )}
 
             {/* Prev Stop Button */}
             <button
@@ -2176,11 +2682,85 @@ const hasNightOwl = myPins.some(p => {
           </div>
           );
         })()}
-        {isWinterActive && (
-          <div className="bg-blue-500/90 backdrop-blur-md px-3 py-1.5 sm:px-4 sm:py-2 rounded-full shadow-lg border border-blue-400 pointer-events-auto flex items-center gap-2 animate-bounce">
-            <span>❄️</span>
-            <span className="text-[10px] sm:text-xs font-black text-white uppercase tracking-wider">Winterwunder aktiv!</span>
-          </div>
+        {isXmasEventActive && !sleighGameActive && (
+          xmasCollapsed ? (
+            <div className="flex items-center gap-1.5 pointer-events-auto self-start">
+              <button
+                onClick={() => setXmasCollapsed(false)}
+                className="bg-gradient-to-r from-emerald-950/95 via-red-950/95 to-slate-950/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-xl border border-yellow-400/70 flex items-center gap-2 text-white active:scale-95 transition"
+              >
+                <img src="/badges/xmas_sleigh.png" alt="Schlitten" className="w-4 h-4 object-contain" />
+                <span className="text-[10px] font-black text-yellow-200">🎁 {xmasScore}/{XMAS_GOAL}</span>
+                <span className="text-white/30">|</span>
+                <span className="text-[10px] font-black text-emerald-300">Schlitten-Abwurf</span>
+                <span className="text-[9px] text-yellow-300/80 ml-0.5">▾</span>
+              </button>
+              <button
+                onClick={() => startSleighDelivery(false)}
+                className="px-2.5 py-1.5 rounded-full text-[10px] font-black shadow-lg border bg-gradient-to-r from-red-600 to-emerald-600 text-white border-yellow-300/70 active:scale-95 transition"
+              >
+                🛷 Fliegen!
+              </button>
+            </div>
+          ) : (
+            <div className="bg-gradient-to-br from-slate-950/95 via-emerald-950/95 to-red-950/95 backdrop-blur-md p-2.5 sm:px-4 sm:py-3 rounded-2xl sm:rounded-3xl shadow-2xl border border-yellow-400/60 pointer-events-auto flex flex-col gap-2 w-[270px] sm:w-[320px] transition-all">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <img src="/badges/xmas_sleigh.png" alt="Schlitten" className="w-5 h-5 object-contain" />
+                  <span className="text-[10px] sm:text-xs font-black text-yellow-200 uppercase tracking-wider">Santa&apos;s Schlitten-Abwurf</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-full bg-red-600/40 text-yellow-100 border border-yellow-400/50">
+                    🎁 {xmasScore}/{XMAS_GOAL}
+                  </span>
+                  <button
+                    onClick={() => setXmasCollapsed(true)}
+                    className="text-yellow-200/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold transition"
+                    title="Minimieren"
+                  >
+                    ▴
+                  </button>
+                </div>
+              </div>
+
+              {/* 8-Bit Festive Progress Bar */}
+              <div className="w-full bg-black/50 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-red-500 via-yellow-400 to-emerald-400 h-1.5 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, (xmasScore / XMAS_GOAL) * 100)}%` }}
+                />
+              </div>
+
+              <p className="text-[10px] text-emerald-100/90 leading-snug">
+                {hasXmasPilot
+                  ? '🏆 Schlitten-Pilot 2026 freigeschaltet! Avatar, Lichterketten-Rahmen & Zeitreise-Schlitten gehören dir.'
+                  : 'Flieg im 8-Bit Schlitten über 5 echte Sticker und wirf Geschenke genau im grünen Schornstein ab! (🎯 +3 / 🏠 +1)'}
+              </p>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => startSleighDelivery(false)}
+                  className="flex-1 bg-gradient-to-r from-red-600 via-amber-500 to-emerald-600 hover:opacity-95 text-white text-xs font-black py-2 px-3 rounded-xl shadow-lg border border-yellow-300/60 flex items-center justify-center gap-1.5 active:scale-95 transition"
+                >
+                  <span>🛷</span>
+                  <span>{hasXmasPilot ? 'Nochmal fliegen!' : 'Tour starten!'}</span>
+                </button>
+                <button
+                  onClick={() => startSleighDelivery(true)}
+                  title="8-Bit Intro Video & Tour"
+                  className="bg-white/10 hover:bg-white/20 text-yellow-200 text-[10px] font-bold px-2.5 py-2 rounded-xl border border-yellow-400/30 transition"
+                >
+                  🎬 Intro
+                </button>
+              </div>
+              {isWinterActive && (
+                <div className="text-[9px] text-cyan-200/80 font-bold flex items-center gap-1">
+                  <span>❄️</span>
+                  <span>Winterwunder-Monat aktiv</span>
+                </div>
+              )}
+            </div>
+          )
         )}
       </div>
 
@@ -2321,6 +2901,14 @@ const hasNightOwl = myPins.some(p => {
         
         {profile?.is_admin && !draftPin && (
           <div className="hidden sm:flex gap-2 self-end pointer-events-auto">
+            {!isWinterActive && (
+              <button
+                onClick={() => setXmasTestMode(!xmasTestMode)}
+                className={`mt-1 sm:mt-2 px-4 py-2 sm:px-4 sm:py-3 rounded-full shadow-xl border text-xs sm:text-sm font-bold transition ${xmasTestMode ? 'bg-emerald-600 text-white border-yellow-300' : 'bg-white/95 backdrop-blur-md text-emerald-700 border-gray-100 hover:bg-emerald-50'}`}
+              >
+                🎄 Xmas {xmasTestMode ? 'ON' : 'Test'}
+              </button>
+            )}
             <button 
               onClick={() => setDevMode(!devMode)}
               className={`mt-1 sm:mt-2 px-4 py-2 sm:px-5 sm:py-3 rounded-full sm:rounded-full shadow-xl border border-gray-100 text-xs sm:text-sm font-bold transition ${devMode ? 'bg-purple-600 text-white' : 'bg-white/95 backdrop-blur-md text-gray-400 hover:text-gray-700 hover:bg-gray-50'}`}
@@ -2455,13 +3043,28 @@ const hasNightOwl = myPins.some(p => {
         {mapStyle === 'snow' && <WinterAssets />}
         {(mapStyle === 'neon' || (isHalloweenActive && ghostHuntActive)) && <HalloweenAssets pins={pins} onCatch={handleCatchGhost} onCompassUpdate={setSpookyCompass} />}
 
-        {/* Expedition Flight Route & Animated Airplane */}
-        {isExpeditionMode && routePins.length >= 2 && (
+        {/* Expedition Flight Route & Animated Airplane / Sleigh */}
+        {!sleighGameActive && isExpeditionMode && routePins.length >= 2 && (
           <ExpeditionRouteLayer
             routePins={routePins}
             showRouteLine={showRouteLine}
             activeStepIdx={routeStepIdx}
             planeFlight={planeFlight}
+            vehicleMode={expeditionVehicle}
+          />
+        )}
+
+        {/* 8-Bit Weihnachts-Event: Santa's Schlitten-Abwurf */}
+        {sleighGameActive && sleighTargets.length >= 2 && (
+          <SleighDeliveryLayer
+            targets={sleighTargets}
+            droppedGifts={sleighDroppedGifts}
+            sleighLiveRef={sleighLiveRef}
+            onLegChange={(legIdx) => setSleighCurrentLeg(legIdx)}
+            onTourFinish={() => {
+              setSleighGameActive(false);
+              setSleighRoundSummary({ points: sleighRoundScoreRef.current });
+            }}
           />
         )}
 
@@ -2508,7 +3111,7 @@ const hasNightOwl = myPins.some(p => {
       </MapContainer>
 
       {/* Radar & Roulette Floating Action Buttons */}
-      {!draftPin && !isModalOpen && pins.length > 0 && (
+      {!draftPin && !isModalOpen && !sleighGameActive && pins.length > 0 && (
         <div className="absolute bottom-24 right-3 sm:bottom-[150px] sm:right-8 z-[999] flex flex-col gap-2.5 sm:gap-3 pointer-events-none">
           <button 
             onClick={handleRoulette} 
@@ -2528,7 +3131,7 @@ const hasNightOwl = myPins.some(p => {
       )}
 
 
-      {!draftPin ? (
+      {!draftPin && !sleighGameActive ? (
         <>
           {/* DESKTOP Bottom Right CTA & Milestone (sm and up) */}
           <div className="hidden sm:flex absolute bottom-8 right-8 z-[1000] flex-col items-center gap-1.5 pointer-events-auto">
@@ -2642,6 +3245,64 @@ const hasNightOwl = myPins.some(p => {
             </div>
           </div>
         </>
+      ) : !draftPin && sleighGameActive ? (
+        /* 8-Bit Arcade Geschenk-Abwurf Cockpit */
+        <div className="fixed bottom-4 left-3 right-3 sm:left-1/2 sm:-translate-x-1/2 sm:max-w-md z-[3600] pointer-events-auto">
+          <div className="bg-gradient-to-br from-slate-950/95 via-emerald-950/95 to-red-950/95 backdrop-blur-md rounded-3xl p-3.5 sm:p-4 shadow-2xl border-2 border-yellow-400/75 text-white flex flex-col gap-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full border border-yellow-300/60">
+                    Stopp #{Math.min(sleighCurrentLeg + 1, Math.max(1, sleighTargets.length - 1))}/{Math.max(1, sleighTargets.length - 1)}
+                  </span>
+                  <span id="sleigh-live-zone-label" className="text-[11px] font-black text-slate-300 truncate">
+                    🛷 Anflug...
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm font-black text-yellow-200 truncate mt-0.5">
+                  🏠 {sleighTargets[Math.min(sleighCurrentLeg + 1, sleighTargets.length - 1)]?.location_name?.split(',')[0] || sleighTargets[Math.min(sleighCurrentLeg + 1, sleighTargets.length - 1)]?.name || 'Ziel-Sticker'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="text-right bg-black/40 px-2.5 py-1 rounded-xl border border-yellow-400/30">
+                  <p className="text-[8px] uppercase font-bold text-yellow-300/80 leading-none">Runde / Gesamt</p>
+                  <p className="text-xs sm:text-sm font-black text-white leading-tight mt-0.5">
+                    +{sleighRoundScore} <span className="text-yellow-300 font-bold text-[10px]">({xmasScore}/{XMAS_GOAL})</span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSleighGameActive(false)}
+                  title="Flug beenden"
+                  className="bg-white/10 hover:bg-white/20 text-white/80 hover:text-white rounded-full p-1.5 transition"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Live Approach Progress Bar */}
+            <div className="w-full h-2.5 bg-black/60 rounded-full overflow-hidden border border-white/15 relative">
+              <div
+                className="absolute right-0 top-0 bottom-0 w-[18%] bg-emerald-500/30 border-l border-emerald-400/70 pointer-events-none"
+                title="Zielzone"
+              />
+              <div
+                id="sleigh-live-gauge"
+                className="h-full rounded-full transition-colors duration-75"
+                style={{ width: '0%', backgroundColor: '#ef4444' }}
+              />
+            </div>
+
+            <button
+              onClick={handleDropGift}
+              className="w-full py-3 sm:py-3.5 rounded-2xl bg-gradient-to-r from-red-600 via-amber-500 to-emerald-600 hover:brightness-110 active:scale-95 text-white font-black text-sm sm:text-base tracking-wide shadow-lg shadow-red-600/30 border-2 border-yellow-300 flex items-center justify-center gap-2 transition select-none"
+            >
+              <span className="text-xl">🎁</span>
+              <span>GESCHENK ABWERFEN!</span>
+              <span className="hidden sm:inline text-[10px] bg-black/30 px-2 py-0.5 rounded-full font-mono text-yellow-200">[SPACE]</span>
+            </button>
+          </div>
+        </div>
       ) : !isModalOpen && (
         <div className="absolute bottom-4 left-3 right-3 sm:bottom-6 sm:left-4 sm:right-4 z-[1000] bg-white/95 backdrop-blur-md p-3.5 sm:p-4 rounded-3xl shadow-2xl border border-blue-100 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 pointer-events-auto animate-in slide-in-from-bottom-10">
           <div className="flex-1 text-center sm:text-left">
@@ -3097,7 +3758,7 @@ const hasNightOwl = myPins.some(p => {
                       <div className="flex gap-3.5 items-start">
                         <div className={`avatar-frame frame-${editFrame} relative w-14 h-14 text-2xl shadow bg-white rounded-full shrink-0`}>
                           <div className="w-full h-full overflow-hidden rounded-full flex items-center justify-center">
-                            {editAvatar === 'default' ? '🦊' : editAvatar === 'pumpkin' ? '🎃' : editAvatar === 'ghost' ? '👻' : editAvatar === 'bat' ? '🦇' : editAvatar === 'reindeer' ? '🦌' : editAvatar === 'snowman' ? '⛄' : editAvatar === 'fire' ? <img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /> : editAvatar === 'cyberpunk' ? <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /> : editAvatar === 'retro' ? <img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" /> : editAvatar === 'pioneer' ? <img src="/badges/avatar_pioneer.jpg" className="w-full h-full object-cover" /> : editAvatar === 'admin' ? <img src="/badges/avatar_admin.jpg" className="w-full h-full object-cover" /> : editAvatar === 'polar' ? <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /> : '🦊'}
+                            {editAvatar === 'default' ? '🦊' : editAvatar === 'pumpkin' ? '🎃' : editAvatar === 'ghost' ? '👻' : editAvatar === 'bat' ? '🦇' : editAvatar === 'reindeer' ? '🦌' : editAvatar === 'snowman' ? '⛄' : editAvatar === 'xmas_pilot' ? <img src="/badges/avatar_xmas.jpg" className="w-full h-full object-cover" /> : editAvatar === 'fire' ? <img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" /> : editAvatar === 'cyberpunk' ? <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" /> : editAvatar === 'retro' ? <img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" /> : editAvatar === 'pioneer' ? <img src="/badges/avatar_pioneer.jpg" className="w-full h-full object-cover" /> : editAvatar === 'admin' ? <img src="/badges/avatar_admin.jpg" className="w-full h-full object-cover" /> : editAvatar === 'polar' ? <img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /> : '🦊'}
                           </div>
                         </div>
                         <div className="flex-1 space-y-2">
@@ -3108,6 +3769,7 @@ const hasNightOwl = myPins.some(p => {
                               {(hasHalloween || hasGhostHunter) && <button onClick={() => setEditAvatar('ghost')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-base transition ${editAvatar === 'ghost' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>👻</button>}
                               {(hasHalloween || hasGhostHunter) && <button onClick={() => setEditAvatar('bat')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-base transition ${editAvatar === 'bat' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>🦇</button>}
                               {hasGhostHunter && <button onClick={() => setEditAvatar('pumpkin')} title="Geisterjäger Belohnung" className={`w-8 h-8 rounded-lg flex items-center justify-center text-base transition ${editAvatar === 'pumpkin' ? 'bg-orange-100 ring-2 ring-orange-500' : 'bg-white border border-orange-200'}`}>🎃</button>}
+                              {hasXmasPilot && <button onClick={() => setEditAvatar('xmas_pilot')} title="Schlitten-Pilot Belohnung" className={`w-8 h-8 rounded-lg overflow-hidden transition ${editAvatar === 'xmas_pilot' ? 'ring-2 ring-emerald-500' : 'border border-emerald-200'}`}><img src="/badges/avatar_xmas.jpg" className="w-full h-full object-cover" /></button>}
                               {hasWinter && <button onClick={() => setEditAvatar('reindeer')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-base transition ${editAvatar === 'reindeer' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>🦌</button>}
                               {hasWinter && <button onClick={() => setEditAvatar('snowman')} className={`w-8 h-8 rounded-lg flex items-center justify-center text-base transition ${editAvatar === 'snowman' ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-white border border-gray-200'}`}>⛄</button>}
                               {hasPolarExplorer && <button onClick={() => setEditAvatar('polar')} className={`w-8 h-8 rounded-lg overflow-hidden transition ${editAvatar === 'polar' ? 'ring-2 ring-purple-500' : 'border border-gray-200'}`}><img src="/badges/avatar_polar.jpg" className="w-full h-full object-cover" /></button>}
@@ -3126,6 +3788,7 @@ const hasNightOwl = myPins.some(p => {
                               {(devMode || hasPolarExplorer || hasWinter) && <button onClick={() => setEditFrame('frost')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'frost' ? 'bg-cyan-500 text-white' : 'bg-white border border-cyan-200 text-cyan-600'}`}>Frost</button>}
                               {(devMode || hasMarathon) && <button onClick={() => setEditFrame('fire')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'fire' ? 'bg-orange-500 text-white' : 'bg-white border border-orange-200 text-orange-600'}`}>Feuer</button>}
                               {(devMode || hasHalloween || hasGhostHunter) && <button onClick={() => setEditFrame('spooky')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'spooky' ? 'bg-orange-600 text-white' : 'bg-white border border-orange-300 text-orange-600'}`}>🎃 Spooky</button>}
+                              {(devMode || hasXmasPilot) && <button onClick={() => setEditFrame('xmas')} className={`px-2 py-1 rounded-md text-xs font-bold transition ${editFrame === 'xmas' ? 'bg-emerald-600 text-white' : 'bg-white border border-emerald-300 text-emerald-700'}`}>🎄 Lichterkette</button>}
                             </div>
                           </div>
                           <button onClick={() => handleUpdateAvatarAndFrame(editAvatar, editFrame)} className="w-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold py-2 rounded-xl transition">Speichern</button>
@@ -3205,6 +3868,7 @@ const hasNightOwl = myPins.some(p => {
                     ]},
                     { label: 'Spezial & Zeitlich', color: 'ring-yellow-400', items: [
                       { has: hasGhostHunter, img: '/badges/badge_ghosthunter.jpg', title: `Geisterjäger (${hasGhostHunter ? Math.max(ghostsCaught, GHOST_GOAL) : ghostsCaught} gefangen) 👻`, titleL: `??? (Halloween Geisterjagd ${ghostsCaught}/${GHOST_GOAL})`, desc: `${GHOST_GOAL} versteckte Spukgestalten mit dem Spooky-Kompass aufgespürt! Kürbis-Avatar & Spooky-Rahmen frei.`, descL: `Spüre während des Halloween-Events mit dem Spooky-Kompass ${GHOST_GOAL} versteckte Geister nahe Stickern auf (ab Zoom 13+)!`, date: myGhostHunterEntry?.claimed_at ? new Date(myGhostHunterEntry.claimed_at).toLocaleDateString('de-DE') : null },
+                      { has: hasXmasPilot, img: '/badges/badge_xmas_2026.jpg', title: `Schlitten-Pilot (${hasXmasPilot ? Math.max(xmasScore, XMAS_GOAL) : xmasScore}/${XMAS_GOAL} 🎁) 🛷`, titleL: `??? (Santa's Schlitten-Abwurf ${xmasScore}/${XMAS_GOAL})`, desc: `${XMAS_GOAL} Geschenke im 8-Bit Schlitten-Mitflug in Schornsteine abgeworfen! Weihnachts-Physalis Avatar, Lichterketten-Rahmen & Zeitreise-Schlitten frei.`, descL: `Wirf beim Weihnachts-Event im 8-Bit Schlitten-Mitflug Geschenke in Schornsteine auf der Weltkarte (${XMAS_GOAL} Punkte)!`, date: myXmasEntry?.claimed_at ? new Date(myXmasEntry.claimed_at).toLocaleDateString('de-DE') : null },
                       { has: devMode || hasPi, img: '/badges/badge_pi.jpg', title: 'PI (3,14) 🥧', titleL: '??? (Mathematiker)', desc: 'Auf dem 3,14 Breiten- oder Längengrad.', descL: 'Nur für wahre Geeks und Nerds...', date: getUnlockDate('pi') },
                       { has: devMode || hasMay4, img: '/badges/badge_may4.jpg', title: 'May the force be with you 🛸', titleL: '??? (Sci-Fi Fan)', desc: 'Am 4. Mai geklebt.', descL: 'Spüre die Macht an einem ganz bestimmten Tag...', date: getUnlockDate('may4') },
                       { has: devMode || hasLove, img: '/badges/badge_love.jpg', title: 'True Love 💌', titleL: '??? (Romantiker)', desc: 'Am Valentinstag (14. Feb) geklebt.', descL: 'Die Liebe liegt in der Luft...', date: getUnlockDate('love') },
@@ -3367,6 +4031,188 @@ const hasNightOwl = myPins.some(p => {
         </div>
       )}
 
+      {/* 8-Bit Weihnachts-Event Intro Video Modal (mit Briefing-Fallback falls /xmas_intro.mp4 noch fehlt) */}
+      {showXmasIntroVideo && (
+        <div className="fixed inset-0 z-[6000] bg-slate-950 flex items-center justify-center">
+          <video
+            autoPlay
+            playsInline
+            muted
+            className="w-full h-full object-cover"
+            onEnded={() => {
+              localStorage.setItem('geophysalis_xmas_intro_2026', 'true');
+              setXmasIntroHasPlayed(true);
+              setShowXmasIntroVideo(false);
+              launchSleighTourNow();
+            }}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const fb = document.getElementById('xmas-intro-fallback');
+              if (fb) fb.style.display = 'flex';
+            }}
+          >
+            <source src="/xmas_intro.mp4" type="video/mp4" />
+          </video>
+
+          {/* 8-Bit Briefing Fallback UI (sichtbar wenn /xmas_intro.mp4 noch nicht hinterlegt wurde) */}
+          <div
+            id="xmas-intro-fallback"
+            style={{ display: 'none' }}
+            className="flex-col items-center justify-center p-6 max-w-sm w-full text-center bg-gradient-to-br from-slate-900 via-emerald-950 to-red-950 rounded-3xl border-2 border-yellow-400/75 shadow-2xl mx-4"
+          >
+            <img src="/badges/badge_xmas_2026.jpg" alt="Santa Schlitten-Abwurf" className="w-28 h-28 rounded-2xl border-2 border-yellow-300 shadow-lg mb-4 object-cover" />
+            <h2 className="text-xl font-black text-yellow-200 mb-1.5">🛷 Santa&apos;s Schlitten-Abwurf</h2>
+            <p className="text-xs text-emerald-100 leading-relaxed mb-4">
+              Du fliegst im 8-Bit Rentierschlitten über <strong>5 echte Sticker</strong>! Wirf rechtzeitig ein Geschenk ab, wenn du den grünen Schornstein überfliegst:
+            </p>
+            <div className="w-full bg-black/40 rounded-2xl p-3 text-xs font-bold space-y-1.5 mb-5 border border-yellow-400/30">
+              <p className="text-emerald-300">🎯 Schornstein-Volltreffer = +3 🎁</p>
+              <p className="text-yellow-200">🏠 Dach-Treffer = +1 🎁</p>
+              <p className="text-slate-300 text-[11px] font-normal mt-1">Ziel: {XMAS_GOAL} Punkte für dein 8-Bit Abzeichen, Avatar &amp; Lichterketten-Rahmen!</p>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.setItem('geophysalis_xmas_intro_2026', 'true');
+                setXmasIntroHasPlayed(true);
+                setShowXmasIntroVideo(false);
+                launchSleighTourNow();
+              }}
+              className="w-full bg-gradient-to-r from-red-600 via-amber-500 to-emerald-600 text-white font-black py-3 rounded-2xl shadow-lg border border-yellow-300 active:scale-95 transition"
+            >
+              🛷 Abflug starten!
+            </button>
+          </div>
+
+          <button
+            onClick={() => {
+              localStorage.setItem('geophysalis_xmas_intro_2026', 'true');
+              setXmasIntroHasPlayed(true);
+              setShowXmasIntroVideo(false);
+              launchSleighTourNow();
+            }}
+            className="fixed bottom-8 right-8 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-full text-xs sm:text-sm font-black border border-white/25 transition"
+          >
+            Abflug starten &gt;&gt;
+          </button>
+        </div>
+      )}
+
+      {/* 8-Bit Schlitten-Tour Runden-Auswertung */}
+      {sleighRoundSummary && !sleighGameActive && !showXmasVictoryModal && (
+        <div
+          className="fixed inset-0 z-[5900] bg-black/65 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setSleighRoundSummary(null)}
+        >
+          <div
+            className="bg-gradient-to-br from-slate-950 via-emerald-950 to-red-950 text-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl border-2 border-yellow-400/75"
+            onClick={e => e.stopPropagation()}
+          >
+            <img src="/badges/xmas_sleigh.png" alt="Schlitten" className="w-16 h-16 mx-auto mb-3 object-contain drop-shadow-lg" />
+            <h3 className="text-xl font-black text-yellow-200 mb-1">Tour beendet! 🎄</h3>
+            <p className="text-sm text-emerald-100 mb-4">
+              Du hast in diesem Flug <span className="font-black text-yellow-300">+{sleighRoundSummary.points} 🎁</span> abgeliefert!
+            </p>
+            <div className="bg-black/40 rounded-2xl p-3 mb-5 border border-yellow-400/30">
+              <div className="flex justify-between text-xs font-bold mb-1.5">
+                <span className="text-slate-300">Gesamtfortschritt</span>
+                <span className="text-yellow-300">{Math.min(xmasScore, XMAS_GOAL)}/{XMAS_GOAL} 🎁</span>
+              </div>
+              <div className="w-full bg-black/50 rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-red-500 via-yellow-400 to-emerald-400 h-2 rounded-full transition-all"
+                  style={{ width: `${Math.min(100, (xmasScore / XMAS_GOAL) * 100)}%` }}
+                />
+              </div>
+              {xmasScore < XMAS_GOAL && (
+                <p className="text-[11px] text-emerald-200 mt-2">
+                  Noch {XMAS_GOAL - xmasScore} Punkte bis zum Schlitten-Pilot-Abzeichen!
+                </p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSleighRoundSummary(null)}
+                className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-2.5 rounded-2xl text-xs transition"
+              >
+                Schließen
+              </button>
+              <button
+                onClick={() => startSleighDelivery(false)}
+                className="flex-1 bg-gradient-to-r from-red-600 to-emerald-600 hover:brightness-110 text-white font-black py-2.5 rounded-2xl text-xs shadow-lg border border-yellow-300/60 transition"
+              >
+                🛷 Nochmal fliegen!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8-Bit Weihnachts-Event Sieges-Modal (mit optionalem /xmas_victory.mp4 Loop) */}
+      {showXmasVictoryModal && (
+        <div
+          className="fixed inset-0 z-[6100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => { setShowXmasVictoryModal(false); setSleighRoundSummary(null); }}
+        >
+          <div
+            className="bg-gradient-to-br from-slate-950 via-emerald-950 to-red-950 text-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl border-2 border-yellow-400 overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="w-full h-40 rounded-2xl overflow-hidden bg-black/50 border border-yellow-400/40 mb-4 relative flex items-center justify-center">
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const fb = document.getElementById('xmas-victory-fallback');
+                  if (fb) fb.style.display = 'block';
+                }}
+              >
+                <source src="/xmas_victory.mp4" type="video/mp4" />
+              </video>
+              <img
+                id="xmas-victory-fallback"
+                src="/badges/badge_xmas_2026.jpg"
+                alt="Schlitten-Pilot 2026"
+                style={{ display: 'none' }}
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            <h2 className="text-2xl font-black text-yellow-300 mb-1">Mission erfüllt! 🛷✨</h2>
+            <p className="text-xs text-emerald-100 leading-relaxed mb-4">
+              Du bist offiziell <strong>Schlitten-Pilot 2026</strong>! Folgende exklusive 8-Bit Belohnungen gehören dir:
+            </p>
+
+            <div className="grid grid-cols-3 gap-2 mb-5">
+              <div className="bg-black/40 p-2 rounded-2xl border border-yellow-400/30 flex flex-col items-center">
+                <img src="/badges/badge_xmas_2026.jpg" alt="Abzeichen" className="w-11 h-11 rounded-xl object-cover mb-1" />
+                <span className="text-[10px] font-bold text-yellow-200">Abzeichen</span>
+              </div>
+              <div className="bg-black/40 p-2 rounded-2xl border border-yellow-400/30 flex flex-col items-center">
+                <div className="avatar-frame frame-xmas w-11 h-11 rounded-full overflow-hidden mb-1">
+                  <img src="/badges/avatar_xmas.jpg" alt="Avatar" className="w-full h-full object-cover rounded-full" />
+                </div>
+                <span className="text-[10px] font-bold text-emerald-200">Avatar &amp; Rahmen</span>
+              </div>
+              <div className="bg-black/40 p-2 rounded-2xl border border-yellow-400/30 flex flex-col items-center justify-center">
+                <img src="/badges/xmas_sleigh.png" alt="Schlitten" className="w-11 h-11 object-contain mb-1" />
+                <span className="text-[10px] font-bold text-red-200">Zeitreise-Schlitten</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => { setShowXmasVictoryModal(false); setSleighRoundSummary(null); }}
+              className="w-full bg-gradient-to-r from-red-600 via-amber-500 to-emerald-600 text-white font-black py-3 rounded-2xl shadow-lg border border-yellow-300 hover:brightness-110 transition"
+            >
+              🎄 Genial! Weiter geht&apos;s
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Animated Achievement Popup */}
       <AchievementPopup
         unlockedAchievements={unlockedAchievements}
@@ -3411,6 +4257,7 @@ const hasNightOwl = myPins.some(p => {
           if (avatar === 'bat') return '🦇';
           if (avatar === 'reindeer') return '🦌';
           if (avatar === 'snowman') return '⛄';
+          if (avatar === 'xmas_pilot') return <img src="/badges/avatar_xmas.jpg" className="w-full h-full object-cover" />;
           if (avatar === 'fire') return <img src="/badges/avatar_fire.jpg" className="w-full h-full object-cover" />;
           if (avatar === 'cyberpunk') return <img src="/badges/avatar_cyberpunk.jpg" className="w-full h-full object-cover" />;
           if (avatar === 'retro') return <img src="/badges/avatar_retro.jpg" className="w-full h-full object-cover" />;
@@ -3488,11 +4335,18 @@ const hasNightOwl = myPins.some(p => {
                 g.achievement_id === `ghosthunter_2026_${targetId}` ||
                 (g.achievement_id === 'ghosthunter_2026' && g.user_id === targetId)
             ) || uManual.has('ghosthunter');
+          const uXmasPilot =
+            globalAchievements.some(
+              g =>
+                g.achievement_id === `xmas_2026_${targetId}` ||
+                (g.achievement_id === 'xmas_2026' && g.user_id === targetId)
+            ) || uManual.has('xmas_2026');
 
           const badges = [];
           if (uEuCenter) badges.push({ title: 'Mitte der EU', img: '/badges/badge_eu.png', bg: 'bg-blue-800', rare: true });
           if (pRank) badges.push({ title: `Pionier No.${pRank}`, img: '/badges/badge_pioneer.jpg', rare: true });
           if (uGhostHunter) badges.push({ title: 'Geisterjäger 👻', img: '/badges/badge_ghosthunter.jpg', rare: true });
+          if (uXmasPilot) badges.push({ title: 'Schlitten-Pilot 🛷', img: '/badges/badge_xmas_2026.jpg', rare: true });
           uPeaks.forEach(pk => {
             badges.push({ title: `🏔️ ${pk.name.split(' ')[0]}`, img: pk.img, rare: true });
           });
