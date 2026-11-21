@@ -419,8 +419,8 @@ const XMAS_CHIMNEY_ICON = L.divIcon({
   html: `<div class="xmas-target-ring">
            <div class="xmas-target-bullseye">🏠</div>
          </div>`,
-  iconSize: [78, 78],
-  iconAnchor: [39, 39]
+  iconSize: [64, 64],
+  iconAnchor: [32, 32]
 });
 
 function SleighDeliveryLayer({ targets, droppedGifts, sleighLiveRef, onLegChange, onTourFinish }) {
@@ -452,22 +452,32 @@ function SleighDeliveryLayer({ targets, droppedGifts, sleighLiveRef, onLegChange
     let finishTimeoutId = null;
     let rafId = null;
 
-    const setupLegCamera = (idx) => {
+    // Pick ONE fixed cruising zoom for the entire tour to eliminate tile-reload grey screens between stops!
+    let totalDistKm = 0;
+    for (let i = 0; i < totalLegs; i++) {
+      totalDistKm += map.distance([targets[i].lat, targets[i].lng], [targets[i + 1].lat, targets[i + 1].lng]) / 1000;
+    }
+    const avgDistKm = totalDistKm / totalLegs;
+    const tourZoom =
+      avgDistKm < 25 ? 10 :
+      avgDistKm < 90 ? 9 :
+      avgDistKm < 300 ? 8 : 7;
+
+    const getLegDurationMs = (idx) => {
       const fromPin = targets[idx];
       const toPin = targets[idx + 1];
       const distKm = map.distance([fromPin.lat, fromPin.lng], [toPin.lat, toPin.lng]) / 1000;
-      const zoom =
-        distKm < 15 ? 11 :
-        distKm < 65 ? 9 :
-        distKm < 260 ? 8 :
-        distKm < 900 ? 6 : 5;
-      const durationMs = Math.min(4600, Math.max(3600, 3400 + Math.sqrt(distKm) * 16));
-      map.stop();
-      map.setView([fromPin.lat, fromPin.lng], zoom, { animate: false });
-      return { zoom, durationMs };
+      const baseMs = Math.min(3900, Math.max(2700, 2500 + Math.sqrt(distKm) * 14));
+      // Reindeer-Turbo: each stop gets ~9% faster (up to ~36% faster by stop #5)!
+      const speedFactor = Math.max(0.64, 1 - idx * 0.09);
+      return Math.round(baseMs * speedFactor);
     };
 
-    let legCfg = setupLegCamera(0);
+    // Set camera view ONCE at launch; never reset zoom on leg transitions!
+    map.stop();
+    map.setView([targets[0].lat, targets[0].lng], tourZoom, { animate: false });
+
+    let currentLegDurationMs = getLegDurationMs(0);
     setActiveLeg(0);
     if (onLegChange) onLegChange(0, targets[1]);
 
@@ -475,19 +485,19 @@ function SleighDeliveryLayer({ targets, droppedGifts, sleighLiveRef, onLegChange
       if (tourCompleted) return;
       let elapsed = now - legStartTime;
 
-      if (elapsed >= legCfg.durationMs) {
+      if (elapsed >= currentLegDurationMs) {
         if (legIdx < totalLegs - 1) {
           legIdx += 1;
           legStartTime = now;
           elapsed = 0;
-          legCfg = setupLegCamera(legIdx);
+          currentLegDurationMs = getLegDurationMs(legIdx);
           setActiveLeg(legIdx);
           if (onLegChange && lastReportedLeg !== legIdx) {
             lastReportedLeg = legIdx;
             onLegChange(legIdx, targets[legIdx + 1]);
           }
         } else {
-          // Final stop reached! Hold briefly (~550ms grace window) so late drops still register
+          // Final stop reached! Hold briefly (~380ms grace window) so late drops still register
           tourCompleted = true;
           const endPos = [targets[totalLegs].lat, targets[totalLegs].lng];
           if (sleighMarkerRef.current) sleighMarkerRef.current.setLatLng(endPos);
@@ -496,19 +506,19 @@ function SleighDeliveryLayer({ targets, droppedGifts, sleighLiveRef, onLegChange
             ...(sleighLiveRef.current || {}),
             legIdx,
             t: 1,
-            elapsedInLeg: legCfg.durationMs,
+            elapsedInLeg: currentLegDurationMs,
             pos: endPos,
             distPx: 0,
             finished: true
           };
           finishTimeoutId = setTimeout(() => {
             if (onTourFinish) onTourFinish();
-          }, 550);
+          }, 380);
           return;
         }
       }
 
-      const rawT = Math.min(1, Math.max(0, elapsed / legCfg.durationMs));
+      const rawT = Math.min(1, Math.max(0, elapsed / currentLegDurationMs));
       // Smooth continuous glide across targets; tiny soft ramp only on very first launch
       const t = legIdx === 0 && rawT < 0.12 ? (rawT / 0.12) * 0.12 * (0.5 + 0.5 * (rawT / 0.12)) : rawT;
 
@@ -547,23 +557,23 @@ function SleighDeliveryLayer({ targets, droppedGifts, sleighLiveRef, onLegChange
       const zoneLabelEl = document.getElementById('sleigh-live-zone-label');
       if (gaugeEl) {
         gaugeEl.style.width = `${Math.round(rawT * 100)}%`;
-        if (distPx <= 26) {
+        if (distPx <= 16) {
           gaugeEl.style.backgroundColor = '#22c55e';
-        } else if (distPx <= 52) {
+        } else if (distPx <= 36) {
           gaugeEl.style.backgroundColor = '#facc15';
         } else {
           gaugeEl.style.backgroundColor = '#ef4444';
         }
       }
       if (zoneLabelEl) {
-        if (distPx <= 26) {
+        if (distPx <= 16) {
           zoneLabelEl.textContent = '🔥 SCHORNSTEIN! JETZT (+3)';
           zoneLabelEl.style.color = '#86efac';
-        } else if (distPx <= 52) {
-          zoneLabelEl.textContent = '🏠 ZIELZONE! ABWURF (+1)';
+        } else if (distPx <= 36) {
+          zoneLabelEl.textContent = '🏠 DACH-ZONE (+1)';
           zoneLabelEl.style.color = '#fde047';
         } else {
-          zoneLabelEl.textContent = `🛷 Anflug · ${Math.round(distPx)}px`;
+          zoneLabelEl.textContent = `🛷 Anflug (${(1 + legIdx * 0.12).toFixed(1)}x) · Daneben = -1`;
           zoneLabelEl.style.color = '#cbd5e1';
         }
       }
@@ -1167,7 +1177,7 @@ export default function MapView() {
   }, [session?.user?.id, globalsLoaded, hasGhostHunterGlobal, hasGhostHunterManual, ghostsCaught]);
 
   // Weihnachts-Event 2026: "Santa's Schlitten-Abwurf" (komplett eigene Event-Belohnungen & Cloud-Sync!)
-  const XMAS_GOAL = 15;
+  const XMAS_GOAL = 25;
   const [xmasTestMode, setXmasTestMode] = useState(false);
   const [xmasCollapsed, setXmasCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640);
   const [xmasScore, setXmasScore] = useState(() => parseInt(localStorage.getItem('geophysalis_xmas_score_2026') || '0', 10));
@@ -1237,26 +1247,41 @@ export default function MapView() {
     const rawPool = (pins && pins.length >= 6) ? pins : [...(pins || []), ...PEAKS];
     const uniquePool = [];
     for (const item of rawPool) {
-      if (!uniquePool.some(u => Math.hypot(u.lat - item.lat, u.lng - item.lng) < 0.04)) {
+      if (!uniquePool.some(u => Math.hypot(u.lat - item.lat, u.lng - item.lng) < 0.05)) {
         uniquePool.push(item);
       }
     }
     const source = uniquePool.length >= 6 ? uniquePool : PEAKS;
-    // Shuffle slightly and pick up to 8 candidates, then sort nearest-neighbor to pick 6 fluid stops
-    const shuffled = [...source].sort(() => Math.random() - 0.5).slice(0, Math.min(10, source.length));
-    const ordered = [shuffled.shift()];
-    while (ordered.length < 6 && shuffled.length > 0) {
+
+    // Prefer an anchor with >= 5 regional neighbors (~5 to 350km) to keep tour compact & tile-friendly
+    const regionalAnchors = source.filter(anchor =>
+      source.filter(cand => cand !== anchor && Math.hypot(cand.lat - anchor.lat, cand.lng - anchor.lng) <= 3.8).length >= 5
+    );
+    const startAnchor = regionalAnchors.length > 0
+      ? regionalAnchors[Math.floor(Math.random() * regionalAnchors.length)]
+      : source[Math.floor(Math.random() * source.length)];
+
+    const regionalNeighbors = source
+      .filter(cand => cand !== startAnchor && Math.hypot(cand.lat - startAnchor.lat, cand.lng - startAnchor.lng) <= 3.8);
+    const remaining = regionalNeighbors.length >= 5
+      ? regionalNeighbors
+      : source.filter(cand => cand !== startAnchor);
+
+    // Order via nearest-neighbor from startAnchor for a smooth 6-stop flight (0 launch + 5 targets)
+    const poolCopy = [...remaining];
+    const ordered = [startAnchor];
+    while (ordered.length < 6 && poolCopy.length > 0) {
       const last = ordered[ordered.length - 1];
       let bestIdx = 0;
       let bestDist = Infinity;
-      shuffled.forEach((cand, idx) => {
+      poolCopy.forEach((cand, idx) => {
         const d = Math.hypot(cand.lat - last.lat, cand.lng - last.lng);
         if (d < bestDist) {
           bestDist = d;
           bestIdx = idx;
         }
       });
-      ordered.push(shuffled.splice(bestIdx, 1)[0]);
+      ordered.push(poolCopy.splice(bestIdx, 1)[0]);
     }
     return ordered;
   };
@@ -1305,10 +1330,10 @@ export default function MapView() {
 
     const sleighScreenPt = map.latLngToContainerPoint(live.pos);
 
-    if (prevTargetIdx !== null && live.elapsedInLeg < 650 && !sleighDroppedTargetSetRef.current.has(prevTargetIdx)) {
+    if (prevTargetIdx !== null && live.elapsedInLeg < 380 && !sleighDroppedTargetSetRef.current.has(prevTargetIdx)) {
       const prevPin = sleighTargets[prevTargetIdx];
       const prevDist = sleighScreenPt.distanceTo(map.latLngToContainerPoint([prevPin.lat, prevPin.lng]));
-      if (prevDist <= 56) {
+      if (prevDist <= 38) {
         chosenTargetIdx = prevTargetIdx;
         bestDistPx = prevDist;
       }
@@ -1331,15 +1356,15 @@ export default function MapView() {
     sleighLastDropAtRef.current = now;
     sleighDroppedTargetSetRef.current.add(chosenTargetIdx);
 
-    let pts = 0;
-    let label = '❄️ Im Schnee gelandet!';
+    let pts = -1;
+    let label = '❄️ Im Schnee versunken! (-1)';
     let emoji = '❄️';
-    if (bestDistPx <= 26) {
+    if (bestDistPx <= 16) {
       pts = 3;
       label = '🎯 VOLLTREFFER IM SCHORNSTEIN!';
       emoji = '🎯';
       confetti({ particleCount: 75, spread: 75, origin: { y: 0.5 }, colors: ['#dc2626', '#16a34a', '#facc15', '#ffffff'] });
-    } else if (bestDistPx <= 52) {
+    } else if (bestDistPx <= 36) {
       pts = 1;
       label = '🏠 Aufs Dach getroffen!';
       emoji = '🎁';
@@ -1359,34 +1384,33 @@ export default function MapView() {
         x: window.innerWidth / 2,
         y: Math.max(120, window.innerHeight / 2 - 50),
         emoji,
-        signStr: pts > 0 ? `+${pts}` : '+0',
+        signStr: pts > 0 ? `+${pts}` : `${pts}`,
         label,
-        isTrap: pts === 0
+        isTrap: pts < 0
       }
     ]);
     setTimeout(() => setSpookyPopups(prev => prev.filter(p => p.id !== popId)), 1350);
 
-    if (pts > 0) {
-      sleighRoundScoreRef.current += pts;
-      setSleighRoundScore(r => r + pts);
-      setXmasScore(prev => {
-        const next = prev + pts;
-        localStorage.setItem('geophysalis_xmas_score_2026', next.toString());
-        if (prev < XMAS_GOAL && next >= XMAS_GOAL) {
-          confetti({ particleCount: 160, spread: 100, origin: { y: 0.55 }, colors: ['#dc2626', '#16a34a', '#facc15', '#ffffff'] });
-          setShowXmasVictoryModal(true);
-          if (session?.user?.id) {
-            supabase
-              .from('global_achievements')
-              .insert({ achievement_id: `xmas_2026_${session.user.id}`, user_id: session.user.id })
-              .then(({ error }) => {
-                if (!error) fetchGlobals();
-              });
-          }
+    sleighRoundScoreRef.current += pts;
+    setSleighRoundScore(r => r + pts);
+    setXmasScore(prev => {
+      // Once unlocked, overall progress never drops below XMAS_GOAL
+      const next = prev >= XMAS_GOAL ? Math.max(XMAS_GOAL, prev + pts) : Math.max(0, prev + pts);
+      localStorage.setItem('geophysalis_xmas_score_2026', next.toString());
+      if (prev < XMAS_GOAL && next >= XMAS_GOAL) {
+        confetti({ particleCount: 160, spread: 100, origin: { y: 0.55 }, colors: ['#dc2626', '#16a34a', '#facc15', '#ffffff'] });
+        setShowXmasVictoryModal(true);
+        if (session?.user?.id) {
+          supabase
+            .from('global_achievements')
+            .insert({ achievement_id: `xmas_2026_${session.user.id}`, user_id: session.user.id })
+            .then(({ error }) => {
+              if (!error) fetchGlobals();
+            });
         }
-        return next;
-      });
-    }
+      }
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -2750,7 +2774,7 @@ const hasNightOwl = myPins.some(p => {
               <p className="text-[10px] text-emerald-100/90 leading-snug">
                 {hasXmasPilot
                   ? '🏆 Schlitten-Pilot 2026 freigeschaltet! Avatar, Lichterketten-Rahmen & Zeitreise-Schlitten gehören dir.'
-                  : 'Flieg im 8-Bit Schlitten über 5 echte Sticker und wirf Geschenke genau im grünen Schornstein ab! (🎯 +3 / 🏠 +1)'}
+                  : 'Flieg im 8-Bit Schlitten über 5 echte Sticker und wirf Geschenke genau im grünen Schornstein ab! (🎯 +3 / 🏠 +1 / ❄️ -1)'}
               </p>
 
               <div className="flex items-center gap-1.5">
@@ -2986,7 +3010,7 @@ const hasNightOwl = myPins.some(p => {
           <TileLayer 
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            keepBuffer={6}
+            keepBuffer={8}
             updateWhenIdle={false}
           />
         )}
@@ -2994,7 +3018,7 @@ const hasNightOwl = myPins.some(p => {
           <TileLayer 
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" 
             attribution='Tiles &copy; Esri'
-            keepBuffer={6}
+            keepBuffer={8}
             updateWhenIdle={false}
           />
         )}
@@ -3002,12 +3026,16 @@ const hasNightOwl = myPins.some(p => {
           <TileLayer 
             url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}" 
             attribution='Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
+            keepBuffer={8}
+            updateWhenIdle={false}
           />
         )}
         {mapStyle === 'vintage' && (
           <TileLayer 
             url="https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}" 
             attribution='Tiles &copy; Esri &mdash; National Geographic'
+            keepBuffer={8}
+            updateWhenIdle={false}
             maxZoom={16}
           />
         )}
@@ -3016,6 +3044,8 @@ const hasNightOwl = myPins.some(p => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             className="map-sunrise"
+            keepBuffer={8}
+            updateWhenIdle={false}
           />
         )}
         {mapStyle === 'neon' && (
@@ -3023,6 +3053,8 @@ const hasNightOwl = myPins.some(p => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             className="map-spooky"
+            keepBuffer={8}
+            updateWhenIdle={false}
           />
         )}
         {mapStyle === 'snow' && (
@@ -3030,6 +3062,8 @@ const hasNightOwl = myPins.some(p => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             className="map-frozen"
+            keepBuffer={8}
+            updateWhenIdle={false}
           />
         )}
         {mapStyle === 'aurora' && (
@@ -3037,6 +3071,8 @@ const hasNightOwl = myPins.some(p => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             className="map-aurora"
+            keepBuffer={8}
+            updateWhenIdle={false}
           />
         )}
         {mapStyle === 'cyberpunk' && (
@@ -3044,6 +3080,8 @@ const hasNightOwl = myPins.some(p => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             className="map-cyberpunk"
+            keepBuffer={8}
+            updateWhenIdle={false}
           />
         )}
         {mapStyle === '8bit' && (
@@ -3051,6 +3089,8 @@ const hasNightOwl = myPins.some(p => {
             url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png" 
             attribution='&copy; OpenTopoMap'
             className="map-8bit"
+            keepBuffer={8}
+            updateWhenIdle={false}
             maxNativeZoom={9}
             maxZoom={18}
           />
@@ -4094,7 +4134,8 @@ const hasNightOwl = myPins.some(p => {
             <div className="w-full bg-black/40 rounded-2xl p-3 text-xs font-bold space-y-1.5 mb-5 border border-yellow-400/30">
               <p className="text-emerald-300">🎯 Schornstein-Volltreffer = +3 🎁</p>
               <p className="text-yellow-200">🏠 Dach-Treffer = +1 🎁</p>
-              <p className="text-slate-300 text-[11px] font-normal mt-1">Ziel: {XMAS_GOAL} Punkte für dein 8-Bit Abzeichen, Avatar &amp; Lichterketten-Rahmen!</p>
+              <p className="text-red-300">❄️ Daneben in den Schnee = -1 🎁</p>
+              <p className="text-slate-300 text-[11px] font-normal mt-1">Ziel: {XMAS_GOAL} Punkte (Tempo steigt pro Haus!) für dein 8-Bit Abzeichen, Avatar &amp; Lichterketten-Rahmen!</p>
             </div>
             <button
               onClick={() => {
