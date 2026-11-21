@@ -1179,8 +1179,24 @@ export default function MapView() {
   const [sleighRoundSummary, setSleighRoundSummary] = useState(null);
   const [showXmasIntroVideo, setShowXmasIntroVideo] = useState(false);
   const [showXmasVictoryModal, setShowXmasVictoryModal] = useState(false);
+  const [xmasAudioMuted, setXmasAudioMuted] = useState(false);
   const [xmasIntroHasPlayed, setXmasIntroHasPlayed] = useState(() => localStorage.getItem('geophysalis_xmas_intro_2026') === 'true');
   const [expeditionVehicle, setExpeditionVehicle] = useState('plane');
+
+  const xmasIntroVideoRef = useRef(null);
+  const xmasVictoryVideoRef = useRef(null);
+
+  useEffect(() => {
+    const vid = showXmasIntroVideo ? xmasIntroVideoRef.current : showXmasVictoryModal ? xmasVictoryVideoRef.current : null;
+    if (!vid) return;
+    vid.volume = 0.5;
+    vid.muted = xmasAudioMuted;
+    vid.play().catch(() => {
+      vid.muted = true;
+      setXmasAudioMuted(true);
+      vid.play().catch(() => {});
+    });
+  }, [showXmasIntroVideo, showXmasVictoryModal, xmasAudioMuted]);
 
   const sleighLiveRef = useRef({ legIdx: 0, t: 0, elapsedInLeg: 0, pos: [50, 10], bearing: 0, distPx: 999, finished: false });
   const sleighDroppedTargetSetRef = useRef(new Set());
@@ -4035,10 +4051,11 @@ const hasNightOwl = myPins.some(p => {
       {showXmasIntroVideo && (
         <div className="fixed inset-0 z-[6000] bg-slate-950 flex items-center justify-center">
           <video
+            ref={xmasIntroVideoRef}
             autoPlay
             playsInline
-            muted
-            className="w-full h-full object-cover"
+            muted={xmasAudioMuted}
+            className="w-full max-h-[82dvh] sm:max-h-none sm:h-full object-contain sm:object-cover"
             onEnded={() => {
               localStorage.setItem('geophysalis_xmas_intro_2026', 'true');
               setXmasIntroHasPlayed(true);
@@ -4053,6 +4070,15 @@ const hasNightOwl = myPins.some(p => {
           >
             <source src="/xmas_intro.mp4" type="video/mp4" />
           </video>
+
+          {/* Ton An/Aus Button */}
+          <button
+            onClick={() => setXmasAudioMuted(!xmasAudioMuted)}
+            title={xmasAudioMuted ? 'Ton einschalten' : 'Ton stummschalten'}
+            className="fixed top-6 right-6 bg-black/60 hover:bg-black/80 text-white px-3.5 py-2 rounded-full text-xs sm:text-sm font-black border border-white/25 backdrop-blur-md transition z-10"
+          >
+            {xmasAudioMuted ? '🔇 Ton aus' : '🔊 8-Bit Sound'}
+          </button>
 
           {/* 8-Bit Briefing Fallback UI (sichtbar wenn /xmas_intro.mp4 noch nicht hinterlegt wurde) */}
           <div
@@ -4157,11 +4183,12 @@ const hasNightOwl = myPins.some(p => {
             className="bg-gradient-to-br from-slate-950 via-emerald-950 to-red-950 text-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl border-2 border-yellow-400 overflow-hidden"
             onClick={e => e.stopPropagation()}
           >
-            <div className="w-full h-40 rounded-2xl overflow-hidden bg-black/50 border border-yellow-400/40 mb-4 relative flex items-center justify-center">
+            <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black border border-yellow-400/40 mb-4 relative flex items-center justify-center">
               <video
+                ref={xmasVictoryVideoRef}
                 autoPlay
                 loop
-                muted
+                muted={xmasAudioMuted}
                 playsInline
                 className="w-full h-full object-cover"
                 onError={(e) => {
@@ -4172,6 +4199,13 @@ const hasNightOwl = myPins.some(p => {
               >
                 <source src="/xmas_victory.mp4" type="video/mp4" />
               </video>
+              <button
+                onClick={() => setXmasAudioMuted(!xmasAudioMuted)}
+                title={xmasAudioMuted ? 'Ton einschalten' : 'Ton stummschalten'}
+                className="absolute top-2 right-2 bg-black/65 hover:bg-black/85 text-white px-2.5 py-1 rounded-full text-[11px] font-black border border-white/25 backdrop-blur-md transition z-10"
+              >
+                {xmasAudioMuted ? '🔇' : '🔊'}
+              </button>
               <img
                 id="xmas-victory-fallback"
                 src="/badges/badge_xmas_2026.jpg"
