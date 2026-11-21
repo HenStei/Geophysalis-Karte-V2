@@ -416,7 +416,8 @@ const SLEIGH_ICON_STATIC = L.divIcon({
 
 const XMAS_CHIMNEY_ICON = L.divIcon({
   className: 'bg-transparent border-none',
-  html: `<div class="xmas-target-ring">
+  html: `<div class="xmas-target-ring" style="position:relative;">
+           <span class="xmas-chimney-smoke">💨</span>
            <div class="xmas-target-bullseye">🏠</div>
          </div>`,
   iconSize: [64, 64],
@@ -426,6 +427,7 @@ const XMAS_CHIMNEY_ICON = L.divIcon({
 function SleighDeliveryLayer({ targets, droppedGifts, sleighLiveRef, onLegChange, onTourFinish }) {
   const map = useMap();
   const sleighMarkerRef = useRef(null);
+  const trailPolylineRef = useRef(null);
   const [activeLeg, setActiveLeg] = useState(0);
 
   // Polyline samples for Santa's golden festive flight route
@@ -451,6 +453,8 @@ function SleighDeliveryLayer({ targets, droppedGifts, sleighLiveRef, onLegChange
     let tourCompleted = false;
     let finishTimeoutId = null;
     let rafId = null;
+    const trailPts = [[targets[0].lat, targets[0].lng]];
+    let lastTrailPush = 0;
 
     // Pick ONE fixed cruising zoom for the entire tour to eliminate tile-reload grey screens between stops!
     let totalDistKm = 0;
@@ -531,6 +535,12 @@ function SleighDeliveryLayer({ targets, droppedGifts, sleighLiveRef, onLegChange
       if (sleighMarkerRef.current) sleighMarkerRef.current.setLatLng(pos);
       map.panTo(pos, { animate: false });
 
+      if (now - lastTrailPush > 65) {
+        trailPts.push(pos);
+        lastTrailPush = now;
+        if (trailPolylineRef.current) trailPolylineRef.current.setLatLngs(trailPts);
+      }
+
       const spriteEl = document.getElementById('xmas-sleigh-sprite');
       if (spriteEl) {
         const bobScale = 1 + 0.08 * Math.sin(now * 0.008);
@@ -597,9 +607,16 @@ function SleighDeliveryLayer({ targets, droppedGifts, sleighLiveRef, onLegChange
         <Polyline
           key={seg.id}
           positions={seg.pts}
-          pathOptions={{ color: '#facc15', weight: 3, dashArray: '8, 10', opacity: 0.8 }}
+          pathOptions={{ color: '#facc15', weight: 2.5, dashArray: '6, 10', opacity: 0.45 }}
         />
       ))}
+
+      {/* Sparkling golden stardust trail directly behind Santa's sleigh */}
+      <Polyline
+        ref={trailPolylineRef}
+        positions={[[targets[0].lat, targets[0].lng]]}
+        pathOptions={{ color: '#fde047', weight: 4.5, className: 'sleigh-sparkle-line' }}
+      />
 
       {/* Chimney Bullseye Ring on current target sticker */}
       {activeTarget && (
@@ -693,7 +710,7 @@ const WinterAssets = () => {
   useEffect(() => {
     if (!map) return;
     const generateAssets = () => {
-      if (map.getZoom() < 8) {
+      if (map.getZoom() < 7) {
         setAssets([]);
         return;
       }
@@ -701,12 +718,13 @@ const WinterAssets = () => {
       const newAssets = Array.from({ length: 5 }).map((_, i) => {
         const lat = bounds.getSouth() + Math.random() * (bounds.getNorth() - bounds.getSouth());
         const lng = bounds.getWest() + Math.random() * (bounds.getEast() - bounds.getWest());
-        const isReindeer = Math.random() > 0.5;
+        const icons = ['🎄', '⛄', '🦌', '🔔'];
+        const picked = icons[i % icons.length];
         return {
           id: i,
           pos: [lat, lng],
           icon: L.divIcon({
-            html: `<div style="font-size: 32px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3));">${isReindeer ? '🦌' : '🎁'}</div>`,
+            html: `<div class="xmas-decor-float" style="font-size: 28px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.35));">${picked}</div>`,
             className: 'bg-transparent border-none'
           })
         };
@@ -1179,6 +1197,16 @@ export default function MapView() {
   // Weihnachts-Event 2026: "Santa's Schlitten-Abwurf" (komplett eigene Event-Belohnungen & Cloud-Sync!)
   const XMAS_GOAL = 25;
   const [xmasTestMode, setXmasTestMode] = useState(false);
+  const [xmasSnowEnabled, setXmasSnowEnabled] = useState(true);
+  const toggleXmasTestMode = () => {
+    const next = !xmasTestMode;
+    setXmasTestMode(next);
+    if (next) {
+      setMapStyle('snow');
+    } else if (mapStyle === 'snow') {
+      setMapStyle('street');
+    }
+  };
   const [xmasCollapsed, setXmasCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640);
   const [xmasScore, setXmasScore] = useState(() => parseInt(localStorage.getItem('geophysalis_xmas_score_2026') || '0', 10));
   const [sleighGameActive, setSleighGameActive] = useState(false);
@@ -1817,7 +1845,7 @@ const hasNightOwl = myPins.some(p => {
   const canUseVintage = devMode || hasLocalHero;
   const canUseSunrise = devMode || hasEarlyBird;
   const canUseSpooky = devMode || hasHalloween || isHalloweenActive || hasGhostHunter;
-  const canUseSnow = devMode || hasWinter;
+  const canUseSnow = devMode || hasWinter || isXmasEventActive || hasXmasPilot;
   const canUseAurora = devMode || hasPolarExplorer;
   const canUseCyberpunk = devMode || hasUrbanLegend;
   const canUse8Bit = devMode || hasRetroGamer;
@@ -2420,7 +2448,12 @@ const hasNightOwl = myPins.some(p => {
   }, [session, myPins]);
 
   return (
-    <div className="relative w-full h-[100dvh] overflow-hidden overscroll-none">
+    <div className={`relative w-full h-[100dvh] overflow-hidden overscroll-none ${(isXmasEventActive || mapStyle === 'snow') ? 'xmas-active-map' : ''}`}>
+      {(isXmasEventActive || mapStyle === 'snow') && (
+        <div className="xmas-lights-bar" aria-hidden="true">
+          {Array.from({ length: 24 }).map((_, i) => <span key={i} className="xmas-bulb" />)}
+        </div>
+      )}
       
       {/* Top Left Header & Counter (Optimized for Mobile) */}
       <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-[1000] pointer-events-none flex flex-col gap-1.5 sm:gap-3 max-w-[calc(100vw-24px)]">
@@ -2476,7 +2509,7 @@ const hasNightOwl = myPins.some(p => {
               </button>
               {!isWinterActive && (
                 <button
-                  onClick={() => setXmasTestMode(!xmasTestMode)}
+                  onClick={toggleXmasTestMode}
                   title="Weihnachts-Event testen"
                   className={`px-2.5 py-1.5 rounded-full shadow-lg text-[10px] font-black transition ${xmasTestMode ? 'bg-emerald-600 text-white ring-2 ring-yellow-300' : 'bg-white/95 text-emerald-700'}`}
                 >
@@ -2741,6 +2774,13 @@ const hasNightOwl = myPins.some(p => {
               >
                 🛷 Fliegen!
               </button>
+              <button
+                onClick={() => setMapStyle(mapStyle === 'snow' ? 'street' : 'snow')}
+                title="Winter-Karte umschalten"
+                className={`px-2.5 py-1.5 rounded-full text-[10px] font-black shadow-lg border backdrop-blur-md transition ${mapStyle === 'snow' ? 'bg-cyan-600/95 text-white border-cyan-300' : 'bg-slate-900/90 text-yellow-200 border-yellow-400/40'}`}
+              >
+                {mapStyle === 'snow' ? '☀️' : '❄️'}
+              </button>
             </div>
           ) : (
             <div className="bg-gradient-to-br from-slate-950/95 via-emerald-950/95 to-red-950/95 backdrop-blur-md p-2.5 sm:px-4 sm:py-3 rounded-2xl sm:rounded-3xl shadow-2xl border border-yellow-400/60 pointer-events-auto flex flex-col gap-2 w-[270px] sm:w-[320px] transition-all">
@@ -2793,12 +2833,25 @@ const hasNightOwl = myPins.some(p => {
                   🎬 Intro
                 </button>
               </div>
-              {isWinterActive && (
-                <div className="text-[9px] text-cyan-200/80 font-bold flex items-center gap-1">
-                  <span>❄️</span>
-                  <span>Winterwunder-Monat aktiv</span>
+              <div className="flex items-center justify-between gap-1.5 pt-0.5">
+                <span className="text-[9px] text-cyan-200/80 font-bold truncate">
+                  {isWinterActive ? '❄️ Winterwunder aktiv' : '🎄 Santa Nordpol-HQ in Lappland!'}
+                </span>
+                <div className="flex gap-1 shrink-0">
+                  <button
+                    onClick={() => setXmasSnowEnabled(!xmasSnowEnabled)}
+                    className={`text-[9px] font-bold px-2 py-0.5 rounded-full border transition ${xmasSnowEnabled ? 'bg-cyan-500/80 text-white border-cyan-300' : 'bg-white/10 text-gray-300 border-white/20'}`}
+                  >
+                    {xmasSnowEnabled ? '🌨️ Schnee AN' : 'Schnee AUS'}
+                  </button>
+                  <button
+                    onClick={() => setMapStyle(mapStyle === 'snow' ? 'street' : 'snow')}
+                    className={`text-[9px] font-bold px-2 py-0.5 rounded-full border transition ${mapStyle === 'snow' ? 'bg-blue-600 text-white border-cyan-300' : 'bg-white/10 text-yellow-200 border-yellow-400/30 hover:bg-white/20'}`}
+                  >
+                    {mapStyle === 'snow' ? '☀️ Normal' : '❄️ Winter-Karte'}
+                  </button>
                 </div>
-              )}
+              </div>
             </div>
           )
         )}
@@ -2943,7 +2996,7 @@ const hasNightOwl = myPins.some(p => {
           <div className="hidden sm:flex gap-2 self-end pointer-events-auto">
             {!isWinterActive && (
               <button
-                onClick={() => setXmasTestMode(!xmasTestMode)}
+                onClick={toggleXmasTestMode}
                 className={`mt-1 sm:mt-2 px-4 py-2 sm:px-4 sm:py-3 rounded-full shadow-xl border text-xs sm:text-sm font-bold transition ${xmasTestMode ? 'bg-emerald-600 text-white border-yellow-300' : 'bg-white/95 backdrop-blur-md text-emerald-700 border-gray-100 hover:bg-emerald-50'}`}
               >
                 🎄 Xmas {xmasTestMode ? 'ON' : 'Test'}
@@ -2962,10 +3015,10 @@ const hasNightOwl = myPins.some(p => {
         )}
       </div>
       
-      {mapStyle === 'snow' && (
+      {(mapStyle === 'snow' || sleighGameActive || isXmasEventActive) && (
         <>
-          <Snowflakes />
-          <div className="frost-overlay"></div>
+          {(mapStyle === 'snow' || sleighGameActive || (isXmasEventActive && xmasSnowEnabled)) && <Snowflakes />}
+          {mapStyle === 'snow' && <div className="frost-overlay"></div>}
         </>
       )}
       {mapStyle === 'aurora' && <div className="aurora-overlay"></div>}
@@ -3096,7 +3149,43 @@ const hasNightOwl = myPins.some(p => {
           />
         )}
         
-        {mapStyle === 'snow' && <WinterAssets />}
+        {(isXmasEventActive || mapStyle === 'snow') && <WinterAssets />}
+        {(isXmasEventActive || mapStyle === 'snow') && (
+          <Marker
+            position={[66.543, 25.847]}
+            zIndexOffset={1900}
+            icon={L.divIcon({
+              className: 'bg-transparent border-none',
+              html: `<div style="display:flex;flex-direction:column;align-items:center;">
+                       <div class="nordpol-hq-badge">
+                         <img src="/badges/avatar_xmas.jpg" style="width:100%;height:100%;object-fit:cover;" />
+                       </div>
+                       <span style="margin-top:2px;background:#7f1d1d;color:#fef08a;font-size:9px;font-weight:900;padding:1px 6px;border-radius:999px;border:1.5px solid #facc15;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.45);">🎅 Nordpol-HQ</span>
+                     </div>`,
+              iconSize: [78, 72],
+              iconAnchor: [39, 36],
+              popupAnchor: [0, -28]
+            })}
+          >
+            <Popup>
+              <div className="p-4 text-center bg-gradient-to-b from-slate-900 via-emerald-950 to-slate-900 text-white">
+                <img src="/badges/badge_xmas_2026.jpg" alt="Nordpol HQ" className="w-20 h-20 mx-auto rounded-2xl border-2 border-yellow-400 shadow-lg mb-2.5 object-cover" />
+                <h3 className="font-black text-base text-yellow-300 leading-tight mb-1">🎅 Santa&apos;s Nordpol-Werkstatt</h3>
+                <p className="text-[11px] text-emerald-200 mb-3">Rovaniemi · Polarkreis (66,5° N)</p>
+                <div className="bg-black/40 rounded-xl p-2 mb-3 border border-yellow-400/30 text-xs font-bold">
+                  <span className="text-yellow-200">Geschenke gesammelt: {Math.min(xmasScore, XMAS_GOAL)}/{XMAS_GOAL} 🎁</span>
+                  {hasXmasPilot && <p className="text-[10px] text-emerald-300 mt-0.5">✅ Schlitten-Pilot 2026 freigeschaltet!</p>}
+                </div>
+                <button
+                  onClick={() => startSleighDelivery(false)}
+                  className="w-full bg-gradient-to-r from-red-600 via-amber-500 to-emerald-600 text-white font-black py-2 px-3 rounded-xl text-xs shadow border border-yellow-300 active:scale-95 transition"
+                >
+                  🛷 Von hier Liefer-Tour starten!
+                </button>
+              </div>
+            </Popup>
+          </Marker>
+        )}
         {(mapStyle === 'neon' || (isHalloweenActive && ghostHuntActive)) && <HalloweenAssets pins={pins} onCatch={handleCatchGhost} onCompassUpdate={setSpookyCompass} />}
 
         {/* Expedition Flight Route & Animated Airplane / Sleigh */}
